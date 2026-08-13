@@ -52,6 +52,24 @@ export async function isNodeSqliteSupported(): Promise<boolean> {
 }
 
 /**
+ * `nuxt dev` proxies every request through Nitro's dev middleware in-process
+ * before it reaches this handler, which loses the original socket and makes
+ * `event.node.req.socket.remoteAddress` (and therefore `getRequestIP` with
+ * `xForwardedFor: false`) come back `undefined` even for genuine
+ * 127.0.0.1/::1 requests. The dev proxy does set `x-forwarded-for` correctly,
+ * but that header is normally untrustworthy since a real reverse proxy in
+ * front of a production deployment could let a remote client spoof it.
+ * Trusting it is safe specifically in dev: `import.meta.dev` is compiled to
+ * `false` in production builds, so this fallback never runs there.
+ */
+function resolveClientIp(event: H3Event): string | null {
+  const socketIp = getRequestIP(event, { xForwardedFor: false })
+  if (socketIp) return socketIp
+  if (import.meta.dev) return getRequestIP(event, { xForwardedFor: true }) ?? null
+  return null
+}
+
+/**
  * History.db bytes are local, personal browsing data — never serve them (or
  * even confirm their existence) to a caller that isn't this app's own page,
  * even if this Nitro server ends up bound to a LAN/WAN interface.
@@ -69,7 +87,7 @@ export async function isNodeSqliteSupported(): Promise<boolean> {
 export function assertLocalRequest(event: H3Event) {
   if (process.env.NUXT_HISTORY_DB_ALLOW_REMOTE === 'true') return
 
-  const ip = getRequestIP(event, { xForwardedFor: false })
+  const ip = resolveClientIp(event)
   if (!ip || !LOCALHOST_IPS.has(ip)) {
     throw createError({
       statusCode: 403,

@@ -11,6 +11,7 @@ const loadError = ref('')
 const serverAutoLoadAvailable = ref(false)
 const serverDbPath = ref('')
 const serverPermissionHint = ref(false)
+const serverStatusWarning = ref('')
 
 const search = ref('')
 const domainFilter = ref<string | null>(null)
@@ -120,7 +121,24 @@ async function loadFile(file: File | null | undefined) {
 async function checkServerAutoLoadAvailability() {
   try {
     const res = await fetch('/api/local-history/status')
-    if (!res.ok) return
+    if (!res.ok) {
+      // A same-origin same-machine request being rejected (403) means the
+      // server-side localhost check itself failed, not that this deployment
+      // simply lacks a Nitro server — surface that instead of silently
+      // falling back to drag & drop, which otherwise looks identical to
+      // "feature not available" and hides the real cause.
+      if (res.status === 403) {
+        let message = 'サーバー側の制限により自動読み込みが利用できません。'
+        try {
+          const body = await res.json()
+          if (body?.message) message = body.message
+        } catch {
+          // ignore JSON parse errors, use default message
+        }
+        serverStatusWarning.value = message
+      }
+      return
+    }
     const body = await res.json()
     serverAutoLoadAvailable.value = Boolean(body?.available)
     serverDbPath.value = typeof body?.path === 'string' ? body.path : ''
@@ -261,6 +279,16 @@ function resetAll() {
                 この Mac 上の History.db を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 →
                 プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に
                 権限を付与すると自動読み込みが利用できます。
+              </v-alert>
+
+              <v-alert
+                v-else-if="serverStatusWarning"
+                type="warning"
+                variant="tonal"
+                density="compact"
+                class="mb-6 text-left"
+              >
+                {{ serverStatusWarning }}
               </v-alert>
 
               <v-file-input
