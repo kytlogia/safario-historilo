@@ -8,6 +8,9 @@ const isLoading = ref(false)
 const isDragging = ref(false)
 const loadError = ref('')
 
+const serverAutoLoadAvailable = ref(false)
+const serverDbPath = ref('')
+
 const search = ref('')
 const domainFilter = ref<string | null>(null)
 const dateFrom = ref('')
@@ -113,6 +116,50 @@ async function loadFile(file: File | null | undefined) {
   }
 }
 
+async function checkServerAutoLoadAvailability() {
+  try {
+    const res = await fetch('/api/local-history/status')
+    if (!res.ok) return
+    const body = await res.json()
+    serverAutoLoadAvailable.value = Boolean(body?.available)
+    serverDbPath.value = typeof body?.path === 'string' ? body.path : ''
+  } catch {
+    // No Nitro server backing this deployment (e.g. static hosting) — stay with drag & drop only.
+    serverAutoLoadAvailable.value = false
+  }
+}
+
+async function loadFromServer() {
+  isLoading.value = true
+  loadError.value = ''
+  try {
+    const res = await fetch('/api/local-history')
+    if (!res.ok) {
+      let message = 'History.db の自動読み込みに失敗しました。'
+      try {
+        const body = await res.json()
+        if (body?.message) message = body.message
+      } catch {
+        // ignore JSON parse errors, use default message
+      }
+      loadError.value = message
+      return
+    }
+    const blob = await res.blob()
+    const result = await parseSafariHistoryFile(new File([blob], 'History.db'))
+    visits.value = result.visits
+    fileName.value = result.fileName
+  } catch (err) {
+    loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  checkServerAutoLoadAvailability()
+})
+
 function onFileInputChange(files: File[] | File | null) {
   const file = Array.isArray(files) ? files[0] : files
   loadFile(file)
@@ -181,6 +228,26 @@ function resetAll() {
               <div class="text-body-2 text-medium-emphasis mb-6">
                 またはファイルを選択してください。解析はすべてこのブラウザ内で行われ、データは外部に送信されません。
               </div>
+
+              <template v-if="serverAutoLoadAvailable">
+                <v-btn
+                  color="primary"
+                  variant="flat"
+                  prepend-icon="mdi-database-sync-outline"
+                  block
+                  class="mb-1"
+                  :loading="isLoading"
+                  @click="loadFromServer"
+                >
+                  この Mac の History.db を自動で読み込む
+                </v-btn>
+                <div class="text-caption text-medium-emphasis mb-6">{{ serverDbPath }}</div>
+                <div class="d-flex align-center mb-6">
+                  <v-divider />
+                  <span class="mx-3 text-caption text-medium-emphasis">または</span>
+                  <v-divider />
+                </div>
+              </template>
 
               <v-file-input
                 label="History.db を選択"
