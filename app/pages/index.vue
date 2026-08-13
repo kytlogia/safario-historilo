@@ -4,7 +4,6 @@ import { exportVisitsAsCsv, exportVisitsAsJson } from '~/utils/export'
 
 const visits = ref<HistoryVisit[]>([])
 const fileName = ref('')
-const sourceItemCount = ref(0)
 const isLoading = ref(false)
 const isDragging = ref(false)
 const loadError = ref('')
@@ -56,7 +55,7 @@ const topDomains = computed(() => {
   for (const v of filteredVisits.value) {
     counts.set(v.domain, (counts.get(v.domain) ?? 0) + 1)
   }
-  const max = Math.max(1, ...counts.values())
+  const max = [...counts.values()].reduce((a, b) => Math.max(a, b), 1)
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
@@ -66,8 +65,8 @@ const topDomains = computed(() => {
 const dateRangeLabel = computed(() => {
   if (visits.value.length === 0) return '-'
   const times = visits.value.map((v) => v.visitTime.getTime())
-  const min = new Date(Math.min(...times))
-  const max = new Date(Math.max(...times))
+  const min = new Date(times.reduce((a, b) => Math.min(a, b)))
+  const max = new Date(times.reduce((a, b) => Math.max(a, b)))
   return `${formatDate(min)} 〜 ${formatDate(max)}`
 })
 
@@ -107,7 +106,6 @@ async function loadFile(file: File | null | undefined) {
     const result = await parseSafariHistoryFile(file)
     visits.value = result.visits
     fileName.value = result.fileName
-    sourceItemCount.value = result.sourceItemCount
   } catch (err) {
     loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
   } finally {
@@ -126,6 +124,14 @@ function onDrop(event: DragEvent) {
   loadFile(file)
 }
 
+function onDragLeave(event: DragEvent) {
+  const target = event.currentTarget as Node
+  const related = event.relatedTarget as Node | null
+  if (!related || !target.contains(related)) {
+    isDragging.value = false
+  }
+}
+
 function openDetail(visit: HistoryVisit) {
   selectedVisit.value = visit
   detailDialog.value = true
@@ -134,7 +140,6 @@ function openDetail(visit: HistoryVisit) {
 function resetAll() {
   visits.value = []
   fileName.value = ''
-  sourceItemCount.value = 0
   search.value = ''
   domainFilter.value = null
   dateFrom.value = ''
@@ -168,7 +173,7 @@ function resetAll() {
               :class="{ 'drop-zone--active': isDragging }"
               variant="outlined"
               @dragover.prevent="isDragging = true"
-              @dragleave.prevent="isDragging = false"
+              @dragleave.prevent="onDragLeave"
               @drop.prevent="onDrop"
             >
               <v-icon icon="mdi-database-search-outline" size="56" color="primary" class="mb-4" />

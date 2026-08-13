@@ -10,6 +10,9 @@ function getSqlJs() {
   if (!sqlJsPromise) {
     sqlJsPromise = initSqlJs({
       locateFile: (file) => `/${file}`
+    }).catch((err) => {
+      sqlJsPromise = null
+      throw err
     })
   }
   return sqlJsPromise
@@ -27,6 +30,30 @@ function toBool(value: unknown): boolean {
   return Number(value) === 1
 }
 
+const REQUIRED_COLUMNS: Record<string, string[]> = {
+  history_items: ['id', 'url', 'visit_count', 'domain_expansion', 'status_code'],
+  history_visits: [
+    'id',
+    'history_item',
+    'visit_time',
+    'title',
+    'load_successful',
+    'http_non_get',
+    'synthesized',
+    'redirect_source',
+    'redirect_destination',
+    'origin',
+    'generation',
+    'attributes',
+    'score'
+  ]
+}
+
+function getTableColumns(db: Database, table: string): Set<string> {
+  const result = db.exec(`PRAGMA table_info(${table})`)
+  return new Set((result[0]?.values ?? []).map((row) => String(row[1])))
+}
+
 function assertHistorySchema(db: Database) {
   const tables = db.exec(
     "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('history_items', 'history_visits')"
@@ -36,6 +63,16 @@ function assertHistorySchema(db: Database) {
     throw new Error(
       'このファイルはSafariの履歴データベース(History.db)ではないようです。history_items / history_visits テーブルが見つかりませんでした。'
     )
+  }
+
+  for (const [table, columns] of Object.entries(REQUIRED_COLUMNS)) {
+    const existing = getTableColumns(db, table)
+    const missing = columns.filter((column) => !existing.has(column))
+    if (missing.length > 0) {
+      throw new Error(
+        `このHistory.dbのスキーマは対応していません。テーブル "${table}" に想定していた列が見つかりませんでした: ${missing.join(', ')}`
+      )
+    }
   }
 }
 
@@ -125,10 +162,7 @@ export async function parseSafariHistoryFile(file: File): Promise<ParsedHistory>
       }
     })
 
-    const itemCountResult = db.exec('SELECT COUNT(*) FROM history_items')
-    const sourceItemCount = Number(itemCountResult[0]?.values?.[0]?.[0] ?? 0)
-
-    return { visits, fileName: file.name, sourceItemCount }
+    return { visits, fileName: file.name }
   } finally {
     db.close()
   }

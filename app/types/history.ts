@@ -28,5 +28,4 @@ export interface DomainSummary {
 export interface ParsedHistory {
   visits: HistoryVisit[]
   fileName: string
-  sourceItemCount: number
 }
