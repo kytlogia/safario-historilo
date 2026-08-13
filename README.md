@@ -23,11 +23,11 @@ Safariのブラウズ履歴データベース（`History.db`）を読み込み�
 `pnpm dev` や `pnpm build && node .output/server/index.mjs` のようにNitroサーバーが起動している環境では、Nitroサーバー(Node.jsプロセス)が **`~/Library/Safari/History.db` をローカルのファイルシステムから直接読み込みます**。画面を開くと自動的に利用可否が判定され、「この Mac の History.db を自動で読み込む」ボタンが表示されます。
 
 - 既定のパスは `~/Library/Safari/History.db` です。`NUXT_HISTORY_DB_PATH` 環境変数で上書きできます。
-- 読み込み時は `History.db` 本体に加えて `-wal` / `-shm` ファイルも一時ディレクトリへコピーしてから開くため、元ファイルを変更・破損することなく、Safari実行中でも安全に読み取れます。
+- 読み込みは `History.db`/`-wal`/`-shm` を手動でファイルコピーするのではなく、SQLiteの Online Backup API（`node:sqlite` の `backup()`）でホットバックアップします。Safariが実行中でWALへ書き込みが発生していても、常に論理的に一貫したスナップショットが得られるため、元ファイルを変更・破損することなく安全に読み取れます（手動でのマルチファイルコピーは書き込みタイミングによって不整合な状態になり得るため採用していません）。バックアップ自体もNode.jsのイベントループをブロックしない非同期処理です。
 - サーバーは読み込んだバイト列をそのままブラウザへ返し、実際のパース処理は他の読み込み方法と同じくブラウザ内のsql.jsで行われます（サーバー側でデータの中身を解析・保持することはありません）。
-- macOSでは、ターミナルアプリ（またはNodeを実行するアプリ）に「フルディスクアクセス」権限を付与する必要があります（システム設定 → プライバシーとセキュリティ → フルディスクアクセス）。
-- この機能は `node:sqlite`（Node.js 22.5以降に付属）を使用します。利用できない環境や `History.db` が見つからない環境では自動的にドラッグ&ドロップのみの表示にフォールバックします。
-- **セキュリティ**: `/api/local-history` 系のAPIは既定でローカルホスト（`127.0.0.1` / `::1`）からのリクエストのみ許可されます。Nitroサーバーを `0.0.0.0` などLAN/WAN向けにバインドして起動した場合でも、他マシンからはHistory.dbの内容はおろか存在確認すら行えません。意図的に許可する場合のみ `NUXT_HISTORY_DB_ALLOW_REMOTE=true` を設定してください（自己責任・非推奨）。
+- macOSでは、ターミナルアプリ（またはNodeを実行するアプリ）に「フルディスクアクセス」権限を付与する必要があります（システム設定 → プライバシーとセキュリティ → フルディスクアクセス）。付与されていない場合はファイルの存在は検出しつつ読み取り不可であることを判定し、画面上に権限付与を促すメッセージを表示します。
+- この機能は `node:sqlite`（Node.js 22.5以降に付属）を使用します。利用できない環境や `History.db` が見つからない/読み取れない環境では自動的にドラッグ&ドロップのみの表示にフォールバックします。
+- **セキュリティ**: `/api/local-history` 系のAPIは既定でローカルホスト（`127.0.0.1` / `::1`）かつ同一オリジンからのリクエストのみ許可されます。IPだけでなく `Origin` ヘッダーも検証しているため、同じブラウザの別タブで開いた他のWebページのJavaScriptから `fetch()` された場合でも拒否されます（IPチェックのみだと127.0.0.1判定を通過してしまうため）。Nitroサーバーを `0.0.0.0` などLAN/WAN向けにバインドして起動した場合でも、他マシンからはHistory.dbの内容はおろか存在確認すら行えません。意図的に許可する場合のみ `NUXT_HISTORY_DB_ALLOW_REMOTE=true` を設定してください（自己責任・非推奨）。
 
 ### 2. ドラッグ&ドロップ / ファイル選択
 
@@ -78,4 +78,4 @@ pnpm build
 
 - SafariのSQLiteスキーマ（`history_items` / `history_visits`）を `hv.history_item = hi.id` で結合して1訪問=1行として取得しています。
 - `visit_time` はCore Dataのタイムスタンプ（2001-01-01 UTCからの秒数）のため、`+ 978307200` 秒したうえで `Date` に変換しています。
-- 自動読み込み関連のサーバーコードは `server/utils/history-store.ts`（`History.db`のパス解決・WALマージ・バイト列取得）と `server/api/local-history/`（`status.get.ts` で利用可否判定、`index.get.ts` でバイト列を返却）にあります。フロントエンドは `GET /api/local-history/status` で利用可否を判定し、利用可能な場合のみ `GET /api/local-history` からバイト列を取得して既存の `parseSafariHistoryFile`（ドラッグ&ドロップと共通のsql.jsパーサー）に渡します。
+- 自動読み込み関連のサーバーコードは `server/utils/history-store.ts`（`History.db`のパス解決・読み取り権限判定・`node:sqlite`のBackup APIによるホットバックアップ・ローカル/同一オリジン判定）と `server/api/local-history/`（`status.get.ts` で利用可否判定、`index.get.ts` でバイト列を返却）にあります。フロントエンドは `GET /api/local-history/status` で利用可否を判定し、利用可能な場合のみ `GET /api/local-history` からバイト列を取得して既存の `parseSafariHistoryFile`（ドラッグ&ドロップと共通のsql.jsパーサー）に渡します。

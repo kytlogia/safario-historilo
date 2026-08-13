@@ -10,6 +10,7 @@ const loadError = ref('')
 
 const serverAutoLoadAvailable = ref(false)
 const serverDbPath = ref('')
+const serverPermissionHint = ref(false)
 
 const search = ref('')
 const domainFilter = ref<string | null>(null)
@@ -123,6 +124,7 @@ async function checkServerAutoLoadAvailability() {
     const body = await res.json()
     serverAutoLoadAvailable.value = Boolean(body?.available)
     serverDbPath.value = typeof body?.path === 'string' ? body.path : ''
+    serverPermissionHint.value = Boolean(body?.present) && !body?.readable
   } catch {
     // No Nitro server backing this deployment (e.g. static hosting) — stay with drag & drop only.
     serverAutoLoadAvailable.value = false
@@ -248,6 +250,18 @@ function resetAll() {
                   <v-divider />
                 </div>
               </template>
+
+              <v-alert
+                v-else-if="serverPermissionHint"
+                type="warning"
+                variant="tonal"
+                density="compact"
+                class="mb-6 text-left"
+              >
+                この Mac 上の History.db を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 →
+                プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に
+                権限を付与すると自動読み込みが利用できます。
+              </v-alert>
 
               <v-file-input
                 label="History.db を選択"

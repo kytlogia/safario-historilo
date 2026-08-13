@@ -14,6 +14,13 @@ export default defineEventHandler(async (event) => {
         message: err.message
       })
     }
+    if (err instanceof HistoryDbNotReadableError) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Forbidden',
+        message: err.message
+      })
+    }
     throw createError({
       statusCode: 500,
       statusMessage: 'Internal Server Error',
