@@ -91,6 +91,14 @@ function formatDateTime(date: Date) {
   return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium', timeStyle: 'medium' }).format(date)
 }
 
+function isSafeUrl(url: string) {
+  try {
+    return ['http:', 'https:'].includes(new URL(url).protocol)
+  } catch {
+    return false
+  }
+}
+
 async function loadFile(file: File | null | undefined) {
   if (!file) return
   isLoading.value = true
@@ -394,9 +402,16 @@ function resetAll() {
           <v-list-item title="タイトル" :subtitle="selectedVisit.title" />
           <v-list-item title="URL">
             <template #subtitle>
-              <a :href="selectedVisit.url" target="_blank" rel="noopener noreferrer" class="text-primary">
+              <a
+                v-if="isSafeUrl(selectedVisit.url)"
+                :href="selectedVisit.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-primary"
+              >
                 {{ selectedVisit.url }}
               </a>
+              <span v-else>{{ selectedVisit.url }}</span>
             </template>
           </v-list-item>
           <v-list-item title="ドメイン" :subtitle="selectedVisit.domain" />

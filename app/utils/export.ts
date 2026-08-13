@@ -6,8 +6,10 @@ function downloadBlob(content: BlobPart, mimeType: string, fileName: string) {
   const anchor = document.createElement('a')
   anchor.href = url
   anchor.download = fileName
+  document.body.appendChild(anchor)
   anchor.click()
-  URL.revokeObjectURL(url)
+  anchor.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 export function exportVisitsAsJson(visits: HistoryVisit[], fileName = 'safari-history.json') {
@@ -41,8 +43,8 @@ export function exportVisitsAsCsv(visits: HistoryVisit[], fileName = 'safari-his
     lines.push(
       [
         visit.visitId,
-        escapeCell(visit.title),
-        escapeCell(visit.url),
+        visit.title,
+        visit.url,
         visit.domain,
         visit.visitTime.toISOString(),
         visit.visitCount,
