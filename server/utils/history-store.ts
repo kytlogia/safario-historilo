@@ -1,8 +1,13 @@
 import { existsSync, mkdtempSync, copyFileSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'
+import type { H3Event } from 'h3'
 
 export const DEFAULT_DB_PATH = join(homedir(), 'Library/Safari/History.db')
+
+const LOCALHOST_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1'])
+
+export class HistoryDbNotFoundError extends Error {}
 
 export function resolveHistoryDbPath(): string {
   return process.env.NUXT_HISTORY_DB_PATH || DEFAULT_DB_PATH
@@ -15,7 +20,7 @@ export function isHistoryDbFilePresent(): boolean {
 async function loadDatabaseSyncCtor() {
   try {
     const sqliteModule = await import('node:sqlite')
-    return sqliteModule.DatabaseSync
+    return typeof sqliteModule.DatabaseSync === 'function' ? sqliteModule.DatabaseSync : null
   } catch {
     return null
   }
@@ -25,10 +30,28 @@ export async function isNodeSqliteSupported(): Promise<boolean> {
   return (await loadDatabaseSyncCtor()) !== null
 }
 
+/**
+ * History.db bytes are local, personal browsing data — never serve them (or
+ * even confirm their existence) to a caller that isn't the local machine,
+ * even if this Nitro server ends up bound to a LAN/WAN interface.
+ */
+export function assertLocalRequest(event: H3Event) {
+  if (process.env.NUXT_HISTORY_DB_ALLOW_REMOTE === 'true') return
+
+  const ip = getRequestIP(event, { xForwardedFor: false })
+  if (!ip || !LOCALHOST_IPS.has(ip)) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Forbidden',
+      message: 'このAPIはローカルホストからのアクセスのみ許可されています。'
+    })
+  }
+}
+
 export async function readLocalHistoryDb(): Promise<{ buffer: Buffer, fileName: string }> {
   const dbPath = resolveHistoryDbPath()
   if (!existsSync(dbPath)) {
-    throw new Error(`History.db が見つかりませんでした: ${dbPath}`)
+    throw new HistoryDbNotFoundError(`History.db が見つかりませんでした: ${dbPath}`)
   }
 
   const DatabaseSync = await loadDatabaseSyncCtor()

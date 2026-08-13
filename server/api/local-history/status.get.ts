@@ -1,4 +1,6 @@
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  assertLocalRequest(event)
+
   const supported = await isNodeSqliteSupported()
   const present = isHistoryDbFilePresent()
 
