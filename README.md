@@ -1,5 +1,7 @@
 # Safari History Detail
 
+[![CI](https://github.com/kytlogia/safario-historilo/actions/workflows/ci.yml/badge.svg)](https://github.com/kytlogia/safario-historilo/actions/workflows/ci.yml)
+
 Safariのブラウズ履歴データベース（`History.db`）を読み込み、訪問履歴を詳細に確認できるWebアプリです。
 
 - **プライバシー重視**: `History.db` はどちらの読み込み方法でも外部サーバーへ送信されません。ファイルの解析処理そのものは常にブラウザ内でWebAssembly版SQLite ([sql.js](https://sql.js.org/)) を使って行われます。
