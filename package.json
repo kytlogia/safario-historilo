@@ -12,6 +12,10 @@
   "bugs": {
     "url": "https://github.com/kytlogia/safario-historilo/issues"
   },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "packageManager": "pnpm@11.21.0",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
