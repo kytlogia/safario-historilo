@@ -1,0 +1,8 @@
+.nuxt
+.output
+.data
+node_modules
+pnpm-lock.yaml
+
+# GitHub config YAML uses double-quote style; leave untouched by Prettier
+.github/

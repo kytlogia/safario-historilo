@@ -22,7 +22,7 @@ export function resolveHistoryDbPath(event: H3Event): string {
  * up front lets the UI explain *why* auto-load isn't available instead of
  * surfacing a raw filesystem error only after the user clicks the button.
  */
-export function checkHistoryDbAccess(event: H3Event): { present: boolean, readable: boolean } {
+export function checkHistoryDbAccess(event: H3Event): { present: boolean; readable: boolean } {
   const dbPath = resolveHistoryDbPath(event)
   if (!existsSync(dbPath)) {
     return { present: false, readable: false }
@@ -38,7 +38,10 @@ export function checkHistoryDbAccess(event: H3Event): { present: boolean, readab
 async function loadSqliteBindings() {
   try {
     const sqliteModule = await import('node:sqlite')
-    if (typeof sqliteModule.DatabaseSync !== 'function' || typeof sqliteModule.backup !== 'function') {
+    if (
+      typeof sqliteModule.DatabaseSync !== 'function' ||
+      typeof sqliteModule.backup !== 'function'
+    ) {
       return null
     }
     return sqliteModule
@@ -110,7 +113,8 @@ export function assertLocalRequest(event: H3Event) {
 
   const ip = resolveClientIp(event)
   if (!ip || !LOCALHOST_IPS.has(ip)) {
-    const isUnresolvedDevProxyRequest = import.meta.dev && !getRequestIP(event, { xForwardedFor: false })
+    const isUnresolvedDevProxyRequest =
+      import.meta.dev && !getRequestIP(event, { xForwardedFor: false })
     throw createError({
       statusCode: 403,
       statusMessage: 'Forbidden',
@@ -123,7 +127,7 @@ export function assertLocalRequest(event: H3Event) {
   const origin = getRequestHeader(event, 'origin')
   if (origin) {
     const host = getRequestHeader(event, 'host')
-    let originHost: string | null = null
+    let originHost: string | null
     try {
       originHost = new URL(origin).host
     } catch {
@@ -139,7 +143,9 @@ export function assertLocalRequest(event: H3Event) {
   }
 }
 
-export async function readLocalHistoryDb(event: H3Event): Promise<{ buffer: Buffer, fileName: string }> {
+export async function readLocalHistoryDb(
+  event: H3Event
+): Promise<{ buffer: Buffer; fileName: string }> {
   const dbPath = resolveHistoryDbPath(event)
   const { present, readable } = checkHistoryDbAccess(event)
   if (!present) {
@@ -153,7 +159,9 @@ export async function readLocalHistoryDb(event: H3Event): Promise<{ buffer: Buff
 
   const sqlite = await loadSqliteBindings()
   if (!sqlite) {
-    throw new Error('この環境では node:sqlite (Node.js 22.5以降) が利用できないため、自動読み込みに対応していません。')
+    throw new Error(
+      'この環境では node:sqlite (Node.js 22.5以降) が利用できないため、自動読み込みに対応していません。'
+    )
   }
 
   const tempDir = await mkdtemp(join(tmpdir(), 'safari-history-'))

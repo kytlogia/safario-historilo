@@ -84,7 +84,9 @@ export async function parseSafariHistoryFile(file: File): Promise<ParsedHistory>
   try {
     db = new SQL.Database(buffer)
   } catch {
-    throw new Error('ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。')
+    throw new Error(
+      'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。'
+    )
   }
 
   try {
