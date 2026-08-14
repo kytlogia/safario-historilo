@@ -76,7 +76,7 @@ pnpm format:check  # 整形が必要な箇所がないか確認（CI向け）
 pnpm typecheck     # nuxt typecheck（vue-tsc）で型チェック
 ```
 
-ESLintは [`@nuxt/eslint`](https://eslint.nuxt.com/) モジュールが `nuxt.config.ts` から自動生成する `eslint.config.mjs` をベースにしています。スタイル関連のルールはPrettierに一任するため無効化しており（`eslint.stylistic: false`）、`eslint-config-prettier` を併用してPrettierと競合するルールも無効化しています。
+ESLintは [`@nuxt/eslint`](https://eslint.nuxt.com/) モジュールが `nuxt.config.ts` から自動生成する `eslint.config.mjs` をベースにしています。`@nuxt/eslint` はデフォルトでスタイル関連のルール（`stylistic`）を無効化しており、フォーマットはPrettierに一任する構成になっています。`eslint.config.mjs` では `eslint-config-prettier` を最後に適用し、Prettierと競合しうるESLintコアルールも無効化しています。
 
 ## 技術スタック
 

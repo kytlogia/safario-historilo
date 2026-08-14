@@ -1,8 +1,4 @@
-.nuxt
-.output
-.data
-node_modules
+# Most build-output/dependency directories are already covered by
+# .gitignore, which Prettier 3 reads automatically. Only list what
+# .gitignore doesn't already exclude.
 pnpm-lock.yaml
-
-# GitHub config YAML uses double-quote style; leave untouched by Prettier
-.github/

@@ -3,5 +3,11 @@
   "singleQuote": true,
   "printWidth": 100,
   "trailingComma": "none",
-  "arrowParens": "always"
+  "arrowParens": "always",
+  "overrides": [
+    {
+      "files": ["*.yml", "*.yaml"],
+      "options": { "singleQuote": false }
+    }
+  ]
 }
