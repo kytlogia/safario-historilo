@@ -2,7 +2,7 @@ export default defineEventHandler(async (event) => {
   assertLocalRequest(event)
 
   try {
-    const { buffer, fileName } = await readLocalHistoryDb()
+    const { buffer, fileName } = await readLocalHistoryDb(event)
     setHeader(event, 'content-type', 'application/octet-stream')
     setHeader(event, 'content-disposition', `attachment; filename="${fileName}"`)
     return buffer

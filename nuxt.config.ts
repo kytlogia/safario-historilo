@@ -45,5 +45,14 @@ export default defineNuxtConfig({
   nitro: {
     // sql.js loads its wasm binary at runtime; make sure it's served as a static asset
     publicAssets: [{ dir: 'public' }]
+  },
+  runtimeConfig: {
+    // NUXT_HISTORY_DB_PATH — path to Safari's History.db; empty string falls
+    // back to DEFAULT_DB_PATH in server/utils/history-store.ts
+    historyDbPath: '',
+    // NUXT_HISTORY_DB_ALLOW_REMOTE
+    historyDbAllowRemote: 'false',
+    // NUXT_HISTORY_DB_TRUST_DEV_PROXY
+    historyDbTrustDevProxy: 'false'
   }
 })

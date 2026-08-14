@@ -11,8 +11,8 @@ const LOCALHOST_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1'])
 export class HistoryDbNotFoundError extends Error {}
 export class HistoryDbNotReadableError extends Error {}
 
-export function resolveHistoryDbPath(): string {
-  return process.env.NUXT_HISTORY_DB_PATH || DEFAULT_DB_PATH
+export function resolveHistoryDbPath(event: H3Event): string {
+  return useRuntimeConfig(event).historyDbPath || DEFAULT_DB_PATH
 }
 
 /**
@@ -22,8 +22,8 @@ export function resolveHistoryDbPath(): string {
  * up front lets the UI explain *why* auto-load isn't available instead of
  * surfacing a raw filesystem error only after the user clicks the button.
  */
-export function checkHistoryDbAccess(): { present: boolean, readable: boolean } {
-  const dbPath = resolveHistoryDbPath()
+export function checkHistoryDbAccess(event: H3Event): { present: boolean, readable: boolean } {
+  const dbPath = resolveHistoryDbPath(event)
   if (!existsSync(dbPath)) {
     return { present: false, readable: false }
   }
@@ -84,7 +84,7 @@ export const TRUST_DEV_PROXY_ENV_VAR = 'NUXT_HISTORY_DB_TRUST_DEV_PROXY'
 function resolveClientIp(event: H3Event): string | null {
   const socketIp = getRequestIP(event, { xForwardedFor: false })
   if (socketIp) return socketIp
-  if (import.meta.dev && process.env[TRUST_DEV_PROXY_ENV_VAR] === 'true') {
+  if (import.meta.dev && useRuntimeConfig(event).historyDbTrustDevProxy === 'true') {
     return getRequestIP(event, { xForwardedFor: true }) ?? null
   }
   return null
@@ -106,7 +106,7 @@ function resolveClientIp(event: H3Event): string | null {
  * clients (e.g. curl) that don't send an Origin header at all.
  */
 export function assertLocalRequest(event: H3Event) {
-  if (process.env.NUXT_HISTORY_DB_ALLOW_REMOTE === 'true') return
+  if (useRuntimeConfig(event).historyDbAllowRemote === 'true') return
 
   const ip = resolveClientIp(event)
   if (!ip || !LOCALHOST_IPS.has(ip)) {
@@ -139,9 +139,9 @@ export function assertLocalRequest(event: H3Event) {
   }
 }
 
-export async function readLocalHistoryDb(): Promise<{ buffer: Buffer, fileName: string }> {
-  const dbPath = resolveHistoryDbPath()
-  const { present, readable } = checkHistoryDbAccess()
+export async function readLocalHistoryDb(event: H3Event): Promise<{ buffer: Buffer, fileName: string }> {
+  const dbPath = resolveHistoryDbPath(event)
+  const { present, readable } = checkHistoryDbAccess(event)
   if (!present) {
     throw new HistoryDbNotFoundError(`History.db が見つかりませんでした: ${dbPath}`)
   }
