@@ -2,6 +2,16 @@
   "name": "safario-historilo",
   "type": "module",
   "private": true,
+  "description": "Safariのブラウズ履歴データベースを読み込み、訪問履歴を詳細に確認できるWebアプリ",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kytlogia/safario-historilo.git"
+  },
+  "homepage": "https://github.com/kytlogia/safario-historilo",
+  "bugs": {
+    "url": "https://github.com/kytlogia/safario-historilo/issues"
+  },
   "engines": {
     "node": ">=22.5.0"
   },
