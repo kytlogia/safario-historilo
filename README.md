@@ -66,6 +66,19 @@ pnpm build
 
 静的ホスティング用途では引き続き `pnpm generate` が使えます。その場合Nitro APIルートは含まれないため、自動読み込みボタンは表示されずドラッグ&ドロップのみになります（機能は自動的にフォールバックするため、コードの変更は不要です）。
 
+## テスト
+
+```bash
+pnpm test          # Vitest: ユニットテスト + インテグレーションテスト
+pnpm test:watch    # Vitest をウォッチモードで実行
+pnpm test:e2e      # Playwright: E2Eテスト（初回のみ `pnpm exec playwright install chromium` が必要）
+```
+
+- **ユニットテスト**（`tests/unit/`）: `History.db` のパース処理（Core Dataエポック変換・スキーマ検証・異常系）、CSV/JSONエクスポート、`server/utils/history-store.ts` のローカルアクセス制御（`assertLocalRequest` のセキュリティ境界）を対象にしています。
+- **インテグレーションテスト**（`tests/integration/`）: [`@nuxt/test-utils`](https://nuxt.com/docs/getting-started/testing) でビルド済みのNitroサーバーを実際に起動し、`/api/local-history/*` に対するHTTPリクエスト〜レスポンスを検証します。
+- **E2Eテスト**（`tests/e2e/`）: Playwrightで `nuxt dev` を起動し、ドラッグ&ドロップ/ファイル選択での読み込み、検索・フィルタ、詳細ダイアログ、CSV/JSON出力、自動読み込みボタンの表示切り替えといった主要フローをブラウザ上で検証します。
+- テスト用の `History.db` は `tests/fixtures/build-history-db.ts` がsql.jsでその場に組み立てます（バイナリを直接コミットしていません）。
+
 ## Lint / Format / 型チェック
 
 ```bash
