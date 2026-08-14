@@ -26,7 +26,10 @@
     "lint:fix": "[ -f .nuxt/eslint.config.mjs ] || nuxt prepare && eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "nuxt": "^4.5.2",
@@ -39,12 +42,17 @@
   "devDependencies": {
     "@mdi/font": "^7.4.47",
     "@nuxt/eslint": "^1.17.0",
+    "@nuxt/test-utils": "^4.1.0",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^22.20.1",
     "@types/sql.js": "^1.4.11",
+    "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.8.1",
     "eslint-config-prettier": "^10.1.8",
+    "jsdom": "^27.4.0",
     "prettier": "^3.9.6",
     "typescript": "^5.9.3",
+    "vitest": "^4.1.10",
     "vue-tsc": "^3.3.9"
   }
 }

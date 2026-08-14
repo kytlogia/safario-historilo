@@ -18,6 +18,12 @@ logs
 .fleet
 .idea
 
+# Test output
+coverage
+test-results
+playwright-report
+blob-report
+
 # Local env files
 .env
 .env.*
