@@ -51,21 +51,42 @@ export async function isNodeSqliteSupported(): Promise<boolean> {
   return (await loadSqliteBindings()) !== null
 }
 
+export const TRUST_DEV_PROXY_ENV_VAR = 'NUXT_HISTORY_DB_TRUST_DEV_PROXY'
+
 /**
- * `nuxt dev` proxies every request through Nitro's dev middleware in-process
- * before it reaches this handler, which loses the original socket and makes
- * `event.node.req.socket.remoteAddress` (and therefore `getRequestIP` with
- * `xForwardedFor: false`) come back `undefined` even for genuine
- * 127.0.0.1/::1 requests. The dev proxy does set `x-forwarded-for` correctly,
- * but that header is normally untrustworthy since a real reverse proxy in
- * front of a production deployment could let a remote client spoof it.
- * Trusting it is safe specifically in dev: `import.meta.dev` is compiled to
- * `false` in production builds, so this fallback never runs there.
+ * `nuxt dev` proxies requests to this handler through an internal loopback
+ * hop (nitropack's `createHTTPProxy`), which loses the original socket and
+ * makes `event.node.req.socket.remoteAddress` (and therefore `getRequestIP`
+ * with `xForwardedFor: false`) come back `undefined` even for genuine
+ * 127.0.0.1/::1 requests.
+ *
+ * It's tempting to fall back to trusting `x-forwarded-for` whenever
+ * `import.meta.dev` is true, but that alone is NOT safe: nitropack's dev
+ * proxy only sets that header when the incoming request doesn't already
+ * have one (`if (!proxyReq.hasHeader('x-forwarded-for'))`), so a raw,
+ * non-browser client (curl, a script — the Origin check below only applies
+ * to browsers) can just send its own `X-Forwarded-For: 127.0.0.1` and it
+ * passes straight through unmodified. Verified locally: running `nuxt dev
+ * --host 0.0.0.0` and hitting the machine's LAN address with that header
+ * from another host on the network returns 200. `import.meta.dev` can't
+ * distinguish "my own browser hitting localhost" from "an attacker on the
+ * LAN" — by the time either request reaches us, both present the exact same
+ * empty/proxied socket.
+ *
+ * So this fallback is opt-in only, via `NUXT_HISTORY_DB_TRUST_DEV_PROXY=true`,
+ * for a developer who has deliberately set it in their own local dev
+ * environment. It's off by default — meaning a plain `nuxt dev` (or `nuxt
+ * dev --host`) is exactly as strict as before this fallback existed unless
+ * a developer explicitly turns it on — and `import.meta.dev` compiles to
+ * `false` in production builds regardless, so this can never activate
+ * outside a dev server.
  */
 function resolveClientIp(event: H3Event): string | null {
   const socketIp = getRequestIP(event, { xForwardedFor: false })
   if (socketIp) return socketIp
-  if (import.meta.dev) return getRequestIP(event, { xForwardedFor: true }) ?? null
+  if (import.meta.dev && process.env[TRUST_DEV_PROXY_ENV_VAR] === 'true') {
+    return getRequestIP(event, { xForwardedFor: true }) ?? null
+  }
   return null
 }
 
@@ -89,10 +110,13 @@ export function assertLocalRequest(event: H3Event) {
 
   const ip = resolveClientIp(event)
   if (!ip || !LOCALHOST_IPS.has(ip)) {
+    const isUnresolvedDevProxyRequest = import.meta.dev && !getRequestIP(event, { xForwardedFor: false })
     throw createError({
       statusCode: 403,
       statusMessage: 'Forbidden',
-      message: 'このAPIはローカルホストからのアクセスのみ許可されています。'
+      message: isUnresolvedDevProxyRequest
+        ? `開発サーバーの制限により自動読み込みが利用できません。ローカルの nuxt dev だとわかっている場合は、環境変数 ${TRUST_DEV_PROXY_ENV_VAR}=true を設定すると有効になります。`
+        : 'このAPIはローカルホストからのアクセスのみ許可されています。'
     })
   }
 
