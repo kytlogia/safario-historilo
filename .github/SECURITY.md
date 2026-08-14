@@ -11,7 +11,7 @@
 
 ## 脆弱性の報告方法
 
-このリポジトリでは GitHub の [Private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability) を有効化しています。
+このリポジトリでは GitHub の [Private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability) を利用します。
 
 脆弱性を発見した場合は、Issueやpull requestなど公開の場ではなく、このリポジトリの **[Security] タブ → [Report a vulnerability]** から報告してください。
 
