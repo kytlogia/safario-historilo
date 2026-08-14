@@ -21,7 +21,12 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "lint": "[ -f .nuxt/eslint.config.mjs ] || nuxt prepare && eslint .",
+    "lint:fix": "[ -f .nuxt/eslint.config.mjs ] || nuxt prepare && eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "nuxt": "^4.5.2",
@@ -32,6 +37,14 @@
     "vuetify-nuxt-module": "1.0.0-rc.4"
   },
   "devDependencies": {
-    "@mdi/font": "^7.4.47"
+    "@mdi/font": "^7.4.47",
+    "@nuxt/eslint": "^1.17.0",
+    "@types/node": "^22.20.1",
+    "@types/sql.js": "^1.4.11",
+    "eslint": "^10.8.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.3.9"
   }
 }

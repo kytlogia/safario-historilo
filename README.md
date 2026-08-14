@@ -66,6 +66,18 @@ pnpm build
 
 静的ホスティング用途では引き続き `pnpm generate` が使えます。その場合Nitro APIルートは含まれないため、自動読み込みボタンは表示されずドラッグ&ドロップのみになります（機能は自動的にフォールバックするため、コードの変更は不要です）。
 
+## Lint / Format / 型チェック
+
+```bash
+pnpm lint         # ESLint（@nuxt/eslint）でチェック
+pnpm lint:fix      # 自動修正可能なものを修正
+pnpm format        # Prettierでコード整形
+pnpm format:check  # 整形が必要な箇所がないか確認（CI向け）
+pnpm typecheck     # nuxt typecheck（vue-tsc）で型チェック
+```
+
+ESLintは [`@nuxt/eslint`](https://eslint.nuxt.com/) モジュールが `nuxt.config.ts` から自動生成する `eslint.config.mjs` をベースにしています。`@nuxt/eslint` はデフォルトでスタイル関連のルール（`stylistic`）を無効化しており、フォーマットはPrettierに一任する構成になっています。`eslint.config.mjs` では `eslint-config-prettier` を最後に適用し、Prettierと競合しうるESLintコアルールも無効化しています。
+
 ## 技術スタック
 
 - [Nuxt 4](https://nuxt.com/) / [Nitro](https://nitro.build/)
