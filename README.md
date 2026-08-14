@@ -75,6 +75,27 @@ pnpm build
 - `node:sqlite`（Node.js組み込み。自動読み込み時のWALマージに使用）
 - [pnpm](https://pnpm.io/)
 
+## サプライチェーン攻撃対策
+
+npmエコシステムでは、メンテナのアカウント/トークンが乗っ取られて悪意あるバージョンが公開され、検知・削除されるまでの短時間に多くのプロジェクトへ自動的に取り込まれてしまう攻撃が近年頻発しています。このリポジトリでは以下の対策を行っています。
+
+### pnpmの防御機能（`pnpm-workspace.yaml`）
+
+- **`minimumReleaseAge`**: 公開されたばかりのバージョンを一定時間（既定24時間）インストールしません。pnpm 11以降はデフォルトで有効ですが、バージョンに依存せず常に有効になるよう明示設定しています。
+  - 緊急のセキュリティパッチ等ですぐ上げたい特定パッケージがある場合は `minimumReleaseAgeExclude` で除外できます（`pnpm-workspace.yaml` 内にコメントで使用例を記載）。
+- **`minimumReleaseAgeStrict: true`**: 上記期間内に条件を満たすバージョンが無い場合、古いバージョンへ自動フォールバックせずインストールを失敗させます。
+- **`allowBuilds`**: 明示的に許可したパッケージ以外は `postinstall` 等のビルドスクリプトを実行しません（依存パッケージ経由の任意コード実行対策）。新しい依存でビルドスクリプトの許可が必要になった場合は、本当に必要か確認してから追加してください。
+
+参考: [pnpm: Mitigating supply chain attacks](https://pnpm.io/supply-chain-security)
+
+### Aikido Safe Chain（開発者ローカル環境向け、任意）
+
+[Aikido Safe Chain](https://github.com/AikidoSec/safe-chain) は `npm`/`pnpm`/`yarn`/`npx` 等のコマンドをラップし、インストール前にAikidoの脅威インテリジェンスに照らしてマルウェア判定・公開直後バージョン（既定48時間未満）のブロックを行うOSSツールです（無料・トークン不要）。リポジトリ直下の `.aikido` にプロジェクト共有設定があります。
+
+導入する場合は、[Installationセクション](https://github.com/AikidoSec/safe-chain#installation)に従ってローカルにセットアップしてください（インストールスクリプトはバージョン固定のGitHub Releases URL＋SHA256チェックサム検証で配布されているため、READMEに直接コマンドを埋め込まず都度公式手順を参照することを推奨します）。セットアップ後はシェルの `npm`/`pnpm`/`yarn`/`npx` エイリアスとして動作し、`pnpm safe-chain-verify` で導入確認できます。
+
+CI環境で使う場合は `--ci` フラグ付きでセットアップします（シェルエイリアスではなくPATH上の実行ファイルとして動作）。CIへの導入自体は[#11](https://github.com/kytlogia/safario-historilo/issues/11)で検討します。
+
 ## 実装メモ
 
 - SafariのSQLiteスキーマ（`history_items` / `history_visits`）を `hv.history_item = hi.id` で結合して1訪問=1行として取得しています。
