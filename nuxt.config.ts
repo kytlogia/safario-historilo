@@ -5,6 +5,9 @@ export default defineNuxtConfig({
   modules: ['vuetify-nuxt-module'],
   ssr: false,
   vuetify: {
+    moduleOptions: {
+      prefixComposables: ['useLayout']
+    },
     vuetifyOptions: {
       theme: {
         defaultTheme: 'safariHistory',
