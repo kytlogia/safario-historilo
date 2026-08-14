@@ -2,6 +2,10 @@
   "name": "safario-historilo",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "packageManager": "pnpm@11.21.0",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
