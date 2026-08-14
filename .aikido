@@ -3,6 +3,6 @@
 # Aikidoの脅威インテリジェンスでマルウェア判定と公開直後バージョンのブロックを行う。
 # https://github.com/AikidoSec/safe-chain
 safe-chain:
-  # pnpm-workspace.yaml の minimumReleaseAge (24時間) より短いが、Safe Chain側は
+  # pnpm-workspace.yaml の minimumReleaseAge (24時間) より長いが、Safe Chain側は
   # npm/yarn/npx など pnpm 以外の経路もカバーするためのデフォルト値をそのまま採用している。
   minimumPackageAgeHours: 48
