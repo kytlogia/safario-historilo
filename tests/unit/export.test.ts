@@ -56,6 +56,8 @@ describe('export.ts', () => {
   let revokeObjectURL: ReturnType<typeof vi.fn>
   let clickSpy: ReturnType<typeof vi.fn>
   let capturedAnchor: { href: string; download: string } | null
+  const originalCreateObjectURL = URL.createObjectURL
+  const originalRevokeObjectURL = URL.revokeObjectURL
 
   beforeEach(() => {
     createObjectURL = vi.fn(() => 'blob:mock-url')
@@ -78,6 +80,8 @@ describe('export.ts', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    URL.createObjectURL = originalCreateObjectURL
+    URL.revokeObjectURL = originalRevokeObjectURL
   })
 
   describe('exportVisitsAsJson', () => {
