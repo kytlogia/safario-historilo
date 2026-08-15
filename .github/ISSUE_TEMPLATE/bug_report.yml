@@ -1,0 +1,48 @@
+name: バグ報告
+description: 動作不良や意図しない挙動を報告する
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 事象の概要
+      description: 何が起きているか簡潔に
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待する動作
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の動作
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 環境（OS / ブラウザ / バージョンなど）
+      placeholder: "例）macOS 15.1, Safari 18, safario-historilo v1.0.0"
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: 補足（スクリーンショット・ログなど）
+    validations:
+      required: false
