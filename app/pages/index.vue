@@ -81,7 +81,7 @@ const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domai
 
 const headers = [
   { title: 'タイトル', key: 'title', width: '28%' },
-  { title: 'URL', key: 'url' },
+  { title: 'URL', key: 'url', width: '28%' },
   { title: 'ドメイン', key: 'domain', width: 170 },
   { title: '訪問日時', key: 'visitTime', width: 190 },
   { title: 'URL累計訪問回数', key: 'visitCount', width: 130, align: 'end' as const },
@@ -492,18 +492,13 @@ function resetAll() {
                   @click:row="(_e: Event, row: { item: HistoryVisit }) => openDetail(row.item)"
                 >
                   <template #item.title="{ item }">
-                    <div class="text-truncate" style="max-width: 100%" :title="item.title">
-                      {{ item.title }}
-                    </div>
+                    <TruncatedCell :text="item.title" />
                   </template>
                   <template #item.url="{ item }">
-                    <div
-                      class="text-truncate text-medium-emphasis"
-                      style="max-width: 100%"
-                      :title="item.url"
-                    >
-                      {{ item.url }}
-                    </div>
+                    <TruncatedCell :text="item.url" class="text-medium-emphasis" />
+                  </template>
+                  <template #item.domain="{ item }">
+                    <TruncatedCell :text="item.domain" />
                   </template>
                   <template #item.visitTime="{ item }">
                     {{ formatDateTime(item.visitTime) }}
@@ -676,5 +671,8 @@ function resetAll() {
 }
 :deep(tr) {
   cursor: pointer;
+}
+:deep(table) {
+  table-layout: fixed;
 }
 </style>
