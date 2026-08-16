@@ -9,5 +9,17 @@ export default withNuxt(
       'vue/valid-v-slot': ['error', { allowModifiers: true }]
     }
   },
+  {
+    files: ['app/**/*.ts', 'app/**/*.vue', 'server/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname
+      }
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error'
+    }
+  },
   eslintConfigPrettier
 )
