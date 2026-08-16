@@ -35,13 +35,19 @@
 
 - 1コミット（またはPR全体としてのsquashコミット）が「何を」「なぜ」変更したのかを一文で説明できるタイトルにします。
 - 挙動の変更を伴う場合は `fix:` / `feat:` / `refactor:` のような接頭辞を付け、それ以外（ドキュメントのみ、CI設定のみ等）は `docs:` / `chore:` を使うことを推奨します（必須ではありません）。日本語・英語どちらでも構いません。
-- マージは運用上Squash mergeで統一しています（リポジトリ設定でSquash以外を無効化しているわけではないため、マージ時は必ずSquash mergeを選んでください）。これにより実質的にはPRタイトルがそのまま `main` 上のコミットメッセージになります。PRタイトルを上記の基準で書けば、個々のコミットメッセージの厳密さは重視しません。
+- マージはSquash mergeで統一しています。`main` に設定したRepository rulesetでSquash merge以外のマージ方式を選べないよう強制しているため（詳細は下記「PRのマージ」参照）、通常操作では選択ミスは起きません。これにより実質的にはPRタイトルがそのまま `main` 上のコミットメッセージになります。PRタイトルを上記の基準で書けば、個々のコミットメッセージの厳密さは重視しません。
 
 ## PRのマージ
 
 目標は「誰か（エージェント含む）が確認なしに `main` へ直接pushしたり、勝手にPRをマージできない」状態を保つことです。
 
-- `main` への直接pushは禁止です。すべての変更はPR経由で行います。リポジトリのPublic化後は `main` に Branch protection rule を設定し、直push禁止・必須ステータスチェックをGitHub側でも強制します（詳細は [#51](https://github.com/kytlogia/safario-historilo/issues/51) 参照）。それまでの間も、この規約に沿って運用します。
-- Branch protection rule設定後は、CIの必須ステータスチェック（`Lint / Format / Typecheck / Test / Build`、`E2E tests (Playwright)`、いずれも[ci.yml](.github/workflows/ci.yml)のジョブ名）を通過していないPRはマージできなくなります。
+- `main` への直接pushは禁止です。すべての変更はPR経由で行います。リポジトリのPublic化に合わせて `main` に Repository ruleset を設定済みで、直push禁止・必須ステータスチェック・squash mergeのみ許可・線形履歴をGitHub側でも強制しています（詳細は [#51](https://github.com/kytlogia/safario-historilo/issues/51) 参照）。
+- CIの必須ステータスチェック（`Lint / Format / Typecheck / Test / Build`、`E2E tests (Playwright)`、いずれも[ci.yml](.github/workflows/ci.yml)のジョブ名）を通過していないPRはマージできません。
 - Claude Codeなどのエージェントは `gh pr merge` を実行しません。PRの作成までを行い、マージはユーザー本人の明示的な承認を得てから、ユーザー自身（またはユーザーの指示を受けたエージェント）がボタンを押します。マージボタンを押す行為そのものが、オーナー本人の最終確認ポイントとして機能します。（現時点ではこのルールを技術的に強制する仕組みはなく、運用上の約束事です）
 - このリポジトリは現状コラボレーターがオーナー1名のため、GitHubの「Require approvals」機能（他者によるレビュー承認必須化）は有効化していません。外部コントリビューターを受け入れ始めた時点で見直します。
+
+## Dependabotが作成するPRの運用
+
+- Dependabotが作成する依存パッケージ更新PRも、他のPRと同様に常に手動でレビューしてからマージします（リポジトリ全体のAuto-merge機能は無効のままにしています）。
+- `package.json` のバージョン更新・gitタグの作成はDependabotの依存更新PRとは別に行います。依存更新1件ごとにパッチバージョンを上げるのではなく、ある程度まとまった時点でオーナーが判断してパッチリリース（例: `v1.0.1`）を切ります。
+- 依存更新の件数が増えて手動レビューの負担が大きくなった場合は、パッチバージョンのみ等の条件付き自動マージ導入をあらためて検討します（[#53](https://github.com/kytlogia/safario-historilo/issues/53)参照）。
