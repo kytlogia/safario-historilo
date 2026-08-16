@@ -1,3 +1,5 @@
+import { ja } from 'vuetify/locale'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -9,6 +11,10 @@ export default defineNuxtConfig({
       prefixComposables: ['useLayout']
     },
     vuetifyOptions: {
+      locale: {
+        locale: 'ja',
+        messages: { ja }
+      },
       theme: {
         defaultTheme: 'safariHistory',
         themes: {
