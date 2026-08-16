@@ -128,3 +128,7 @@ CI環境で使う場合は `--ci` フラグ付きでセットアップします�
 - SafariのSQLiteスキーマ（`history_items` / `history_visits`）を `hv.history_item = hi.id` で結合して1訪問=1行として取得しています。
 - `visit_time` はCore Dataのタイムスタンプ（2001-01-01 UTCからの秒数）のため、`+ 978307200` 秒したうえで `Date` に変換しています。
 - 自動読み込み関連のサーバーコードは `server/utils/history-store.ts`（`History.db`のパス解決・読み取り権限判定・`node:sqlite`のBackup APIによるホットバックアップ・ローカル/同一オリジン判定）と `server/api/local-history/`（`status.get.ts` で利用可否判定、`index.get.ts` でバイト列を返却）にあります。フロントエンドは `GET /api/local-history/status` で利用可否を判定し、利用可能な場合のみ `GET /api/local-history` からバイト列を取得して既存の `parseSafariHistoryFile`（ドラッグ&ドロップと共通のsql.jsパーサー）に渡します。
+
+## 開発に参加する
+
+Issueの起票ルール、ブランチ運用、PRフローについては [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。

@@ -1,0 +1,19 @@
+name: ドキュメント・運用改善
+description: README/CONTRIBUTING等のドキュメント修正や、開発フロー・CI/CDなど運用面の改善を提案する
+title: "[Docs] "
+labels:
+  - documentation
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: 内容
+      description: 何を変更・整備したいか
+    validations:
+      required: true
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景・理由
+    validations:
+      required: false
