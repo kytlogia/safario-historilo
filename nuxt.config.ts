@@ -42,6 +42,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      htmlAttrs: { lang: 'ja' },
       title: 'Safari History Detail',
       meta: [
         { name: 'description', content: 'Safariの閲覧履歴(History.db)を詳細に確認できるツール' }
