@@ -9,12 +9,12 @@ export default withNuxt(
     languageOptions: {
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
+        tsconfigRootDir: import.meta.dirname
+      }
     },
     rules: {
-      '@typescript-eslint/no-floating-promises': 'error',
-    },
+      '@typescript-eslint/no-floating-promises': 'error'
+    }
   },
   eslintConfigPrettier
 )
