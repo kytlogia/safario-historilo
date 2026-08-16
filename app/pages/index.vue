@@ -478,23 +478,13 @@ function resetAll() {
                   @click:row="(_e: Event, row: { item: HistoryVisit }) => openDetail(row.item)"
                 >
                   <template #item.title="{ item }">
-                    <div class="text-truncate" style="max-width: 100%" :title="item.title">
-                      {{ item.title }}
-                    </div>
+                    <TruncatedCell :text="item.title" />
                   </template>
                   <template #item.url="{ item }">
-                    <div
-                      class="text-truncate text-medium-emphasis"
-                      style="max-width: 100%"
-                      :title="item.url"
-                    >
-                      {{ item.url }}
-                    </div>
+                    <TruncatedCell :text="item.url" class="text-medium-emphasis" />
                   </template>
                   <template #item.domain="{ item }">
-                    <div class="text-truncate" style="max-width: 100%" :title="item.domain">
-                      {{ item.domain }}
-                    </div>
+                    <TruncatedCell :text="item.domain" />
                   </template>
                   <template #item.visitTime="{ item }">
                     {{ formatDateTime(item.visitTime) }}
