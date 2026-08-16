@@ -2,7 +2,7 @@ import { ja } from 'vuetify/locale'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
+  compatibilityDate: '2026-08-17',
   devtools: { enabled: true },
   modules: ['vuetify-nuxt-module', '@nuxt/eslint'],
   ssr: false,
@@ -48,10 +48,6 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Safariの閲覧履歴(History.db)を詳細に確認できるツール' }
       ]
     }
-  },
-  nitro: {
-    // sql.js loads its wasm binary at runtime; make sure it's served as a static asset
-    publicAssets: [{ dir: 'public' }]
   },
   runtimeConfig: {
     // NUXT_HISTORY_DB_PATH — path to Safari's History.db; empty string falls
