@@ -547,7 +547,7 @@ function resetAll() {
 
     <!-- Detail dialog -->
     <v-dialog v-model="detailDialog" max-width="640">
-      <v-card v-if="selectedVisit">
+      <v-card v-if="selectedVisit" class="detail-dialog-card">
         <v-card-title class="d-flex align-center">
           <v-icon icon="mdi-web" class="mr-2" />
           <span class="text-truncate">履歴の詳細</span>
@@ -555,7 +555,7 @@ function resetAll() {
           <v-btn icon="mdi-close" variant="text" size="small" @click="detailDialog = false" />
         </v-card-title>
         <v-divider />
-        <v-card-text class="detail-dialog-content">
+        <v-card-text>
           <v-list density="compact">
             <v-list-item title="タイトル" :subtitle="selectedVisit.title" />
             <v-list-item title="URL">
@@ -663,7 +663,7 @@ function resetAll() {
 :deep(tr) {
   cursor: pointer;
 }
-.detail-dialog-content {
+.detail-dialog-card {
   overscroll-behavior: contain;
 }
 </style>
