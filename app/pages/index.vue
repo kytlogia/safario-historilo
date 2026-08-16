@@ -479,7 +479,7 @@ function resetAll() {
                 >
                   <!-- eslint-disable-next-line vue/valid-v-slot -- Vuetify dot-slot name, not a v-slot modifier; static form keeps Vue's stable-slot optimization -->
                   <template #item.title="{ item }">
-                    <div class="text-truncate" style="max-width: 320px" :title="item.title">
+                    <div class="text-truncate" style="max-width: 100%" :title="item.title">
                       {{ item.title }}
                     </div>
                   </template>
@@ -487,7 +487,7 @@ function resetAll() {
                   <template #item.url="{ item }">
                     <div
                       class="text-truncate text-medium-emphasis"
-                      style="max-width: 420px"
+                      style="max-width: 100%"
                       :title="item.url"
                     >
                       {{ item.url }}
