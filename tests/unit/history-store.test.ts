@@ -15,14 +15,14 @@ type Event = Parameters<typeof historyStore.resolveHistoryDbPath>[0]
 // security-boundary checks.
 interface RuntimeConfigStub {
   historyDbPath: string
-  historyDbAllowRemote: string
-  historyDbTrustDevProxy: string
+  historyDbAllowRemote: boolean
+  historyDbTrustDevProxy: boolean
 }
 
 const defaultRuntimeConfig = (): RuntimeConfigStub => ({
   historyDbPath: '',
-  historyDbAllowRemote: 'false',
-  historyDbTrustDevProxy: 'false'
+  historyDbAllowRemote: false,
+  historyDbTrustDevProxy: false
 })
 
 let runtimeConfig: RuntimeConfigStub
@@ -176,7 +176,7 @@ describe('assertLocalRequest', () => {
   })
 
   it('bypasses all checks when NUXT_HISTORY_DB_ALLOW_REMOTE=true', () => {
-    runtimeConfig.historyDbAllowRemote = 'true'
+    runtimeConfig.historyDbAllowRemote = true
     socketIp = '203.0.113.5'
     requestHeaders.origin = 'https://evil.example.com'
     requestHeaders.host = 'localhost:3000'
@@ -200,13 +200,13 @@ describe('assertLocalRequest', () => {
     })
 
     it('bypasses via X-Forwarded-For when the trust flag is set and it resolves to localhost', () => {
-      runtimeConfig.historyDbTrustDevProxy = 'true'
+      runtimeConfig.historyDbTrustDevProxy = true
       xffIp = '127.0.0.1'
       expect(() => assertLocalRequest(fakeEvent())).not.toThrow()
     })
 
     it('still rejects when the trust flag is set but X-Forwarded-For is not localhost', () => {
-      runtimeConfig.historyDbTrustDevProxy = 'true'
+      runtimeConfig.historyDbTrustDevProxy = true
       xffIp = '198.51.100.9'
       try {
         assertLocalRequest(fakeEvent())

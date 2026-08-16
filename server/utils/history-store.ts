@@ -87,7 +87,7 @@ export const TRUST_DEV_PROXY_ENV_VAR = 'NUXT_HISTORY_DB_TRUST_DEV_PROXY'
 function resolveClientIp(event: H3Event): string | null {
   const socketIp = getRequestIP(event, { xForwardedFor: false })
   if (socketIp) return socketIp
-  if (import.meta.dev && useRuntimeConfig(event).historyDbTrustDevProxy === 'true') {
+  if (import.meta.dev && useRuntimeConfig(event).historyDbTrustDevProxy === true) {
     return getRequestIP(event, { xForwardedFor: true }) ?? null
   }
   return null
@@ -109,7 +109,7 @@ function resolveClientIp(event: H3Event): string | null {
  * clients (e.g. curl) that don't send an Origin header at all.
  */
 export function assertLocalRequest(event: H3Event) {
-  if (useRuntimeConfig(event).historyDbAllowRemote === 'true') return
+  if (useRuntimeConfig(event).historyDbAllowRemote === true) return
 
   const ip = resolveClientIp(event)
   if (!ip || !LOCALHOST_IPS.has(ip)) {
