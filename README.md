@@ -5,7 +5,7 @@
 Safariのブラウズ履歴データベース（`History.db`）を読み込み、訪問履歴を詳細に確認できるWebアプリです。
 
 - **プライバシー重視**: `History.db` はどちらの読み込み方法でも外部サーバーへ送信されません。ファイルの解析処理そのものは常にブラウザ内でWebAssembly版SQLite ([sql.js](https://sql.js.org/)) を使って行われます。
-- Nuxt 4 + Vuetify 3 + Vite + pnpm で構築。
+- Nuxt 4 + Vuetify 4 + Vite + pnpm で構築。
 - `History.db` の読み込みは**自動読み込みとドラッグ&ドロップの両対応**です（詳細は下記）。
 
 ## 主な機能
