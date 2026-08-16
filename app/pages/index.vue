@@ -81,7 +81,7 @@ const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domai
 
 const headers = [
   { title: 'タイトル', key: 'title', width: '28%' },
-  { title: 'URL', key: 'url' },
+  { title: 'URL', key: 'url', width: '28%' },
   { title: 'ドメイン', key: 'domain', width: 170 },
   { title: '訪問日時', key: 'visitTime', width: 190 },
   { title: 'URL累計訪問回数', key: 'visitCount', width: 130, align: 'end' as const },
@@ -491,6 +491,11 @@ function resetAll() {
                       {{ item.url }}
                     </div>
                   </template>
+                  <template #item.domain="{ item }">
+                    <div class="text-truncate" style="max-width: 100%" :title="item.domain">
+                      {{ item.domain }}
+                    </div>
+                  </template>
                   <template #item.visitTime="{ item }">
                     {{ formatDateTime(item.visitTime) }}
                   </template>
@@ -662,5 +667,8 @@ function resetAll() {
 }
 :deep(tr) {
   cursor: pointer;
+}
+:deep(table) {
+  table-layout: fixed;
 }
 </style>
