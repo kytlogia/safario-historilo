@@ -104,10 +104,18 @@ test.describe('Safari History Detail', () => {
     // timezone. All sample visits share the same instant-derived local day.
     const visitDate = new Date((700000000 + 978307200) * 1000)
     const pad = (n: number) => String(n).padStart(2, '0')
-    const inRangeDate = `${visitDate.getFullYear()}-${pad(visitDate.getMonth() + 1)}-${pad(visitDate.getDate())}`
+    const inRangeDate = `${visitDate.getFullYear()}/${pad(visitDate.getMonth() + 1)}/${pad(visitDate.getDate())}`
 
-    await page.getByLabel('開始日').fill(inRangeDate)
-    await page.getByLabel('終了日').fill(inRangeDate)
+    // v-date-input renders a text field (format yyyy/mm/dd for the ja locale)
+    // alongside a "clear" icon that also matches the field's label, so scope
+    // to the textbox role and blur to commit the typed value.
+    const startInput = page.getByRole('textbox', { name: '開始日' })
+    const endInput = page.getByRole('textbox', { name: '終了日' })
+
+    await startInput.fill(inRangeDate)
+    await startInput.blur()
+    await endInput.fill(inRangeDate)
+    await endInput.blur()
     await expect(
       page.getByText(
         `${SAMPLE_HISTORY_DATA.visits.length} / ${SAMPLE_HISTORY_DATA.visits.length} 件を表示`
@@ -115,8 +123,10 @@ test.describe('Safari History Detail', () => {
     ).toBeVisible()
 
     // A date range entirely before every visit excludes everything.
-    await page.getByLabel('開始日').fill('2000-01-01')
-    await page.getByLabel('終了日').fill('2000-01-02')
+    await startInput.fill('2000/01/01')
+    await startInput.blur()
+    await endInput.fill('2000/01/02')
+    await endInput.blur()
     await expect(page.getByText(`0 / ${SAMPLE_HISTORY_DATA.visits.length} 件を表示`)).toBeVisible()
   })
 
