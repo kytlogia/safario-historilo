@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { FetchError } from 'ofetch'
 import type { HistoryVisit } from '~/types/history'
 import { exportVisitsAsCsv, exportVisitsAsJson } from '~/utils/export'
 
@@ -133,30 +134,20 @@ async function loadFile(file: File | null | undefined) {
 
 async function checkServerAutoLoadAvailability() {
   try {
-    const res = await fetch('/api/local-history/status')
-    if (!res.ok) {
-      // A same-origin same-machine request being rejected (403) means the
-      // server-side localhost check itself failed, not that this deployment
-      // simply lacks a Nitro server — surface that instead of silently
-      // falling back to drag & drop, which otherwise looks identical to
-      // "feature not available" and hides the real cause.
-      if (res.status === 403) {
-        let message = 'サーバー側の制限により自動読み込みが利用できません。'
-        try {
-          const body = await res.json()
-          if (body?.message) message = body.message
-        } catch {
-          // ignore JSON parse errors, use default message
-        }
-        serverStatusWarning.value = message
-      }
-      return
-    }
-    const body = await res.json()
+    const body = await $fetch('/api/local-history/status')
     serverAutoLoadAvailable.value = Boolean(body?.available)
     serverDbPath.value = typeof body?.path === 'string' ? body.path : ''
     serverPermissionHint.value = Boolean(body?.present) && !body?.readable
-  } catch {
+  } catch (err) {
+    // A same-origin same-machine request being rejected (403) means the
+    // server-side localhost check itself failed, not that this deployment
+    // simply lacks a Nitro server — surface that instead of silently
+    // falling back to drag & drop, which otherwise looks identical to
+    // "feature not available" and hides the real cause.
+    if (err instanceof FetchError && err.statusCode === 403) {
+      serverStatusWarning.value =
+        err.data?.message ?? 'サーバー側の制限により自動読み込みが利用できません。'
+    }
     // No Nitro server backing this deployment (e.g. static hosting) — stay with drag & drop only.
     serverAutoLoadAvailable.value = false
   }
@@ -166,24 +157,16 @@ async function loadFromServer() {
   isLoading.value = true
   loadError.value = ''
   try {
-    const res = await fetch('/api/local-history')
-    if (!res.ok) {
-      let message = 'History.db の自動読み込みに失敗しました。'
-      try {
-        const body = await res.json()
-        if (body?.message) message = body.message
-      } catch {
-        // ignore JSON parse errors, use default message
-      }
-      loadError.value = message
-      return
-    }
-    const blob = await res.blob()
+    const blob = await $fetch<Blob>('/api/local-history')
     const result = await parseSafariHistoryFile(new File([blob], 'History.db'))
     visits.value = result.visits
     fileName.value = result.fileName
   } catch (err) {
-    loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
+    if (err instanceof FetchError) {
+      loadError.value = err.data?.message ?? 'History.db の自動読み込みに失敗しました。'
+    } else {
+      loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
+    }
   } finally {
     isLoading.value = false
   }
