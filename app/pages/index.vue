@@ -92,6 +92,10 @@ function formatDate(date: Date) {
   return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium' }).format(date)
 }
 
+function formatDateInputValue(date: unknown) {
+  return date instanceof Date ? formatDate(date) : ''
+}
+
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0)
 }
@@ -415,7 +419,7 @@ function resetAll() {
                         label="開始日"
                         variant="outlined"
                         density="comfortable"
-                        :display-format="(date) => formatDate(date as Date)"
+                        :display-format="formatDateInputValue"
                         hide-details
                         clearable
                       />
@@ -426,7 +430,7 @@ function resetAll() {
                         label="終了日"
                         variant="outlined"
                         density="comfortable"
-                        :display-format="(date) => formatDate(date as Date)"
+                        :display-format="formatDateInputValue"
                         hide-details
                         clearable
                       />
