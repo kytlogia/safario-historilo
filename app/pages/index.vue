@@ -538,7 +538,7 @@ function resetAll() {
             </v-col>
 
             <v-col cols="12" md="3">
-              <v-card>
+              <v-card class="h-100">
                 <v-card-title class="text-subtitle-1">よく訪れたドメイン Top 10</v-card-title>
                 <v-card-text>
                   <div v-for="d in topDomains" :key="d.domain" class="mb-3">
