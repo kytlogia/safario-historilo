@@ -46,6 +46,8 @@ Safariを終了してから、Finderの「移動」→「フォルダへ移動�
 
 ## セットアップ
 
+- 必要な環境: Node.js `>=22.5.0`、pnpm `11.21.0`（`package.json` の `engines` / `packageManager` を参照。Corepackの利用を推奨します）
+
 ```bash
 pnpm install
 ```
