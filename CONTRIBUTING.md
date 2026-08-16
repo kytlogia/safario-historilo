@@ -42,6 +42,6 @@
 目標は「誰か（エージェント含む）が確認なしに `main` へ直接pushしたり、勝手にPRをマージできない」状態を保つことです。
 
 - `main` への直接pushは禁止です。すべての変更はPR経由で行います。リポジトリのPublic化後は `main` に Branch protection rule を設定し、直push禁止・必須ステータスチェックをGitHub側でも強制します（詳細は [#51](https://github.com/kytlogia/safario-historilo/issues/51) 参照）。それまでの間も、この規約に沿って運用します。
-- Branch protection rule設定後は、CIの必須ステータスチェック（Lint / Format / Typecheck / Test / Build、E2E）を通過していないPRはマージできなくなります。
+- Branch protection rule設定後は、CIの必須ステータスチェック（`Lint / Format / Typecheck / Test / Build`、`E2E tests (Playwright)`、いずれも[ci.yml](.github/workflows/ci.yml)のジョブ名）を通過していないPRはマージできなくなります。
 - Claude Codeなどのエージェントは `gh pr merge` を実行しません。PRの作成までを行い、マージはユーザー本人の明示的な承認を得てから、ユーザー自身（またはユーザーの指示を受けたエージェント）がボタンを押します。マージボタンを押す行為そのものが、オーナー本人の最終確認ポイントとして機能します。
 - このリポジトリは現状コラボレーターがオーナー1名のため、GitHubの「Require approvals」機能（他者によるレビュー承認必須化）は有効化していません。外部コントリビューターを受け入れ始めた時点で見直します。
