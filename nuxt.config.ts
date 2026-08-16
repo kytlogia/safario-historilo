@@ -51,8 +51,8 @@ export default defineNuxtConfig({
     // back to DEFAULT_DB_PATH in server/utils/history-store.ts
     historyDbPath: '',
     // NUXT_HISTORY_DB_ALLOW_REMOTE
-    historyDbAllowRemote: 'false',
+    historyDbAllowRemote: false,
     // NUXT_HISTORY_DB_TRUST_DEV_PROXY
-    historyDbTrustDevProxy: 'false'
+    historyDbTrustDevProxy: false
   }
 })
