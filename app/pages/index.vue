@@ -157,7 +157,7 @@ async function loadFromServer() {
   isLoading.value = true
   loadError.value = ''
   try {
-    const blob = await $fetch<Blob>('/api/local-history', { responseType: 'blob' })
+    const blob = await $fetch<Blob>('/api/local-history')
     const result = await parseSafariHistoryFile(new File([blob], 'History.db'))
     visits.value = result.visits
     fileName.value = result.fileName
