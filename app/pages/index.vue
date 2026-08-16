@@ -15,8 +15,8 @@ const serverStatusWarning = ref('')
 
 const search = ref('')
 const domainFilter = ref<string | null>(null)
-const dateFrom = ref('')
-const dateTo = ref('')
+const dateFrom = ref<Date | null>(null)
+const dateTo = ref<Date | null>(null)
 const onlyFailed = ref(false)
 const onlyRedirects = ref(false)
 const onlySynthesized = ref(false)
@@ -38,8 +38,8 @@ const domainOptions = computed(() => {
 
 const filteredVisits = computed(() => {
   const query = search.value.trim().toLowerCase()
-  const from = dateFrom.value ? new Date(`${dateFrom.value}T00:00:00`) : null
-  const to = dateTo.value ? new Date(`${dateTo.value}T23:59:59`) : null
+  const from = dateFrom.value ? startOfDay(dateFrom.value) : null
+  const to = dateTo.value ? endOfDay(dateTo.value) : null
 
   return visits.value.filter((v) => {
     if (query && !v.title.toLowerCase().includes(query) && !v.url.toLowerCase().includes(query)) {
@@ -81,7 +81,7 @@ const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domai
 
 const headers = [
   { title: 'タイトル', key: 'title', width: '28%' },
-  { title: 'URL', key: 'url' },
+  { title: 'URL', key: 'url', width: '28%' },
   { title: 'ドメイン', key: 'domain', width: 170 },
   { title: '訪問日時', key: 'visitTime', width: 190 },
   { title: 'URL累計訪問回数', key: 'visitCount', width: 130, align: 'end' as const },
@@ -90,6 +90,18 @@ const headers = [
 
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium' }).format(date)
+}
+
+function formatDateInputValue(date: unknown) {
+  return date instanceof Date ? formatDate(date) : ''
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0)
+}
+
+function endOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999)
 }
 
 function formatDateTime(date: Date) {
@@ -210,8 +222,8 @@ function resetAll() {
   fileName.value = ''
   search.value = ''
   domainFilter.value = null
-  dateFrom.value = ''
-  dateTo.value = ''
+  dateFrom.value = null
+  dateTo.value = null
   onlyFailed.value = false
   onlyRedirects.value = false
   onlySynthesized.value = false
@@ -402,23 +414,25 @@ function resetAll() {
                       />
                     </v-col>
                     <v-col cols="6" md="2">
-                      <v-text-field
+                      <v-date-input
                         v-model="dateFrom"
-                        type="date"
                         label="開始日"
                         variant="outlined"
                         density="comfortable"
+                        :display-format="formatDateInputValue"
                         hide-details
+                        clearable
                       />
                     </v-col>
                     <v-col cols="6" md="2">
-                      <v-text-field
+                      <v-date-input
                         v-model="dateTo"
-                        type="date"
                         label="終了日"
                         variant="outlined"
                         density="comfortable"
+                        :display-format="formatDateInputValue"
                         hide-details
+                        clearable
                       />
                     </v-col>
                   </v-row>
@@ -478,18 +492,13 @@ function resetAll() {
                   @click:row="(_e: Event, row: { item: HistoryVisit }) => openDetail(row.item)"
                 >
                   <template #item.title="{ item }">
-                    <div class="text-truncate" style="max-width: 100%" :title="item.title">
-                      {{ item.title }}
-                    </div>
+                    <TruncatedCell :text="item.title" />
                   </template>
                   <template #item.url="{ item }">
-                    <div
-                      class="text-truncate text-medium-emphasis"
-                      style="max-width: 100%"
-                      :title="item.url"
-                    >
-                      {{ item.url }}
-                    </div>
+                    <TruncatedCell :text="item.url" class="text-medium-emphasis" />
+                  </template>
+                  <template #item.domain="{ item }">
+                    <TruncatedCell :text="item.domain" />
                   </template>
                   <template #item.visitTime="{ item }">
                     {{ formatDateTime(item.visitTime) }}
@@ -524,7 +533,7 @@ function resetAll() {
             </v-col>
 
             <v-col cols="12" md="3">
-              <v-card>
+              <v-card class="h-100">
                 <v-card-title class="text-subtitle-1">よく訪れたドメイン Top 10</v-card-title>
                 <v-card-text>
                   <div v-for="d in topDomains" :key="d.domain" class="mb-3">
@@ -665,5 +674,8 @@ function resetAll() {
 }
 .detail-dialog-card {
   overscroll-behavior: contain;
+}
+:deep(table) {
+  table-layout: fixed;
 }
 </style>
