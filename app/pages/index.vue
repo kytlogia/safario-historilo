@@ -477,13 +477,11 @@ function resetAll() {
                   fixed-header
                   @click:row="(_e: Event, row: { item: HistoryVisit }) => openDetail(row.item)"
                 >
-                  <!-- eslint-disable-next-line vue/valid-v-slot -- Vuetify dot-slot name, not a v-slot modifier; static form keeps Vue's stable-slot optimization -->
                   <template #item.title="{ item }">
                     <div class="text-truncate" style="max-width: 100%" :title="item.title">
                       {{ item.title }}
                     </div>
                   </template>
-                  <!-- eslint-disable-next-line vue/valid-v-slot -- Vuetify dot-slot name, not a v-slot modifier; static form keeps Vue's stable-slot optimization -->
                   <template #item.url="{ item }">
                     <div
                       class="text-truncate text-medium-emphasis"
@@ -493,15 +491,12 @@ function resetAll() {
                       {{ item.url }}
                     </div>
                   </template>
-                  <!-- eslint-disable-next-line vue/valid-v-slot -- Vuetify dot-slot name, not a v-slot modifier; static form keeps Vue's stable-slot optimization -->
                   <template #item.visitTime="{ item }">
                     {{ formatDateTime(item.visitTime) }}
                   </template>
-                  <!-- eslint-disable-next-line vue/valid-v-slot -- Vuetify dot-slot name, not a v-slot modifier; static form keeps Vue's stable-slot optimization -->
                   <template #item.visitCount="{ item }">
                     {{ item.visitCount.toLocaleString() }}
                   </template>
-                  <!-- eslint-disable-next-line vue/valid-v-slot -- Vuetify dot-slot name, not a v-slot modifier; static form keeps Vue's stable-slot optimization -->
                   <template #item.flags="{ item }">
                     <v-chip
                       v-if="!item.loadSuccessful"
