@@ -555,7 +555,7 @@ function resetAll() {
           <v-btn icon="mdi-close" variant="text" size="small" @click="detailDialog = false" />
         </v-card-title>
         <v-divider />
-        <v-card-text>
+        <v-card-text class="detail-dialog-content">
           <v-list density="compact">
             <v-list-item title="タイトル" :subtitle="selectedVisit.title" />
             <v-list-item title="URL">
@@ -662,5 +662,8 @@ function resetAll() {
 }
 :deep(tr) {
   cursor: pointer;
+}
+.detail-dialog-content {
+  overscroll-behavior: contain;
 }
 </style>
