@@ -177,19 +177,19 @@ async function loadFromServer() {
   }
 }
 
-onMounted(() => {
-  checkServerAutoLoadAvailability()
+onMounted(async () => {
+  await checkServerAutoLoadAvailability()
 })
 
 function onFileInputChange(files: File[] | File | null) {
   const file = Array.isArray(files) ? files[0] : files
-  loadFile(file)
+  void loadFile(file)
 }
 
 function onDrop(event: DragEvent) {
   isDragging.value = false
   const file = event.dataTransfer?.files?.[0]
-  loadFile(file)
+  void loadFile(file)
 }
 
 function onDragLeave(event: DragEvent) {
