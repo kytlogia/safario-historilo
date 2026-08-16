@@ -1,5 +1,6 @@
 {
   "name": "safario-historilo",
+  "version": "1.0.0",
   "type": "module",
   "private": true,
   "description": "Safariのブラウズ履歴データベースを読み込み、訪問履歴を詳細に確認できるWebアプリ",
