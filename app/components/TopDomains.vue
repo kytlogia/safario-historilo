@@ -15,9 +15,12 @@ defineProps<{
         </div>
         <v-progress-linear :model-value="d.ratio" color="primary" height="6" rounded />
       </div>
-      <div v-if="topDomains.length === 0" class="text-body-2 text-medium-emphasis">
-        該当するデータがありません
-      </div>
+      <v-empty-state
+        v-if="topDomains.length === 0"
+        icon="mdi-chart-bar"
+        size="48"
+        text="該当するデータがありません"
+      />
     </v-card-text>
   </v-card>
 </template>
