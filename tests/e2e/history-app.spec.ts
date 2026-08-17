@@ -82,12 +82,11 @@ test.describe('Safari History Detail', () => {
     await page.goto('/')
     await loadFixtureViaFileInput(page)
 
-    // Vuetify's v-select input has pointer-events disabled; the surrounding
-    // field wrapper is the actual element that receives and handles clicks.
-    await page
-      .locator('.v-field__input')
-      .filter({ has: page.getByRole('combobox', { name: 'ドメインで絞り込み' }) })
-      .click()
+    // v-autocomplete's input is directly clickable and editable, so typing a
+    // substring of the domain narrows the candidate list before selecting.
+    const domainInput = page.getByRole('combobox', { name: 'ドメインで絞り込み' })
+    await domainInput.click()
+    await domainInput.fill('blog')
     await page.getByRole('option', { name: /blog\.example\.org/ }).click()
 
     await expect(page.getByText(`1 / ${SAMPLE_HISTORY_DATA.visits.length} 件を表示`)).toBeVisible()

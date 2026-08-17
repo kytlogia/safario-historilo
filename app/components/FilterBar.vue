@@ -16,6 +16,13 @@ const dateTo = defineModel<Date | null>('dateTo', { required: true })
 const onlyFailed = defineModel<boolean>('onlyFailed', { required: true })
 const onlyRedirects = defineModel<boolean>('onlyRedirects', { required: true })
 const onlySynthesized = defineModel<boolean>('onlySynthesized', { required: true })
+
+// v-autocomplete's default filter matches the displayed title, which includes
+// the "(件数)" suffix — restrict matching to the domain itself so typing a
+// number that happens to be another domain's visit count doesn't match it.
+function filterDomainOption(_itemTitle: string, query: string, item?: { value: string }) {
+  return (item?.value ?? '').toLowerCase().includes(query.toLowerCase())
+}
 </script>
 
 <template>
@@ -33,9 +40,10 @@ const onlySynthesized = defineModel<boolean>('onlySynthesized', { required: true
         />
       </v-col>
       <v-col cols="12" sm="6" md="4">
-        <v-select
+        <v-autocomplete
           v-model="domainFilter"
           :items="domainOptions"
+          :custom-filter="filterDomainOption"
           label="ドメインで絞り込み"
           variant="outlined"
           density="comfortable"
