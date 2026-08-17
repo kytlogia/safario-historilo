@@ -14,6 +14,7 @@ const serverPermissionHint = ref(false)
 const serverStatusWarning = ref('')
 
 const search = ref('')
+const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 const domainFilter = ref<string | null>(null)
 const dateFrom = ref<Date | null>(null)
 const dateTo = ref<Date | null>(null)
@@ -37,7 +38,7 @@ const domainOptions = computed(() => {
 })
 
 const filteredVisits = computed(() => {
-  const query = search.value.trim().toLowerCase()
+  const query = debouncedSearch.value.trim().toLowerCase()
   const from = dateFrom.value ? startOfDay(dateFrom.value) : null
   const to = dateTo.value ? endOfDay(dateTo.value) : null
 
@@ -157,6 +158,7 @@ function resetAll() {
   visits.value = []
   fileName.value = ''
   search.value = ''
+  resetDebouncedSearch()
   domainFilter.value = null
   dateFrom.value = null
   dateTo.value = null
