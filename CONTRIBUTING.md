@@ -46,6 +46,47 @@
 - Claude Codeなどのエージェントは `gh pr merge` を実行しません。PRの作成までを行い、マージはユーザー本人の明示的な承認を得てから、ユーザー自身（またはユーザーの指示を受けたエージェント）がボタンを押します。マージボタンを押す行為そのものが、オーナー本人の最終確認ポイントとして機能します。（現時点ではこのルールを技術的に強制する仕組みはなく、運用上の約束事です）
 - このリポジトリは現状コラボレーターがオーナー1名のため、GitHubの「Require approvals」機能（他者によるレビュー承認必須化）は有効化していません。外部コントリビューターを受け入れ始めた時点で見直します。
 
+## Vueコンポーネントのスタイル記述
+
+背景・検討過程の詳細は [#54](https://github.com/kytlogia/safario-historilo/issues/54) を参照してください。
+
+### 方針：ユーティリティクラスとscoped SCSSの併用（折衷案）
+
+`<template>` にVuetifyのユーティリティクラス（`mr-2` `pa-8` `d-flex` `ga-2` 等）をすべて排除して `<style>` に寄せる、という完全移行は行いません。技術検証の結果、以下の理由からユーティリティクラスと `<style scoped lang="scss">` を併用する折衷案を採用します。
+
+- **VuetifyのユーティリティクラスをSCSS側から`@extend`する方式は採用しない。** `vuetify/lib/styles/utilities` はクラスをその場で動的生成するSassモジュールで、`@use` すると（実際に使うクラスが数個でも）レスポンシブ対応を含む全ユーティリティ分＝約240KBのCSSがそのまま出力される。Vue SFCの `<style scoped>` はコンポーネントごとに独立したスタイルシートとしてコンパイルされ、`data-v-*` 属性でスコープされたセレクタは他コンポーネントの出力と重複除去（dedupe）されないため、これをコンポーネント数分繰り返すとバンドルサイズが破綻する。
+- `text-medium-emphasis` `text-caption` `text-h5` のような色・タイポグラフィ系のユーティリティクラスは、Vuetifyのテーマシステム（`--v-theme-*` 等のCSSカスタムプロパティ、ライト/ダーク切り替え）と密結合している。独自CSSに書き直すと同じCSS変数を自分で参照し直す必要があり、劣化コピーになりがちなので、**これらはテンプレート側にユーティリティクラスとして残すのが基本**。
+- グリッド・フレックスレイアウト（`v-row`/`v-col` の間隔、`d-flex` `ga-2` `align-center` 等）や、1箇所だけの軽微な余白調整（単発の `mb-1` `mr-2` など）も、複数プロパティの組み合わせとして名前を与える意味が薄いため、テンプレート側に残してよい。
+
+一方で、次のようなケースは `<style scoped lang="scss">` に寄せます。
+
+- 複数のユーティリティクラス・生のCSSが組み合わさって、そのコンポーネント固有の「見た目のまとまり」を構成している部分（例: ドラッグ&ドロップ領域の見た目、状態に応じた配色変化）
+- `:hover` やトランジションなど、ユーティリティクラスで表現できない振る舞い
+- Vuetifyのデザイントークンを再利用したい場合は、ユーティリティクラス生成器（`vuetify/lib/styles/utilities`）ではなく、変数のみを持つ設定ファイル（例: `@use 'vuetify/lib/styles/settings/_variables' as vuetify;` で `vuetify.$spacers` などを参照）や、`--v-theme-primary` のようなCSSカスタムプロパティを直接使う。こちらは生成CSSを伴わないため肥大化しない。
+
+`lang="scss"` を使うため `sass-embedded` を devDependencies に追加済みです。既存の `<style scoped>`（プレーンCSS）のコンポーネントは、ネストや変数が必要になったタイミングで `lang="scss"` に切り替えれば十分で、一括変換の必要はありません。
+
+比較検討した他の選択肢：
+
+- **`<style scoped>`（プレーンCSS）**：追加の依存が不要な一方、ネスト記法・変数・`map.get()` のようなVuetifyトークン参照ができない。BEM風の命名（`drop-zone__alert` 等）を素のCSSで書くと修飾子のたびにセレクタ全体を書き直すことになり冗長。
+- **CSS Modules（`<style module>`）**：クラス名の衝突をビルド時にハッシュ化して防げるが、このプロジェクトは各コンポーネントが1ファイル完結でクラス名の衝突リスクが低く、すでに `scoped` 属性で同等の分離ができている。`class="drop-zone"` のような静的な文字列でテンプレートに書けなくなり（`$style.dropZone` のような参照が必要）、既存コードとの差分・学習コストの割に得られる利点が小さいため見送る。
+
+以上より `<style scoped lang="scss">` を基本方針として採用します。
+
+適用サンプルは [`app/components/UploadPanel.vue`](app/components/UploadPanel.vue) を参照してください。
+
+### CSSクラスの命名規則
+
+Vue公式スタイルガイドには要素セレクタよりクラスセレクタを優先すべきというルール（[Element selectors with `scoped`](https://vuejs.org/style-guide/rules-use-with-caution.html#element-selectors-with-scoped)）はありますが、クラス名自体の命名規則は定めていないため、このプロジェクトでは軽量なBEM風の規則を採用します。
+
+- ブロック名＝そのスタイルのまとまりを代表する要素につけるクラス名（ケバブケース）。`scoped` により重複はコンポーネント間で衝突しないため、コンポーネント名と一致させる必要はない（例: `drop-zone`）。
+- 子要素は `block__element`（例: `drop-zone__divider`）。
+- 状態・バリエーションは `block--modifier` または `block__element--modifier`（例: `drop-zone--active`）。既存コードのパターンを踏襲し、状態の接頭辞に `is-*` は使わない。
+- BEMのネストは1階層まで（`block__element__sub-element` のような多段ネストは避け、必要なら別のelement名を検討する）。
+- `:hover` `:focus-visible` など疑似クラスで表現できる状態にはクラスを追加しない。
+
+stylelintなど機械的なチェックの導入は本issueでは見送り、必要になった時点で別issueとして検討します。
+
 ## Dependabotが作成するPRの運用
 
 - Dependabotが作成する依存パッケージ更新PRも、他のPRと同様に常に手動でレビューしてからマージします（リポジトリ全体のAuto-merge機能は無効のままにしています）。

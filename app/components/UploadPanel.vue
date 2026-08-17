@@ -39,7 +39,7 @@ function onDragLeave(event: DragEvent) {
   <v-row justify="center">
     <v-col cols="12" md="8" lg="6">
       <v-card
-        class="pa-8 text-center drop-zone"
+        class="drop-zone"
         :class="{ 'drop-zone--active': isDragging }"
         variant="outlined"
         @dragover.prevent="isDragging = true"
@@ -67,10 +67,12 @@ function onDragLeave(event: DragEvent) {
           >
             この Mac の History.db を自動で読み込む
           </v-btn>
-          <div class="text-caption text-medium-emphasis mb-6">{{ serverDbPath }}</div>
-          <div class="d-flex align-center mb-6">
+          <div class="text-caption text-medium-emphasis drop-zone__local-path">
+            {{ serverDbPath }}
+          </div>
+          <div class="drop-zone__divider">
             <v-divider />
-            <span class="mx-3 text-caption text-medium-emphasis">または</span>
+            <span class="text-caption text-medium-emphasis drop-zone__divider-label">または</span>
             <v-divider />
           </div>
         </template>
@@ -80,7 +82,7 @@ function onDragLeave(event: DragEvent) {
           type="warning"
           variant="tonal"
           density="compact"
-          class="mb-6 text-left"
+          class="drop-zone__alert"
         >
           この Mac 上の History.db
           を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 →
@@ -94,7 +96,7 @@ function onDragLeave(event: DragEvent) {
           type="warning"
           variant="tonal"
           density="compact"
-          class="mb-6 text-left"
+          class="drop-zone__alert"
         >
           {{ serverStatusWarning }}
         </v-alert>
@@ -109,15 +111,15 @@ function onDragLeave(event: DragEvent) {
           @update:model-value="onFileInputChange"
         />
 
-        <v-alert v-if="loadError" type="error" variant="tonal" class="mt-4 text-left">
+        <v-alert v-if="loadError" type="error" variant="tonal" class="drop-zone__alert mt-4">
           {{ loadError }}
         </v-alert>
 
-        <v-divider class="my-6" />
+        <v-divider class="drop-zone__instructions-divider" />
 
-        <div class="text-left text-body-2">
+        <div class="text-body-2 drop-zone__instructions">
           <div class="font-weight-medium mb-2">History.db の場所（macOS / Safari）</div>
-          <ol class="pl-5 mb-3">
+          <ol class="drop-zone__instructions-list">
             <li>Safariを終了する（DBがロックされているため）</li>
             <li>
               Finderで「移動」→「フォルダへ移動」を選び、次を入力：<br /><code
@@ -137,14 +139,52 @@ function onDragLeave(event: DragEvent) {
   </v-row>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
+@use 'vuetify/lib/styles/settings/_variables' as vuetify;
+@use 'sass:map';
+
 .drop-zone {
+  padding: map.get(vuetify.$spacers, 8);
+  text-align: center;
   transition:
     border-color 0.2s ease,
     background-color 0.2s ease;
-}
-.drop-zone--active {
-  border-color: rgb(var(--v-theme-primary));
-  background-color: rgba(var(--v-theme-primary), 0.06);
+
+  &--active {
+    border-color: rgb(var(--v-theme-primary));
+    background-color: rgba(var(--v-theme-primary), 0.06);
+  }
+
+  &__local-path {
+    margin-bottom: map.get(vuetify.$spacers, 6);
+  }
+
+  &__divider {
+    display: flex;
+    align-items: center;
+    margin-bottom: map.get(vuetify.$spacers, 6);
+  }
+
+  &__divider-label {
+    margin-inline: map.get(vuetify.$spacers, 3);
+  }
+
+  &__alert {
+    margin-bottom: map.get(vuetify.$spacers, 6);
+    text-align: left;
+  }
+
+  &__instructions-divider {
+    margin-block: map.get(vuetify.$spacers, 6);
+  }
+
+  &__instructions {
+    text-align: left;
+
+    &-list {
+      padding-inline-start: map.get(vuetify.$spacers, 5);
+      margin-bottom: map.get(vuetify.$spacers, 3);
+    }
+  }
 }
 </style>
