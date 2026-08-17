@@ -16,7 +16,8 @@ const headers = [
   { title: 'ドメイン', key: 'domain', width: 170 },
   { title: '訪問日時', key: 'visitTime', width: 190 },
   { title: 'URL累計訪問回数', key: 'visitCount', width: 130, align: 'end' as const },
-  { title: '状態', key: 'flags', width: 150, sortable: false }
+  { title: '状態', key: 'flags', width: 150, sortable: false },
+  { title: '', key: 'actions', width: 56, sortable: false, align: 'center' as const }
 ]
 </script>
 
@@ -58,6 +59,15 @@ const headers = [
         リダイレクト
       </v-chip>
       <v-chip v-if="item.synthesized" size="x-small" color="secondary" variant="flat">自動</v-chip>
+    </template>
+    <template #item.actions="{ item }">
+      <v-btn
+        icon="mdi-information-outline"
+        variant="text"
+        size="small"
+        aria-label="詳細を見る"
+        @click.stop="emit('row-click', item)"
+      />
     </template>
   </v-data-table-virtual>
 </template>

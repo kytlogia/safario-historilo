@@ -46,7 +46,13 @@ onUnmounted(() => {
         <v-icon icon="mdi-web" class="mr-2" />
         <span class="text-truncate">履歴の詳細</span>
         <v-spacer />
-        <v-btn icon="mdi-close" variant="text" size="small" @click="open = false" />
+        <v-btn
+          icon="mdi-close"
+          variant="text"
+          size="small"
+          aria-label="閉じる"
+          @click="open = false"
+        />
       </v-card-title>
       <v-divider />
       <v-card-text>
