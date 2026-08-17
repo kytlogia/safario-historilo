@@ -14,7 +14,7 @@ const serverPermissionHint = ref(false)
 const serverStatusWarning = ref('')
 
 const search = ref('')
-const debouncedSearch = useDebouncedRef(search, 200)
+const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 const domainFilter = ref<string | null>(null)
 const dateFrom = ref<Date | null>(null)
 const dateTo = ref<Date | null>(null)
@@ -156,7 +156,7 @@ function resetAll() {
   visits.value = []
   fileName.value = ''
   search.value = ''
-  debouncedSearch.value = ''
+  resetDebouncedSearch()
   domainFilter.value = null
   dateFrom.value = null
   dateTo.value = null
