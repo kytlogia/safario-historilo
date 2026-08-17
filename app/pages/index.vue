@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { FetchError } from 'ofetch'
 import type { HistoryVisit } from '~/types/history'
-import { formatDate } from '~/utils/format'
 
 const visits = ref<HistoryVisit[]>([])
 const fileName = ref('')
@@ -27,66 +26,18 @@ const detailDialog = ref(false)
 
 const hasData = computed(() => visits.value.length > 0)
 
-const domainOptions = computed(() => {
-  const counts = new Map<string, number>()
-  for (const v of visits.value) {
-    counts.set(v.domain, (counts.get(v.domain) ?? 0) + 1)
-  }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([domain, count]) => ({ title: `${domain} (${count})`, value: domain }))
-})
-
-const filteredVisits = computed(() => {
-  const query = debouncedSearch.value.trim().toLowerCase()
-  const from = dateFrom.value ? startOfDay(dateFrom.value) : null
-  const to = dateTo.value ? endOfDay(dateTo.value) : null
-
-  return visits.value.filter((v) => {
-    if (query && !v.title.toLowerCase().includes(query) && !v.url.toLowerCase().includes(query)) {
-      return false
-    }
-    if (domainFilter.value && v.domain !== domainFilter.value) return false
-    if (from && v.visitTime < from) return false
-    if (to && v.visitTime > to) return false
-    if (onlyFailed.value && v.loadSuccessful) return false
-    if (onlyRedirects.value && v.redirectSource === null && v.redirectDestination === null)
-      return false
-    if (onlySynthesized.value && !v.synthesized) return false
-    return true
-  })
-})
-
-const topDomains = computed(() => {
-  const counts = new Map<string, number>()
-  for (const v of filteredVisits.value) {
-    counts.set(v.domain, (counts.get(v.domain) ?? 0) + 1)
-  }
-  const max = [...counts.values()].reduce((a, b) => Math.max(a, b), 1)
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([domain, count]) => ({ domain, count, ratio: (count / max) * 100 }))
-})
-
-const dateRangeLabel = computed(() => {
-  if (visits.value.length === 0) return '-'
-  const times = visits.value.map((v) => v.visitTime.getTime())
-  const min = new Date(times.reduce((a, b) => Math.min(a, b)))
-  const max = new Date(times.reduce((a, b) => Math.max(a, b)))
-  return `${formatDate(min)} 〜 ${formatDate(max)}`
+const { domainOptions, filteredVisits, topDomains, dateRangeLabel } = useHistoryFilters(visits, {
+  search: debouncedSearch,
+  domainFilter,
+  dateFrom,
+  dateTo,
+  onlyFailed,
+  onlyRedirects,
+  onlySynthesized
 })
 
 const uniqueUrlCount = computed(() => new Set(visits.value.map((v) => v.url)).size)
 const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domain)).size)
-
-function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0)
-}
-
-function endOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999)
-}
 
 async function loadFile(file: File | null | undefined) {
   if (!file) return
