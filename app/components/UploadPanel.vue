@@ -46,11 +46,14 @@ function onDragLeave(event: DragEvent) {
         @dragleave.prevent="onDragLeave"
         @drop.prevent="onDrop"
       >
-        <v-icon icon="mdi-database-search-outline" size="56" color="primary" class="mb-4" />
-        <div class="text-h6 mb-2">Safariの History.db をドラッグ&ドロップ</div>
-        <div class="text-body-2 text-medium-emphasis mb-6">
-          またはファイルを選択してください。解析はすべてこのブラウザ内で行われ、データは外部に送信されません。
-        </div>
+        <v-empty-state
+          icon="mdi-database-search-outline"
+          size="56"
+          color="primary"
+          title="Safariの History.db をドラッグ&ドロップ"
+          text="またはファイルを選択してください。解析はすべてこのブラウザ内で行われ、データは外部に送信されません。"
+          class="mb-2"
+        />
 
         <template v-if="serverAutoLoadAvailable">
           <v-btn

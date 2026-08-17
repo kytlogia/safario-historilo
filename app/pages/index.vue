@@ -14,6 +14,7 @@ const serverPermissionHint = ref(false)
 const serverStatusWarning = ref('')
 
 const search = ref('')
+const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 const domainFilter = ref<string | null>(null)
 const dateFrom = ref<Date | null>(null)
 const dateTo = ref<Date | null>(null)
@@ -37,7 +38,7 @@ const domainOptions = computed(() => {
 })
 
 const filteredVisits = computed(() => {
-  const query = search.value.trim().toLowerCase()
+  const query = debouncedSearch.value.trim().toLowerCase()
   const from = dateFrom.value ? startOfDay(dateFrom.value) : null
   const to = dateTo.value ? endOfDay(dateTo.value) : null
 
@@ -151,10 +152,13 @@ function openDetail(visit: HistoryVisit) {
   detailDialog.value = true
 }
 
+const { isDark, toggleTheme } = useAppTheme()
+
 function resetAll() {
   visits.value = []
   fileName.value = ''
   search.value = ''
+  resetDebouncedSearch()
   domainFilter.value = null
   dateFrom.value = null
   dateTo.value = null
@@ -171,11 +175,19 @@ function resetAll() {
         <v-icon icon="mdi-compass-outline" class="mr-2" />
         Safari History Detail
       </v-app-bar-title>
-      <template v-if="hasData" #append>
-        <span class="text-body-2 text-medium-emphasis mr-4">{{ fileName }}</span>
-        <v-btn variant="tonal" prepend-icon="mdi-refresh" @click="resetAll"
-          >別のファイルを読み込む</v-btn
-        >
+      <template #append>
+        <template v-if="hasData">
+          <span class="text-body-2 text-medium-emphasis mr-4">{{ fileName }}</span>
+          <v-btn variant="tonal" prepend-icon="mdi-refresh" class="mr-2" @click="resetAll"
+            >別のファイルを読み込む</v-btn
+          >
+        </template>
+        <v-btn
+          :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+          :aria-label="isDark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え'"
+          variant="text"
+          @click="toggleTheme"
+        />
       </template>
     </v-app-bar>
 
