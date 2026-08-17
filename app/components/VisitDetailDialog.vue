@@ -11,6 +11,12 @@ const open = defineModel<boolean>({ required: true })
 const copiedField = ref<string | null>(null)
 let copiedTimer: ReturnType<typeof setTimeout> | undefined
 
+function resetCopiedState() {
+  clearTimeout(copiedTimer)
+  copiedTimer = undefined
+  copiedField.value = null
+}
+
 async function copyToClipboard(text: string, field: string) {
   try {
     await navigator.clipboard.writeText(text)
@@ -23,6 +29,14 @@ async function copyToClipboard(text: string, field: string) {
     // クリップボードAPIが使用不可（権限拒否など）の場合は何もしない
   }
 }
+
+watch(open, (isOpen) => {
+  if (!isOpen) resetCopiedState()
+})
+
+onUnmounted(() => {
+  clearTimeout(copiedTimer)
+})
 </script>
 
 <template>
@@ -47,6 +61,7 @@ async function copyToClipboard(text: string, field: string) {
                 variant="text"
                 size="small"
                 title="コピー"
+                aria-label="コピー"
                 @click="copyToClipboard(visit.title, 'title')"
               />
             </template>
@@ -70,6 +85,7 @@ async function copyToClipboard(text: string, field: string) {
                 variant="text"
                 size="small"
                 title="コピー"
+                aria-label="コピー"
                 @click="copyToClipboard(visit.url, 'url')"
               />
             </template>
@@ -141,8 +157,7 @@ async function copyToClipboard(text: string, field: string) {
   display: block;
   width: 100%;
   white-space: normal;
-  overflow-wrap: break-word;
-  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 :deep(.v-list-item-subtitle) {
