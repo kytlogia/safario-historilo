@@ -137,7 +137,17 @@ describe('useHistoryFilters', () => {
       )
     })
 
-    it('excludes failed loads when onlyFailed is off, includes only failed loads when on', () => {
+    it('includes both successful and failed loads when onlyFailed is off', () => {
+      const visits = ref<HistoryVisit[]>([
+        makeVisit({ loadSuccessful: true }),
+        makeVisit({ loadSuccessful: false })
+      ])
+      const { filteredVisits } = useHistoryFilters(visits, makeFilters())
+
+      expect(filteredVisits.value).toHaveLength(2)
+    })
+
+    it('includes only failed loads when onlyFailed is on', () => {
       const visits = ref<HistoryVisit[]>([
         makeVisit({ loadSuccessful: true }),
         makeVisit({ loadSuccessful: false })

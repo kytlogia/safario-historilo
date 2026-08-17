@@ -20,16 +20,21 @@ function endOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999)
 }
 
+function countByDomain(visits: HistoryVisit[]) {
+  const counts = new Map<string, number>()
+  for (const v of visits) {
+    counts.set(v.domain, (counts.get(v.domain) ?? 0) + 1)
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])
+}
+
 export function useHistoryFilters(visits: Ref<HistoryVisit[]>, filters: HistoryFilterState) {
-  const domainOptions = computed(() => {
-    const counts = new Map<string, number>()
-    for (const v of visits.value) {
-      counts.set(v.domain, (counts.get(v.domain) ?? 0) + 1)
-    }
-    return [...counts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .map(([domain, count]) => ({ title: `${domain} (${count})`, value: domain }))
-  })
+  const domainOptions = computed(() =>
+    countByDomain(visits.value).map(([domain, count]) => ({
+      title: `${domain} (${count})`,
+      value: domain
+    }))
+  )
 
   const filteredVisits = computed(() => {
     const query = filters.search.value.trim().toLowerCase()
@@ -56,13 +61,9 @@ export function useHistoryFilters(visits: Ref<HistoryVisit[]>, filters: HistoryF
   })
 
   const topDomains = computed(() => {
-    const counts = new Map<string, number>()
-    for (const v of filteredVisits.value) {
-      counts.set(v.domain, (counts.get(v.domain) ?? 0) + 1)
-    }
-    const max = [...counts.values()].reduce((a, b) => Math.max(a, b), 1)
-    return [...counts.entries()]
-      .sort((a, b) => b[1] - a[1])
+    const counted = countByDomain(filteredVisits.value)
+    const max = counted.reduce((a, [, count]) => Math.max(a, count), 1)
+    return counted
       .slice(0, 10)
       .map(([domain, count]) => ({ domain, count, ratio: (count / max) * 100 }))
   })
