@@ -8,9 +8,9 @@ defineProps<{
   <v-card class="h-100">
     <v-card-title class="text-subtitle-1">よく訪れたドメイン Top 10</v-card-title>
     <v-card-text>
-      <div v-for="d in topDomains" :key="d.domain" class="mb-3">
-        <div class="d-flex justify-space-between text-body-2 mb-1">
-          <span class="text-truncate" style="max-width: 180px">{{ d.domain }}</span>
+      <div v-for="d in topDomains" :key="d.domain" class="domain-row">
+        <div class="d-flex justify-space-between text-body-2 domain-row__header">
+          <span class="text-truncate domain-row__name">{{ d.domain }}</span>
           <span class="text-medium-emphasis">{{ d.count }}</span>
         </div>
         <v-progress-linear :model-value="d.ratio" color="primary" height="6" rounded />
@@ -24,3 +24,17 @@ defineProps<{
     </v-card-text>
   </v-card>
 </template>
+
+<style scoped lang="scss">
+.domain-row {
+  margin-bottom: 12px; // mb-3
+
+  &__header {
+    margin-bottom: 4px; // mb-1
+  }
+
+  &__name {
+    max-width: 180px;
+  }
+}
+</style>

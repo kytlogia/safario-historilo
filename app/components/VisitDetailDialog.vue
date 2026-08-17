@@ -41,7 +41,7 @@ onUnmounted(() => {
 
 <template>
   <v-dialog v-model="open" max-width="640">
-    <v-card v-if="visit" class="detail-dialog-card">
+    <v-card v-if="visit" class="detail-dialog">
       <v-card-title class="d-flex align-center">
         <v-icon icon="mdi-web" class="mr-2" />
         <span class="text-truncate">履歴の詳細</span>
@@ -59,7 +59,7 @@ onUnmounted(() => {
         <v-list density="compact">
           <v-list-item title="タイトル">
             <template #subtitle>
-              <span class="subtitle-wrap">{{ visit.title }}</span>
+              <span class="detail-dialog__subtitle">{{ visit.title }}</span>
             </template>
             <template #append>
               <v-btn
@@ -79,11 +79,11 @@ onUnmounted(() => {
                 :href="visit.url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-primary subtitle-wrap"
+                class="text-primary detail-dialog__subtitle"
               >
                 {{ visit.url }}
               </a>
-              <span v-else class="subtitle-wrap">{{ visit.url }}</span>
+              <span v-else class="detail-dialog__subtitle">{{ visit.url }}</span>
             </template>
             <template #append>
               <v-btn
@@ -154,23 +154,24 @@ onUnmounted(() => {
   </v-dialog>
 </template>
 
-<style scoped>
-.detail-dialog-card {
+<style scoped lang="scss">
+.detail-dialog {
   overscroll-behavior: contain;
-}
 
-.subtitle-wrap {
-  display: block;
-  width: 100%;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
+  &__subtitle {
+    display: block;
+    width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 
-:deep(.v-list-item-subtitle) {
-  -webkit-line-clamp: unset;
-  display: block;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: unset;
+  // v-list-item-subtitleはVuetifyが内部でレンダリングするため、独自クラスを付与できず要素セレクタで指定する
+  :deep(.v-list-item-subtitle) {
+    -webkit-line-clamp: unset;
+    display: block;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
 }
 </style>

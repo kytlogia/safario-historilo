@@ -85,6 +85,7 @@ Vue公式スタイルガイドには要素セレクタよりクラスセレク�
 - 状態・バリエーションは `block--modifier` または `block__element--modifier`（例: `drop-zone--active`）。既存コードのパターンを踏襲し、状態の接頭辞に `is-*` は使わない。
 - BEMのネストは1階層まで（`block__element__sub-element` のような多段ネストは避け、必要なら別のelement名を検討する）。
 - `:hover` `:focus-visible` など疑似クラスで表現できる状態にはクラスを追加しない。
+- Vuetifyコンポーネントが内部でレンダリングする要素（`v-data-table-virtual` の `<tr>`/`<table>`、`v-list-item` の `.v-list-item-subtitle` 等）には独自クラスを付与できないため、`:deep(tr)` のような要素・内部クラスセレクタの使用を例外的に許容する。その旨がコードから読み取れるよう、コメントを添える。
 
 stylelintなど機械的なチェックの導入は本issueでは見送り、必要になった時点で別issueとして検討します。
 
