@@ -33,7 +33,7 @@ const onlySynthesized = defineModel<boolean>('onlySynthesized', { required: true
         />
       </v-col>
       <v-col cols="12" sm="6" md="4">
-        <v-select
+        <v-autocomplete
           v-model="domainFilter"
           :items="domainOptions"
           label="ドメインで絞り込み"
