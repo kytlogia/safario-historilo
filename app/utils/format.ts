@@ -1,5 +1,11 @@
+const dateFormatter = new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium' })
+const dateTimeFormatter = new Intl.DateTimeFormat('ja-JP', {
+  dateStyle: 'medium',
+  timeStyle: 'medium'
+})
+
 export function formatDate(date: Date) {
-  return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium' }).format(date)
+  return dateFormatter.format(date)
 }
 
 export function formatDateInputValue(date: unknown) {
@@ -7,7 +13,7 @@ export function formatDateInputValue(date: unknown) {
 }
 
 export function formatDateTime(date: Date) {
-  return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium', timeStyle: 'medium' }).format(date)
+  return dateTimeFormatter.format(date)
 }
 
 export function isSafeUrl(url: string) {
