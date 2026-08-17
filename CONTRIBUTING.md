@@ -62,13 +62,14 @@
 
 - 複数のユーティリティクラス・生のCSSが組み合わさって、そのコンポーネント固有の「見た目のまとまり」を構成している部分（例: ドラッグ&ドロップ領域の見た目、状態に応じた配色変化）
 - `:hover` やトランジションなど、ユーティリティクラスで表現できない振る舞い
-- Vuetifyのデザイントークンを再利用したい場合は、ユーティリティクラス生成器（`vuetify/lib/styles/utilities`）ではなく、変数のみを持つ設定ファイル（例: `@use 'vuetify/lib/styles/settings/_variables' as vuetify;` で `vuetify.$spacers` などを参照）や、`--v-theme-primary` のようなCSSカスタムプロパティを直接使う。こちらは生成CSSを伴わないため肥大化しない。
+
+このプロジェクトはデザインガイドライン（スペーシングスケール・タイポグラフィ等）をVuetify側の既定値にそのまま委ね、独自にカスタマイズしない運用とします。そのため `<style>` 側でVuetifyのスペーシングスケール等に相当する値を書くときは、`@use 'vuetify/lib/styles/settings/_variables' as vuetify;` で `vuetify.$spacers` をSass経由で参照するのではなく、**対応するユーティリティクラス名をコメントで添えた固定値**を書きます（例: `margin-bottom: 24px; // mb-6`、`text-align: left; // text-left`）。Sassの `map.get()` は結局ビルド時に同じ固定値へ展開されるだけで実行時の可変性は無く、追加の `@use` を書くコストに見合わないためです（将来Vuetify側のスペーシングスケール自体をカスタマイズする方針に転換した場合は、この判断を見直してください）。色に関しては `rgb(var(--v-theme-primary))` のようなCSSカスタムプロパティを直接使うことでテーマ（ライト/ダーク）追従を保ちます。
 
 `lang="scss"` を使うため `sass-embedded` を devDependencies に追加済みです。既存の `<style scoped>`（プレーンCSS）のコンポーネントは、ネストや変数が必要になったタイミングで `lang="scss"` に切り替えれば十分で、一括変換の必要はありません。
 
 比較検討した他の選択肢：
 
-- **`<style scoped>`（プレーンCSS）**：追加の依存が不要な一方、ネスト記法・変数・`map.get()` のようなVuetifyトークン参照ができない。BEM風の命名（`drop-zone__alert` 等）を素のCSSで書くと修飾子のたびにセレクタ全体を書き直すことになり冗長。
+- **`<style scoped>`（プレーンCSS）**：追加の依存が不要な一方、`&--modifier` のようなネスト記法が使えない。BEM風の命名（`drop-zone__alert` 等）を素のCSSで書くと修飾子のたびにセレクタ全体を書き直すことになり冗長。
 - **CSS Modules（`<style module>`）**：クラス名の衝突をビルド時にハッシュ化して防げるが、このプロジェクトは各コンポーネントが1ファイル完結でクラス名の衝突リスクが低く、すでに `scoped` 属性で同等の分離ができている。`class="drop-zone"` のような静的な文字列でテンプレートに書けなくなり（`$style.dropZone` のような参照が必要）、既存コードとの差分・学習コストの割に得られる利点が小さいため見送る。
 
 以上より `<style scoped lang="scss">` を基本方針として採用します。

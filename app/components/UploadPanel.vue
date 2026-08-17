@@ -140,12 +140,9 @@ function onDragLeave(event: DragEvent) {
 </template>
 
 <style scoped lang="scss">
-@use 'vuetify/lib/styles/settings/_variables' as vuetify;
-@use 'sass:map';
-
 .drop-zone {
-  padding: map.get(vuetify.$spacers, 8);
-  text-align: center;
+  padding: 32px; // pa-8
+  text-align: center; // text-center
   transition:
     border-color 0.2s ease,
     background-color 0.2s ease;
@@ -156,34 +153,34 @@ function onDragLeave(event: DragEvent) {
   }
 
   &__local-path {
-    margin-bottom: map.get(vuetify.$spacers, 6);
+    margin-bottom: 24px; // mb-6
   }
 
   &__divider {
-    display: flex;
-    align-items: center;
-    margin-bottom: map.get(vuetify.$spacers, 6);
+    display: flex; // d-flex
+    align-items: center; // align-center
+    margin-bottom: 24px; // mb-6
   }
 
   &__divider-label {
-    margin-inline: map.get(vuetify.$spacers, 3);
+    margin-inline: 12px; // mx-3
   }
 
   &__alert {
-    margin-bottom: map.get(vuetify.$spacers, 6);
-    text-align: left;
+    margin-bottom: 24px; // mb-6
+    text-align: left; // text-left
   }
 
   &__instructions-divider {
-    margin-block: map.get(vuetify.$spacers, 6);
+    margin-block: 24px; // my-6
   }
 
   &__instructions {
-    text-align: left;
+    text-align: left; // text-left
 
     &-list {
-      padding-inline-start: map.get(vuetify.$spacers, 5);
-      margin-bottom: map.get(vuetify.$spacers, 3);
+      padding-inline-start: 20px; // pl-5
+      margin-bottom: 12px; // mb-3
     }
   }
 }
