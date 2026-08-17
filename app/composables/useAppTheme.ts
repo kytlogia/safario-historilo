@@ -1,6 +1,29 @@
+import { computed } from 'vue'
+import { useTheme } from 'vuetify'
+
 const STORAGE_KEY = 'safari-history-theme'
 const LIGHT_THEME = 'safariHistory'
 const DARK_THEME = 'safariHistoryDark'
+
+// localStorage can throw (Safari private mode, blocked storage, restrictive
+// browser policies) — a thrown error here must not break theme switching,
+// nor (via initTheme, called synchronously from app.vue's root setup) the
+// whole app.
+function readStoredTheme(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function writeStoredTheme(name: string) {
+  try {
+    localStorage.setItem(STORAGE_KEY, name)
+  } catch {
+    // Ignore: theme still applies for this session, just isn't persisted.
+  }
+}
 
 export function useAppTheme() {
   const theme = useTheme()
@@ -8,27 +31,27 @@ export function useAppTheme() {
   const isDark = computed(() => theme.global.name.value === DARK_THEME)
 
   function applyTheme(name: typeof LIGHT_THEME | typeof DARK_THEME) {
-    theme.global.name.value = name
-    if (import.meta.client) {
-      localStorage.setItem(STORAGE_KEY, name)
+    void theme.change(name)
+    if (typeof window !== 'undefined') {
+      writeStoredTheme(name)
     }
   }
 
-  function toggleTheme() {
-    applyTheme(isDark.value ? LIGHT_THEME : DARK_THEME)
-  }
-
   function initTheme() {
-    if (!import.meta.client) return
+    if (typeof window === 'undefined') return
 
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = readStoredTheme()
     if (stored === LIGHT_THEME || stored === DARK_THEME) {
-      theme.global.name.value = stored
+      void theme.change(stored)
       return
     }
 
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    theme.global.name.value = prefersDark ? DARK_THEME : LIGHT_THEME
+    void theme.change(prefersDark ? DARK_THEME : LIGHT_THEME)
+  }
+
+  function toggleTheme() {
+    applyTheme(isDark.value ? LIGHT_THEME : DARK_THEME)
   }
 
   return { isDark, toggleTheme, initTheme }
