@@ -17,7 +17,7 @@ const headers = [
   { title: '訪問日時', key: 'visitTime', width: 190 },
   { title: 'URL累計訪問回数', key: 'visitCount', width: 130, align: 'end' as const },
   { title: '状態', key: 'flags', width: 150, sortable: false },
-  { title: '', key: 'actions', width: 56, sortable: false, align: 'center' as const }
+  { title: '操作', key: 'actions', width: 56, sortable: false, align: 'center' as const }
 ]
 </script>
 
