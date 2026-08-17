@@ -7,6 +7,36 @@ defineProps<{
 }>()
 
 const open = defineModel<boolean>({ required: true })
+
+const copiedField = ref<string | null>(null)
+let copiedTimer: ReturnType<typeof setTimeout> | undefined
+
+function resetCopiedState() {
+  clearTimeout(copiedTimer)
+  copiedTimer = undefined
+  copiedField.value = null
+}
+
+async function copyToClipboard(text: string, field: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    copiedField.value = field
+    clearTimeout(copiedTimer)
+    copiedTimer = setTimeout(() => {
+      copiedField.value = null
+    }, 1500)
+  } catch {
+    // クリップボードAPIが使用不可（権限拒否など）の場合は何もしない
+  }
+}
+
+watch(open, (isOpen) => {
+  if (!isOpen) resetCopiedState()
+})
+
+onUnmounted(() => {
+  clearTimeout(copiedTimer)
+})
 </script>
 
 <template>
@@ -21,7 +51,21 @@ const open = defineModel<boolean>({ required: true })
       <v-divider />
       <v-card-text>
         <v-list density="compact">
-          <v-list-item title="タイトル" :subtitle="visit.title" />
+          <v-list-item title="タイトル">
+            <template #subtitle>
+              <span class="subtitle-wrap">{{ visit.title }}</span>
+            </template>
+            <template #append>
+              <v-btn
+                :icon="copiedField === 'title' ? 'mdi-check' : 'mdi-content-copy'"
+                variant="text"
+                size="small"
+                title="コピー"
+                aria-label="コピー"
+                @click="copyToClipboard(visit.title, 'title')"
+              />
+            </template>
+          </v-list-item>
           <v-list-item title="URL">
             <template #subtitle>
               <a
@@ -29,11 +73,21 @@ const open = defineModel<boolean>({ required: true })
                 :href="visit.url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-primary"
+                class="text-primary subtitle-wrap"
               >
                 {{ visit.url }}
               </a>
-              <span v-else>{{ visit.url }}</span>
+              <span v-else class="subtitle-wrap">{{ visit.url }}</span>
+            </template>
+            <template #append>
+              <v-btn
+                :icon="copiedField === 'url' ? 'mdi-check' : 'mdi-content-copy'"
+                variant="text"
+                size="small"
+                title="コピー"
+                aria-label="コピー"
+                @click="copyToClipboard(visit.url, 'url')"
+              />
             </template>
           </v-list-item>
           <v-list-item title="ドメイン" :subtitle="visit.domain" />
@@ -97,5 +151,20 @@ const open = defineModel<boolean>({ required: true })
 <style scoped>
 .detail-dialog-card {
   overscroll-behavior: contain;
+}
+
+.subtitle-wrap {
+  display: block;
+  width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+:deep(.v-list-item-subtitle) {
+  -webkit-line-clamp: unset;
+  display: block;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
 }
 </style>
