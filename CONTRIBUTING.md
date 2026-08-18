@@ -65,7 +65,7 @@
 
 このプロジェクトはデザインガイドライン（スペーシングスケール・タイポグラフィ等）をVuetify側の既定値にそのまま委ね、独自にカスタマイズしない運用とします。そのため `<style>` 側でVuetifyのスペーシングスケール等に相当する値を書くときは、`@use 'vuetify/lib/styles/settings/_variables' as vuetify;` で `vuetify.$spacers` をSass経由で参照するのではなく、**対応するユーティリティクラス名をコメントで添えた固定値**を書きます（例: `margin-bottom: 24px; // mb-6`、`text-align: left; // text-left`）。Sassの `map.get()` は結局ビルド時に同じ固定値へ展開されるだけで実行時の可変性は無く、追加の `@use` を書くコストに見合わないためです（将来Vuetify側のスペーシングスケール自体をカスタマイズする方針に転換した場合は、この判断を見直してください）。色に関しては `rgb(var(--v-theme-primary))` のようなCSSカスタムプロパティを直接使うことでテーマ（ライト/ダーク）追従を保ちます。
 
-`lang="scss"` を使うため `sass-embedded` を devDependencies に追加済みです。既存の `<style scoped>`（プレーンCSS）のコンポーネントは、ネストや変数が必要になったタイミングで `lang="scss"` に切り替えれば十分で、一括変換の必要はありません。
+`lang="scss"` を使うため `sass` を devDependencies に追加済みです（ネスト記法のみの利用であればネイティブバイナリを含む `sass-embedded` は過剰なため、Dart Sassの素のnpmパッケージである `sass` を採用）。既存の `<style scoped>`（プレーンCSS）のコンポーネントは、ネストや変数が必要になったタイミングで `lang="scss"` に切り替えれば十分で、一括変換の必要はありません。
 
 比較検討した他の選択肢：
 

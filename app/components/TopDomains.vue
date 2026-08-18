@@ -10,7 +10,9 @@ defineProps<{
     <v-card-text>
       <div v-for="d in topDomains" :key="d.domain" class="domain-row">
         <div class="d-flex justify-space-between text-body-2 domain-row__header">
-          <span class="text-truncate domain-row__name">{{ d.domain }}</span>
+          <div class="domain-row__name">
+            <TruncatedCell :text="d.domain" />
+          </div>
           <span class="text-medium-emphasis">{{ d.count }}</span>
         </div>
         <v-progress-linear :model-value="d.ratio" color="primary" height="6" rounded />
