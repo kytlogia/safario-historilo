@@ -3,7 +3,13 @@ defineProps<{ text: string }>()
 </script>
 
 <template>
-  <div class="text-truncate" style="max-width: 100%" :title="text">
+  <div class="text-truncate truncated-cell" :title="text">
     {{ text }}
   </div>
 </template>
+
+<style scoped>
+.truncated-cell {
+  max-width: 100%;
+}
+</style>

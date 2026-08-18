@@ -73,6 +73,7 @@ const headers = [
 </template>
 
 <style scoped>
+/* tr/tableはVuetifyが内部でレンダリングするため、独自クラスを付与できず要素セレクタで指定する */
 :deep(tr) {
   cursor: pointer;
 }
