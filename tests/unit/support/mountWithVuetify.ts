@@ -5,7 +5,7 @@ import { mergeDeep } from 'vuetify/lib/util/helpers.js'
 // Mirrors Vuetify's own internal test helper
 // (vuetify/packages/vuetify/test/index.ts) so components mount with the
 // stubs/plugins Vuetify itself relies on when testing its components.
-export function mountWithVuetify<T extends Parameters<typeof mount>[0]>(
+export function mountWithVuetify<T>(
   component: T,
   options?: ComponentMountingOptions<T>,
   vuetifyOptions?: VuetifyOptions
@@ -21,7 +21,8 @@ export function mountWithVuetify<T extends Parameters<typeof mount>[0]>(
           plugins: [vuetify]
         }
       },
-      options
+      options,
+      (a, b) => a.concat(b)
     )
   )
 }
