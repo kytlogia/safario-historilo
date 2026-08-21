@@ -39,23 +39,18 @@ const { domainOptions, filteredVisits, topDomains, dateRangeLabel } = useHistory
 const uniqueUrlCount = computed(() => new Set(visits.value.map((v) => v.url)).size)
 const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domain)).size)
 
-let loadRequestId = 0
-
 async function loadFile(file: File | null | undefined) {
   if (!file || isLoading.value) return
-  const requestId = ++loadRequestId
   isLoading.value = true
   loadError.value = ''
   try {
     const result = await parseSafariHistoryFile(file)
-    if (requestId !== loadRequestId) return
     visits.value = result.visits
     fileName.value = result.fileName
   } catch (err) {
-    if (requestId !== loadRequestId) return
     loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
   } finally {
-    if (requestId === loadRequestId) isLoading.value = false
+    isLoading.value = false
   }
 }
 
@@ -82,24 +77,21 @@ async function checkServerAutoLoadAvailability() {
 
 async function loadFromServer() {
   if (isLoading.value) return
-  const requestId = ++loadRequestId
   isLoading.value = true
   loadError.value = ''
   try {
     const blob = await $fetch<Blob>('/api/local-history')
     const result = await parseSafariHistoryFile(new File([blob], 'History.db'))
-    if (requestId !== loadRequestId) return
     visits.value = result.visits
     fileName.value = result.fileName
   } catch (err) {
-    if (requestId !== loadRequestId) return
     if (err instanceof FetchError) {
       loadError.value = err.data?.message ?? 'History.db の自動読み込みに失敗しました。'
     } else {
       loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
     }
   } finally {
-    if (requestId === loadRequestId) isLoading.value = false
+    isLoading.value = false
   }
 }
 

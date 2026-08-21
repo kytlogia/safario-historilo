@@ -300,8 +300,9 @@ test.describe('Safari History Detail', () => {
     await expect(autoLoadButton).toBeDisabled()
     await expect(fileInput).toBeDisabled()
 
-    // A second click while the button is disabled must not start another request.
-    await autoLoadButton.click({ force: true }).catch(() => {})
+    // Dispatch a click event directly so the native `disabled` semantics (not
+    // Playwright's actionability checks) are what's under test.
+    await autoLoadButton.dispatchEvent('click')
 
     await expect(
       page.getByText(
