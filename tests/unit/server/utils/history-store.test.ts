@@ -1,3 +1,10 @@
+// Under Vitest's global `jsdom` environment (vitest.config.ts), Vite resolves
+// this file through its browser/client environment rather than the ssr one,
+// which does not apply vitest.config.ts's `define: { 'import.meta.dev': 'true' }`
+// — so it evaluates to `undefined` and the dev-proxy branch under test
+// (server/utils/history-store.ts's `resolveClientIp`) never triggers. Forcing
+// `node` here (this file has no DOM dependency anyway) keeps that define intact.
+// @vitest-environment node
 import { mkdtemp, rm, writeFile, chmod } from 'node:fs/promises'
 import { tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'

@@ -18,11 +18,23 @@ export default defineConfig({
   },
   test: {
     include: ['tests/unit/**/*.test.ts', 'tests/integration/**/*.test.ts'],
-    environment: 'node',
+    // Global jsdom (rather than Vitest Browser Mode, which Vuetify's own docs
+    // recommend) is a deliberate tradeoff: the component interactions this repo
+    // plans to test (text/class/emit assertions, basic clicks) are covered by
+    // jsdom + resize-observer-polyfill, real-browser-only behavior (drag & drop
+    // history.db loading) is already covered by tests/e2e/, and a real browser
+    // runner is slower and adds CI complexity. See issue #100 decision 6.
+    environment: 'jsdom',
     globals: false,
+    setupFiles: ['tests/unit/support/setup.ts'],
     testTimeout: 20000,
     // Integration tests build & boot a real Nitro server in beforeAll.
     hookTimeout: 120000,
+    server: {
+      deps: {
+        inline: ['vuetify']
+      }
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],

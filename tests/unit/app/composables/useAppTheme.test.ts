@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { createApp } from 'vue'
 import { createVuetify } from 'vuetify'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
