@@ -3,7 +3,7 @@ import {
   CORE_DATA_EPOCH_OFFSET_SECONDS,
   SAMPLE_HISTORY_DATA,
   createHistoryDatabase
-} from '../fixtures/build-history-db'
+} from '../../../fixtures/build-history-db'
 
 // useSafariHistoryParser's getSqlJs() detects the Node test environment (no
 // `window`) and points sql.js at the real wasm binary in node_modules on its own,

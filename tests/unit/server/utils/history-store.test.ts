@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile, chmod } from 'node:fs/promises'
 import { tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import * as historyStore from '../../server/utils/history-store'
+import * as historyStore from '../../../../server/utils/history-store'
 
 // Derive the event type from the module under test instead of importing 'h3'
 // directly, since h3 is only a transitive dependency here (Nitro's own copy).
