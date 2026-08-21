@@ -1,3 +1,10 @@
+// Under Vitest's global `jsdom` environment (vitest.config.ts), Vite transforms
+// this file through its browser/client environment rather than the ssr one, so
+// `import.meta.url` in tests/fixtures/build-history-db.ts resolves to a
+// non-`file:` URL and its Node-side wasm loading (fileURLToPath) throws. This
+// test has no DOM dependency itself, so force `node` to keep that a real
+// file:// URL.
+// @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import {
   CORE_DATA_EPOCH_OFFSET_SECONDS,

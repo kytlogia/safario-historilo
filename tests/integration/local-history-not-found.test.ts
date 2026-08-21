@@ -1,3 +1,9 @@
+// Under Vitest's global `jsdom` environment (vitest.config.ts), Vite transforms
+// this file through its browser/client environment rather than the ssr one, so
+// `import.meta.url` resolves to a non-`file:` URL and fileURLToPath() below
+// throws. Integration tests boot a real Nitro server and have no DOM
+// dependency, so force `node` to keep that a real file:// URL.
+// @vitest-environment node
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
