@@ -1,23 +1,13 @@
-import { fileURLToPath } from 'node:url'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   CORE_DATA_EPOCH_OFFSET_SECONDS,
   SAMPLE_HISTORY_DATA,
   createHistoryDatabase
 } from '../fixtures/build-history-db'
 
-// The app points sql.js at a public "/sql-wasm.wasm" asset for the browser build.
-// That resolution strategy is orthogonal to the parsing logic under test here, so
-// point it at the real wasm binary shipped in node_modules instead of touching
-// the app source.
-vi.mock('sql.js', async () => {
-  const actual = await vi.importActual<typeof import('sql.js')>('sql.js')
-  const wasmDir = fileURLToPath(new URL('../../node_modules/sql.js/dist/', import.meta.url))
-  return {
-    default: (config: Parameters<typeof actual.default>[0]) =>
-      actual.default({ ...config, locateFile: (file: string) => `${wasmDir}${file}` })
-  }
-})
+// useSafariHistoryParser's getSqlJs() detects the Node test environment (no
+// `window`) and points sql.js at the real wasm binary in node_modules on its own,
+// so no vi.mock('sql.js', ...) workaround is needed here anymore (see issue #119).
 
 async function fileFromDb(build: () => Promise<Awaited<ReturnType<typeof createHistoryDatabase>>>) {
   const db = await build()
