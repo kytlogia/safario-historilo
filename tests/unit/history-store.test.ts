@@ -89,6 +89,16 @@ describe('resolveHistoryDbPath', () => {
     runtimeConfig.historyDbPath = '/custom/History.db'
     expect(resolveHistoryDbPath(fakeEvent())).toBe('/custom/History.db')
   })
+
+  it('expands a leading ~/ to the home directory', () => {
+    runtimeConfig.historyDbPath = '~/Library/Safari/History.db'
+    expect(resolveHistoryDbPath(fakeEvent())).toBe(DEFAULT_DB_PATH)
+  })
+
+  it('expands a bare ~ to the home directory', () => {
+    runtimeConfig.historyDbPath = '~'
+    expect(resolveHistoryDbPath(fakeEvent())).toBe(homedir())
+  })
 })
 
 describe('checkHistoryDbAccess', () => {
