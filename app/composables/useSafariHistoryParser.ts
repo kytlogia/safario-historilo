@@ -12,22 +12,30 @@ let sqlJsPromise: ReturnType<typeof initSqlJs> | null = null
 // once that first call aborts, sql.js's module-scope singleton stays aborted for
 // every later call in the same process — even ones with a correct locateFile. So
 // this must branch on the actual runtime rather than assume a browser.
-function resolveWasmLocateFile(): (file: string) => string {
-  if (typeof window === 'undefined') {
-    const wasmDir = new URL('.', import.meta.resolve('sql.js/dist/sql-wasm.wasm')).href
-    return (file) => `${wasmDir}${file}`
+//
+// sql.js itself picks its Node-vs-browser code path via `process.versions.node`
+// (dist/sql-wasm.js), not via `window` presence, so checking `window` here would
+// disagree with sql.js under e.g. a jsdom test environment (window defined, but
+// still Node underneath) and reintroduce the same ENOENT. Match that same check.
+const isNodeRuntime = typeof globalThis.process?.versions?.node === 'string'
+
+async function resolveWasmLocateFile(): Promise<(file: string) => string> {
+  let prefix = '/'
+  if (isNodeRuntime) {
+    const { fileURLToPath } = await import('node:url')
+    prefix = fileURLToPath(new URL('.', import.meta.resolve('sql.js/dist/sql-wasm.wasm')))
   }
-  return (file) => `/${file}`
+  return (file) => `${prefix}${file}`
 }
 
 function getSqlJs() {
   if (!sqlJsPromise) {
-    sqlJsPromise = initSqlJs({
-      locateFile: resolveWasmLocateFile()
-    }).catch((err) => {
-      sqlJsPromise = null
-      throw err
-    })
+    sqlJsPromise = resolveWasmLocateFile()
+      .then((locateFile) => initSqlJs({ locateFile }))
+      .catch((err) => {
+        sqlJsPromise = null
+        throw err
+      })
   }
   return sqlJsPromise
 }
