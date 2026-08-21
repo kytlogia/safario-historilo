@@ -11,8 +11,20 @@ const LOCALHOST_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1'])
 export class HistoryDbNotFoundError extends Error {}
 export class HistoryDbNotReadableError extends Error {}
 
+/**
+ * Node's filesystem APIs don't expand `~` to the home directory the way a
+ * shell does, so a configured path of `~/Library/Safari/History.db` would
+ * otherwise be looked up literally under a directory named `~`.
+ */
+function expandTilde(path: string): string {
+  if (path === '~') return homedir()
+  if (path.startsWith('~/')) return join(homedir(), path.slice(2))
+  return path
+}
+
 export function resolveHistoryDbPath(event: H3Event): string {
-  return useRuntimeConfig(event).historyDbPath || DEFAULT_DB_PATH
+  const configuredPath = useRuntimeConfig(event).historyDbPath
+  return configuredPath ? expandTilde(configuredPath) : DEFAULT_DB_PATH
 }
 
 /**
