@@ -257,4 +257,58 @@ test.describe('Safari History Detail', () => {
     ).not.toBeVisible()
     await expect(page.locator('input[type="file"]')).toBeVisible()
   })
+
+  test('disables the load controls while an auto-load request is in flight, preventing a duplicate load', async ({
+    page
+  }) => {
+    await page.route('**/api/local-history/status', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          available: true,
+          supported: true,
+          present: true,
+          readable: true,
+          path: '/Users/example/Library/Safari/History.db'
+        })
+      })
+    )
+
+    let requestCount = 0
+    await page.route('**/api/local-history', async (route) => {
+      requestCount += 1
+      // Hold the response open long enough to observe the loading state and
+      // to give a would-be duplicate click a window to fire.
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/octet-stream',
+        body: Buffer.from(await createSampleHistoryDatabaseBytes())
+      })
+    })
+
+    await page.goto('/')
+
+    const autoLoadButton = page.getByRole('button', {
+      name: 'この Mac の History.db を自動で読み込む'
+    })
+    const fileInput = page.locator('input[type="file"]')
+
+    await autoLoadButton.click()
+
+    await expect(autoLoadButton).toBeDisabled()
+    await expect(fileInput).toBeDisabled()
+
+    // A second click while the button is disabled must not start another request.
+    await autoLoadButton.click({ force: true }).catch(() => {})
+
+    await expect(
+      page.getByText(
+        `${SAMPLE_HISTORY_DATA.visits.length} / ${SAMPLE_HISTORY_DATA.visits.length} 件を表示`
+      )
+    ).toBeVisible()
+
+    expect(requestCount).toBe(1)
+  })
 })
