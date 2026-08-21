@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   // server/utils/history-store.ts checks `import.meta.dev` (a Nuxt/Vite build-time
   // macro) to gate its nuxt-dev-proxy fallback. Force it on so that branch is
-  // exercisable from tests/unit/history-store.test.ts; the flag is opt-in via
+  // exercisable from tests/unit/server/utils/history-store.test.ts; the flag is opt-in via
   // NUXT_HISTORY_DB_TRUST_DEV_PROXY regardless, and Nuxt's own production build
   // (not this config) is what guarantees it compiles to `false` for real deploys.
   define: {
