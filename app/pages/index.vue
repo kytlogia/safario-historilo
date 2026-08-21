@@ -40,7 +40,7 @@ const uniqueUrlCount = computed(() => new Set(visits.value.map((v) => v.url)).si
 const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domain)).size)
 
 async function loadFile(file: File | null | undefined) {
-  if (!file) return
+  if (!file || isLoading.value) return
   isLoading.value = true
   loadError.value = ''
   try {
@@ -76,6 +76,7 @@ async function checkServerAutoLoadAvailability() {
 }
 
 async function loadFromServer() {
+  if (isLoading.value) return
   isLoading.value = true
   loadError.value = ''
   try {

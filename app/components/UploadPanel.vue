@@ -63,6 +63,7 @@ function onDragLeave(event: DragEvent) {
             block
             class="mb-1"
             :loading="isLoading"
+            :disabled="isLoading"
             @click="emit('load-from-server')"
           >
             この Mac の History.db を自動で読み込む
@@ -108,6 +109,7 @@ function onDragLeave(event: DragEvent) {
           density="comfortable"
           hide-details
           :loading="isLoading"
+          :disabled="isLoading"
           @update:model-value="onFileInputChange"
         />
 
