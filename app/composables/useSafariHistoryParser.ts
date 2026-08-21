@@ -6,10 +6,24 @@ const CORE_DATA_EPOCH_OFFSET_SECONDS = 978307200
 
 let sqlJsPromise: ReturnType<typeof initSqlJs> | null = null
 
+// sql.js (Emscripten) hands whatever locateFile() returns straight to
+// fs.readFileSync() when running under Node. A path that only makes sense for the
+// browser (root-relative "/sql-wasm.wasm") resolves to nothing on disk there, and
+// once that first call aborts, sql.js's module-scope singleton stays aborted for
+// every later call in the same process — even ones with a correct locateFile. So
+// this must branch on the actual runtime rather than assume a browser.
+function resolveWasmLocateFile(): (file: string) => string {
+  if (typeof window === 'undefined') {
+    const wasmDir = new URL('.', import.meta.resolve('sql.js/dist/sql-wasm.wasm')).href
+    return (file) => `${wasmDir}${file}`
+  }
+  return (file) => `/${file}`
+}
+
 function getSqlJs() {
   if (!sqlJsPromise) {
     sqlJsPromise = initSqlJs({
-      locateFile: (file) => `/${file}`
+      locateFile: resolveWasmLocateFile()
     }).catch((err) => {
       sqlJsPromise = null
       throw err
