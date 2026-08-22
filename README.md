@@ -32,6 +32,15 @@ Safariのブラウズ履歴データベース（`History.db`）を読み込み�
 - **セキュリティ**: `/api/local-history` 系のAPIは既定でローカルホスト（`127.0.0.1` / `::1`）かつ同一オリジンからのリクエストのみ許可されます。IPだけでなく `Origin` ヘッダーも検証しているため、同じブラウザの別タブで開いた他のWebページのJavaScriptから `fetch()` された場合でも拒否されます（IPチェックのみだと127.0.0.1判定を通過してしまうため）。Nitroサーバーを `0.0.0.0` などLAN/WAN向けにバインドして起動した場合でも、他マシンからはHistory.dbの内容はおろか存在確認すら行えません。意図的に許可する場合のみ `NUXT_HISTORY_DB_ALLOW_REMOTE=true` を設定してください（自己責任・非推奨）。
 - **`pnpm dev` で試す場合**: `nuxt dev` は内部プロキシ経由でリクエストを処理するため、上記のローカルホスト判定に使う実ソケットのIPが取得できません。既定では安全側に倒して自動読み込みを無効化するので、`pnpm dev` だけではボタンは表示されません。ローカルの開発サーバーであると分かっている場合に限り、`NUXT_HISTORY_DB_TRUST_DEV_PROXY=true pnpm dev` のように環境変数を設定すると有効になります（本番ビルドではこの変数は無視されます。また `nuxt dev --host` などでLAN/コンテナに公開している場合は、他マシンからのなりすましを防ぐため設定しないでください）。
 
+#### Safariの「プロファイル」機能への対応
+
+Safari 17+ の「プロファイル」機能（用途ごとに履歴/Cookie/拡張機能を分離する機能）で作成したプロファイルも自動読み込みの対象です。
+
+- 各プロファイルの `History.db` は `~/Library/Containers/com.apple.Safari/Data/Library/Safari/Profiles/<UUID>/History.db` に保存されています。このアプリはこのディレクトリをスキャンし、`History.db` が存在するプロファイルを自動で列挙します。
+- プロファイル名は `~/Library/Containers/com.apple.Safari/Data/Library/Safari/SafariTabs.db` の `bookmarks` テーブル（プロファイルのタブバーのルートを表す行）から取得します。これはSafariの非公開の内部実装であり、macOS/Safariのバージョンによって変わる可能性があります。名前の取得に失敗した場合はプロファイルのUUIDに基づくラベル（例: `プロファイル (xxxxxxxx)`）にフォールバックします。
+- 画面上では、2つ以上のプロファイルが検出された場合のみ「読み込むプロファイル」の選択欄が表示されます（プロファイル機能を使っていない場合は従来通り既定の `~/Library/Safari/History.db` のみが対象になり、UIに変化はありません）。
+- `NUXT_HISTORY_DB_PATH` はプロファイル未指定（既定プロファイル）の場合のみ有効です。特定のプロファイルを選択した場合は、常に上記のコンテナ内パスが使用されます。
+
 ### 2. ドラッグ&ドロップ / ファイル選択
 
 `pnpm generate` で生成した静的ホスティング環境など、Nitroサーバーが介在しない場合は自動読み込みボタンは表示されず、従来通り手動での読み込みになります。
@@ -130,6 +139,7 @@ CI環境で使う場合は `--ci` フラグ付きでセットアップします�
 - SafariのSQLiteスキーマ（`history_items` / `history_visits`）を `hv.history_item = hi.id` で結合して1訪問=1行として取得しています。
 - `visit_time` はCore Dataのタイムスタンプ（2001-01-01 UTCからの秒数）のため、`+ 978307200` 秒したうえで `Date` に変換しています。
 - 自動読み込み関連のサーバーコードは `server/utils/history-store.ts`（`History.db`のパス解決・読み取り権限判定・`node:sqlite`のBackup APIによるホットバックアップ・ローカル/同一オリジン判定）と `server/api/local-history/`（`status.get.ts` で利用可否判定、`index.get.ts` でバイト列を返却）にあります。フロントエンドは `GET /api/local-history/status` で利用可否を判定し、利用可能な場合のみ `GET /api/local-history` からバイト列を取得して既存の `parseSafariHistoryFile`（ドラッグ&ドロップと共通のsql.jsパーサー）に渡します。
+- プロファイル対応は `server/utils/safari-profiles.ts`（`Profiles/` ディレクトリのスキャンと `SafariTabs.db` からのプロファイル名解決）と `server/api/local-history/profiles.get.ts` にあります。`status.get.ts` / `index.get.ts` はクエリパラメータ `?profileId=<UUID>` を受け取り、`resolveHistoryDbPath()` に渡すことで対象のプロファイルを切り替えます（未指定または `default` は従来通り既定プロファイル）。
 
 ## 開発に参加する
 

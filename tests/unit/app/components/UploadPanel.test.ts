@@ -108,4 +108,48 @@ describe('UploadPanel', () => {
     expect(wrapper.emitted('file-selected')).toEqual([[file]])
     expect(dropZone.classes()).not.toContain('drop-zone--active')
   })
+
+  describe('profile picker', () => {
+    const profiles = [
+      { id: 'default', name: 'デフォルト', dbPath: '/x/History.db' },
+      {
+        id: '11111111-1111-1111-1111-111111111111',
+        name: 'プロファイルA',
+        dbPath: '/x/profile-a/History.db'
+      }
+    ]
+
+    it('hides the profile picker when only the default profile exists', () => {
+      const wrapper = mountPanel({ serverAutoLoadAvailable: true, serverDbPath: '/x' })
+
+      expect(wrapper.find('[data-testid="profile-select"]').exists()).toBe(false)
+    })
+
+    it('shows the profile picker when more than one profile is available', () => {
+      const wrapper = mountPanel({
+        serverAutoLoadAvailable: true,
+        serverDbPath: '/x',
+        serverProfiles: profiles
+      })
+
+      expect(wrapper.find('[data-testid="profile-select"]').exists()).toBe(true)
+    })
+
+    it('emits update:selectedProfileId when a different profile is chosen', async () => {
+      const wrapper = mountPanel({
+        serverAutoLoadAvailable: true,
+        serverDbPath: '/x',
+        serverProfiles: profiles,
+        selectedProfileId: 'default'
+      })
+
+      await wrapper
+        .findComponent({ name: 'VSelect' })
+        .vm.$emit('update:modelValue', '11111111-1111-1111-1111-111111111111')
+
+      expect(wrapper.emitted('update:selectedProfileId')).toEqual([
+        ['11111111-1111-1111-1111-111111111111']
+      ])
+    })
+  })
 })

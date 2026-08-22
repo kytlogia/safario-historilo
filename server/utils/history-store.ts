@@ -3,8 +3,40 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'
 import type { H3Event } from 'h3'
+import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 
 export const DEFAULT_DB_PATH = join(homedir(), 'Library/Safari/History.db')
+
+/**
+ * Safari 17+'s "profile" feature (separate profiles per use case) keeps each profile's
+ * browsing data in its own sandboxed container directory, isolated from the
+ * unnamed default profile at DEFAULT_DB_PATH.
+ */
+export const PROFILES_DIR = join(
+  homedir(),
+  'Library/Containers/com.apple.Safari/Data/Library/Safari/Profiles'
+)
+
+const PROFILE_ID_PATTERN =
+  /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/
+
+/**
+ * A profile id ultimately becomes a path segment (see profileHistoryDbPath
+ * below), and it can arrive from an untrusted query string
+ * (`?profileId=...`). Restricting it to Safari's own UUID shape up front
+ * blocks path traversal (`../../etc/passwd`) rather than relying on `join`'s
+ * behavior to save us.
+ */
+export function isValidProfileId(id: string): boolean {
+  return PROFILE_ID_PATTERN.test(id)
+}
+
+export function profileHistoryDbPath(
+  profileId: string,
+  profilesDir: string = PROFILES_DIR
+): string {
+  return join(profilesDir, profileId, 'History.db')
+}
 
 const LOCALHOST_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1'])
 
@@ -22,7 +54,23 @@ function expandTilde(path: string): string {
   return path
 }
 
-export function resolveHistoryDbPath(event: H3Event): string {
+/**
+ * `profileId` selects one of Safari's named profiles (its container UUID)
+ * instead of the default, unnamed profile. It's omitted or DEFAULT_PROFILE_ID
+ * for the classic single-profile setup, which keeps the existing
+ * `NUXT_HISTORY_DB_PATH` override behaving exactly as before.
+ */
+export function resolveHistoryDbPath(event: H3Event, profileId?: string): string {
+  if (profileId && profileId !== DEFAULT_PROFILE_ID) {
+    if (!isValidProfileId(profileId)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Bad Request',
+        message: '不正なプロファイルIDです。'
+      })
+    }
+    return profileHistoryDbPath(profileId)
+  }
   const configuredPath = useRuntimeConfig(event).historyDbPath
   return configuredPath ? expandTilde(configuredPath) : DEFAULT_DB_PATH
 }
@@ -34,8 +82,11 @@ export function resolveHistoryDbPath(event: H3Event): string {
  * up front lets the UI explain *why* auto-load isn't available instead of
  * surfacing a raw filesystem error only after the user clicks the button.
  */
-export function checkHistoryDbAccess(event: H3Event): { present: boolean; readable: boolean } {
-  const dbPath = resolveHistoryDbPath(event)
+export function checkHistoryDbAccess(
+  event: H3Event,
+  profileId?: string
+): { present: boolean; readable: boolean } {
+  const dbPath = resolveHistoryDbPath(event, profileId)
   if (!existsSync(dbPath)) {
     return { present: false, readable: false }
   }
@@ -47,7 +98,7 @@ export function checkHistoryDbAccess(event: H3Event): { present: boolean; readab
   }
 }
 
-async function loadSqliteBindings() {
+export async function loadSqliteBindings() {
   try {
     const sqliteModule = await import('node:sqlite')
     if (
@@ -156,10 +207,11 @@ export function assertLocalRequest(event: H3Event) {
 }
 
 export async function readLocalHistoryDb(
-  event: H3Event
+  event: H3Event,
+  profileId?: string
 ): Promise<{ buffer: Buffer; fileName: string }> {
-  const dbPath = resolveHistoryDbPath(event)
-  const { present, readable } = checkHistoryDbAccess(event)
+  const dbPath = resolveHistoryDbPath(event, profileId)
+  const { present, readable } = checkHistoryDbAccess(event, profileId)
   if (!present) {
     throw new HistoryDbNotFoundError(`History.db が見つかりませんでした: ${dbPath}`)
   }
