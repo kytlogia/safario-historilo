@@ -99,7 +99,7 @@ stylelintなど機械的なチェックの導入は本issueでは見送り、必
   - 例: [`tests/integration/local-history-available.test.ts`](tests/integration/local-history-available.test.ts) など。
 - **e2e**（`tests/e2e/`）：Playwrightで実ブラウザから操作し、結合された一連のユーザーフロー（UI操作〜表示結果）を検証する。
 
-いずれもVitestの `test`（`unit`・`integration` を含む）／`test:e2e`（`e2e`）で実行されます（詳細は [`vitest.config.ts`](vitest.config.ts) と [`playwright.config.ts`](playwright.config.ts) を参照）。
+`unit`・`integration` はVitestの `npm run test`（[`vitest.config.ts`](vitest.config.ts) の `include` 参照）、`e2e` はPlaywrightの `npm run test:e2e`（[`playwright.config.ts`](playwright.config.ts) 参照）でそれぞれ実行されます。
 
 ## Dependabotが作成するPRの運用
 
