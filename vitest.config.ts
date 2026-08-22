@@ -52,7 +52,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['app/composables/**', 'app/utils/**', 'server/utils/**'],
+      // app/pages/** is intentionally excluded: it currently has no dedicated
+      // tests (app/pages/index.vue wires components/composables together
+      // rather than being tested itself), so including it would just show up
+      // as uncovered noise. Revisit once page-level tests exist (see #105).
+      include: ['app/composables/**', 'app/utils/**', 'app/components/**', 'server/utils/**'],
       exclude: ['app/composables/**/*.d.ts']
     }
   }
