@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import TruncatedCell from './TruncatedCell.vue'
+
 defineProps<{
   topDomains: { domain: string; count: number; ratio: number }[]
 }>()
