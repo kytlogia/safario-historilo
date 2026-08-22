@@ -82,7 +82,7 @@ describe('UploadPanel', () => {
   // jsdom's File/DragEvent implementations are incomplete, so per the project's
   // test policy these only verify that the component's own handlers run and
   // emit file-selected — actual file-content reading stays covered by
-  // tests/e2e/history-app.spec.ts.
+  // tests/e2e/upload.spec.ts.
   it('emits file-selected with the chosen file from the file input', async () => {
     const wrapper = mountPanel()
     const file = new File(['dummy'], 'History.db')
