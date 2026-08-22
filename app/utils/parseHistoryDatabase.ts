@@ -2,7 +2,7 @@ import initSqlJs, { type Database } from 'sql.js'
 import type { HistoryVisit, ParsedHistory } from '~/types/history'
 
 // Safari (Core Data) timestamps are seconds since 2001-01-01T00:00:00Z.
-export const CORE_DATA_EPOCH_OFFSET_SECONDS = 978307200
+const CORE_DATA_EPOCH_OFFSET_SECONDS = 978307200
 
 let sqlJsPromise: ReturnType<typeof initSqlJs> | null = null
 
@@ -79,9 +79,22 @@ function getTableColumns(db: Database, table: string): Set<string> {
 }
 
 function assertHistorySchema(db: Database) {
-  const tables = db.exec(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('history_items', 'history_visits')"
-  )
+  // sql.js's `SQL.Database` constructor accepts arbitrary bytes and doesn't
+  // validate the SQLite file header — it only fails lazily on the first query
+  // that actually touches the page structure, which is this one. Map that
+  // failure to the same friendly message the constructor's own try/catch
+  // covers, instead of letting a raw sql.js error ("file is not a database")
+  // reach the user.
+  let tables: ReturnType<Database['exec']>
+  try {
+    tables = db.exec(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('history_items', 'history_visits')"
+    )
+  } catch {
+    throw new Error(
+      'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。'
+    )
+  }
   const found = new Set((tables[0]?.values ?? []).map((row) => String(row[0])))
   if (!found.has('history_items') || !found.has('history_visits')) {
     throw new Error(

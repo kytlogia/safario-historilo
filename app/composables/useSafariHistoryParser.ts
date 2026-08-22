@@ -1,4 +1,4 @@
-import type { ParsedHistory } from '~/types/history'
+import type { HistoryVisit, ParsedHistory } from '~/types/history'
 import { parseHistoryBuffer } from '~/utils/parseHistoryDatabase'
 import type {
   HistoryDatabaseWorkerRequest,
@@ -14,32 +14,73 @@ function supportsDedicatedWorker(): boolean {
   return typeof Worker !== 'undefined'
 }
 
+interface PendingRequest {
+  resolve: (visits: HistoryVisit[]) => void
+  reject: (error: Error) => void
+}
+
+// A single Worker is created lazily and reused for every parse in the session,
+// rather than one per call: sql.js/wasm initialization inside the worker is
+// itself cached by a module-scope singleton (see getSqlJs() in
+// parseHistoryDatabase.ts), and that cache only survives as long as the worker
+// does. Spinning up (and terminating) a fresh worker per call would silently
+// discard that cache and re-pay the full init cost on every file load.
+let sharedWorker: Worker | null = null
+let nextRequestId = 0
+const pendingRequests = new Map<number, PendingRequest>()
+
+function getWorker(): Worker {
+  if (sharedWorker) return sharedWorker
+
+  const worker = new Worker(new URL('./historyDatabase.worker.ts', import.meta.url), {
+    type: 'module'
+  })
+
+  worker.onmessage = (event: MessageEvent<HistoryDatabaseWorkerResponse>) => {
+    const data = event.data
+    const pending = pendingRequests.get(data.requestId)
+    if (!pending) return
+    pendingRequests.delete(data.requestId)
+
+    if (data.ok) {
+      pending.resolve(data.visits)
+    } else {
+      pending.reject(new Error(data.message))
+    }
+  }
+
+  worker.onerror = (event) => {
+    // The worker's own module scope may now be unusable (e.g. a script/import
+    // error) — drop it and terminate rather than keep dispatching new requests
+    // to a possibly-broken instance; the next call spins up a fresh one.
+    sharedWorker = null
+    worker.terminate()
+
+    const error =
+      event.error instanceof Error
+        ? event.error
+        : new Error(event.message || 'History.dbの解析中にエラーが発生しました。')
+    for (const pending of pendingRequests.values()) {
+      pending.reject(error)
+    }
+    pendingRequests.clear()
+  }
+
+  sharedWorker = worker
+  return worker
+}
+
 function parseViaWorker(buffer: ArrayBuffer, fileName: string): Promise<ParsedHistory> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL('./historyDatabase.worker.ts', import.meta.url), {
-      type: 'module'
+    const worker = getWorker()
+    const requestId = nextRequestId++
+
+    pendingRequests.set(requestId, {
+      resolve: (visits) => resolve({ visits, fileName }),
+      reject
     })
 
-    worker.onmessage = (event: MessageEvent<HistoryDatabaseWorkerResponse>) => {
-      worker.terminate()
-      const data = event.data
-      if (data.ok) {
-        resolve({ visits: data.visits, fileName: data.fileName })
-      } else {
-        reject(new Error(data.message))
-      }
-    }
-
-    worker.onerror = (event) => {
-      worker.terminate()
-      reject(
-        event.error instanceof Error
-          ? event.error
-          : new Error(event.message || 'History.dbの解析中にエラーが発生しました。')
-      )
-    }
-
-    const request: HistoryDatabaseWorkerRequest = { buffer, fileName }
+    const request: HistoryDatabaseWorkerRequest = { requestId, buffer, fileName }
     worker.postMessage(request, [buffer])
   })
 }
