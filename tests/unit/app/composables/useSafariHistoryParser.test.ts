@@ -12,9 +12,14 @@ import {
   createHistoryDatabase
 } from '../../../fixtures/build-history-db'
 
-// useSafariHistoryParser's getSqlJs() detects the Node test environment (no
+// parseHistoryDatabase's getSqlJs() detects the Node test environment (no
 // `window`) and points sql.js at the real wasm binary in node_modules on its own,
 // so no vi.mock('sql.js', ...) workaround is needed here anymore (see issue #119).
+//
+// This test environment has no `Worker` global either, so parseSafariHistoryFile
+// runs parseHistoryBuffer() directly on the calling thread instead of offloading
+// to historyDatabase.worker.ts (see issue #83) — the worker-dispatch branch itself
+// is covered separately in useSafariHistoryParser.worker.test.ts.
 
 async function fileFromDb(build: () => Promise<Awaited<ReturnType<typeof createHistoryDatabase>>>) {
   const db = await build()

@@ -49,6 +49,15 @@ export default defineNuxtConfig({
       ]
     }
   },
+  vite: {
+    // historyDatabase.worker.ts is loaded via `new Worker(url, { type: 'module' })`
+    // (see app/composables/useSafariHistoryParser.ts) — match Vite's own worker
+    // bundle format to that, otherwise it defaults to 'iife', which can't
+    // represent import.meta and silently strips it in the bundled worker.
+    worker: {
+      format: 'es'
+    }
+  },
   runtimeConfig: {
     // NUXT_HISTORY_DB_PATH — path to Safari's History.db; empty string falls
     // back to DEFAULT_DB_PATH in server/utils/history-store.ts
