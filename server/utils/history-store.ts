@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'
 import type { H3Event } from 'h3'
+import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 
 export const DEFAULT_DB_PATH = join(homedir(), 'Library/Safari/History.db')
 
@@ -30,8 +31,11 @@ export function isValidProfileId(id: string): boolean {
   return PROFILE_ID_PATTERN.test(id)
 }
 
-export function profileHistoryDbPath(profileId: string): string {
-  return join(PROFILES_DIR, profileId, 'History.db')
+export function profileHistoryDbPath(
+  profileId: string,
+  profilesDir: string = PROFILES_DIR
+): string {
+  return join(profilesDir, profileId, 'History.db')
 }
 
 const LOCALHOST_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1'])
@@ -52,12 +56,12 @@ function expandTilde(path: string): string {
 
 /**
  * `profileId` selects one of Safari's named profiles (its container UUID)
- * instead of the default, unnamed profile. It's omitted or `'default'` for
- * the classic single-profile setup, which keeps the existing
+ * instead of the default, unnamed profile. It's omitted or DEFAULT_PROFILE_ID
+ * for the classic single-profile setup, which keeps the existing
  * `NUXT_HISTORY_DB_PATH` override behaving exactly as before.
  */
 export function resolveHistoryDbPath(event: H3Event, profileId?: string): string {
-  if (profileId && profileId !== 'default') {
+  if (profileId && profileId !== DEFAULT_PROFILE_ID) {
     if (!isValidProfileId(profileId)) {
       throw createError({
         statusCode: 400,

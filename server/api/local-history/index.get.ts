@@ -26,8 +26,10 @@ export default defineEventHandler(async (event) => {
     }
     // resolveHistoryDbPath() throws its own H3 error (e.g. 400 for a
     // malformed profileId) — pass it through as-is instead of masking it
-    // with a generic 500 below.
-    if (err && typeof err === 'object' && 'statusCode' in err) {
+    // with a generic 500 below. isError() checks it's genuinely an H3Error
+    // rather than duck-typing on a `statusCode` property, which some
+    // unrelated error type could coincidentally have.
+    if (isError(err)) {
       throw err
     }
     throw createError({

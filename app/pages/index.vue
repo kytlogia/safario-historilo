@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { FetchError } from 'ofetch'
 import type { HistoryVisit, SafariProfile } from '~/types/history'
+import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 
 const visits = ref<HistoryVisit[]>([])
 const fileName = ref('')
@@ -13,7 +14,7 @@ const serverPermissionHint = ref(false)
 const serverStatusWarning = ref('')
 
 const serverProfiles = ref<SafariProfile[]>([])
-const selectedProfileId = ref('default')
+const selectedProfileId = ref(DEFAULT_PROFILE_ID)
 
 const search = ref('')
 const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
@@ -57,15 +58,25 @@ async function loadFile(file: File | null | undefined) {
   }
 }
 
+// Guards against out-of-order responses: switching profiles quickly fires
+// overlapping requests, and without this a slower, stale response could
+// overwrite the state after a newer one already resolved. Only the response
+// whose requestId still matches the latest dispatched request is applied.
+let statusRequestId = 0
+
 async function checkServerAutoLoadAvailability() {
+  const requestId = ++statusRequestId
+  const profileId = selectedProfileId.value
+  serverStatusWarning.value = ''
   try {
-    const body = await $fetch('/api/local-history/status', {
-      query: { profileId: selectedProfileId.value }
-    })
+    const body = await $fetch('/api/local-history/status', { query: { profileId } })
+    if (requestId !== statusRequestId) return
     serverAutoLoadAvailable.value = Boolean(body?.available)
     serverDbPath.value = typeof body?.path === 'string' ? body.path : ''
     serverPermissionHint.value = Boolean(body?.present) && !body?.readable
   } catch (err) {
+    if (requestId !== statusRequestId) return
+    serverPermissionHint.value = false
     // A same-origin same-machine request being rejected (403) means the
     // server-side localhost check itself failed, not that this deployment
     // simply lacks a Nitro server — surface that instead of silently

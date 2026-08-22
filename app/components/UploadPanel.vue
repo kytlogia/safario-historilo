@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { SafariProfile } from '~/types/history'
+import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 
 withDefaults(
   defineProps<{
@@ -15,7 +16,7 @@ withDefaults(
   }>(),
   {
     serverProfiles: () => [],
-    selectedProfileId: 'default'
+    selectedProfileId: DEFAULT_PROFILE_ID
   }
 )
 

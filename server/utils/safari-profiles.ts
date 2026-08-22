@@ -5,8 +5,10 @@ import {
   DEFAULT_DB_PATH,
   PROFILES_DIR,
   isValidProfileId,
-  loadSqliteBindings
+  loadSqliteBindings,
+  profileHistoryDbPath
 } from './history-store'
+import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 
 export interface SafariProfile {
   id: string
@@ -35,7 +37,7 @@ interface ListSafariProfilesOptions {
   safariTabsDbPath?: string
   /**
    * The default profile's dbPath, as reported by this listing. Callers that
-   * have an H3 event should pass `resolveHistoryDbPath(event, 'default')`
+   * have an H3 event should pass `resolveHistoryDbPath(event, DEFAULT_PROFILE_ID)`
    * here so this reflects a NUXT_HISTORY_DB_PATH override; otherwise it
    * falls back to the plain DEFAULT_DB_PATH.
    */
@@ -85,7 +87,11 @@ export async function listSafariProfiles(
 
   const names = await readProfileNames(safariTabsDbPath)
   const profiles: SafariProfile[] = [
-    { id: 'default', name: names.get('DefaultProfile') || 'デフォルト', dbPath: defaultDbPath }
+    {
+      id: DEFAULT_PROFILE_ID,
+      name: names.get('DefaultProfile') || 'デフォルト',
+      dbPath: defaultDbPath
+    }
   ]
 
   if (!existsSync(profilesDir)) return profiles
@@ -104,7 +110,7 @@ export async function listSafariProfiles(
   }
 
   for (const profileId of entries) {
-    const dbPath = join(profilesDir, profileId, 'History.db')
+    const dbPath = profileHistoryDbPath(profileId, profilesDir)
     if (!existsSync(dbPath)) continue
     profiles.push({
       id: profileId,
