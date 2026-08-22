@@ -29,3 +29,9 @@ export interface ParsedHistory {
   visits: HistoryVisit[]
   fileName: string
 }
+
+export interface SafariProfile {
+  id: string
+  name: string
+  dbPath: string
+}

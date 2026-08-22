@@ -77,11 +77,14 @@ function fakeEvent(): Event {
 
 const {
   DEFAULT_DB_PATH,
+  PROFILES_DIR,
   resolveHistoryDbPath,
   checkHistoryDbAccess,
   assertLocalRequest,
   readLocalHistoryDb,
   isNodeSqliteSupported,
+  isValidProfileId,
+  profileHistoryDbPath,
   HistoryDbNotFoundError,
   HistoryDbNotReadableError
 } = historyStore
@@ -105,6 +108,48 @@ describe('resolveHistoryDbPath', () => {
   it('expands a bare ~ to the home directory', () => {
     runtimeConfig.historyDbPath = '~'
     expect(resolveHistoryDbPath(fakeEvent())).toBe(homedir())
+  })
+
+  it('treats profileId "default" the same as no profileId (still honors the env override)', () => {
+    runtimeConfig.historyDbPath = '/custom/History.db'
+    expect(resolveHistoryDbPath(fakeEvent(), 'default')).toBe('/custom/History.db')
+  })
+
+  it('resolves a valid profile UUID to its container path, ignoring the env override', () => {
+    runtimeConfig.historyDbPath = '/custom/History.db'
+    const profileId = '11111111-1111-1111-1111-111111111111'
+    expect(resolveHistoryDbPath(fakeEvent(), profileId)).toBe(
+      join(PROFILES_DIR, profileId, 'History.db')
+    )
+  })
+
+  it('rejects a malformed profileId with a 400 error instead of building a path from it', () => {
+    try {
+      resolveHistoryDbPath(fakeEvent(), '../../etc/passwd')
+      expect.unreachable('expected resolveHistoryDbPath to throw')
+    } catch (err) {
+      const e = err as FakeH3Error
+      expect(e.statusCode).toBe(400)
+    }
+  })
+})
+
+describe('isValidProfileId', () => {
+  it('accepts a well-formed UUID', () => {
+    expect(isValidProfileId('11111111-1111-1111-1111-111111111111')).toBe(true)
+  })
+
+  it('rejects non-UUID strings, including path traversal attempts', () => {
+    expect(isValidProfileId('default')).toBe(false)
+    expect(isValidProfileId('../../etc/passwd')).toBe(false)
+    expect(isValidProfileId('')).toBe(false)
+  })
+})
+
+describe('profileHistoryDbPath', () => {
+  it('joins the profile id onto PROFILES_DIR', () => {
+    const profileId = '11111111-1111-1111-1111-111111111111'
+    expect(profileHistoryDbPath(profileId)).toBe(join(PROFILES_DIR, profileId, 'History.db'))
   })
 })
 

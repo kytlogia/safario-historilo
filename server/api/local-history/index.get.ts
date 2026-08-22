@@ -1,8 +1,11 @@
 export default defineEventHandler(async (event) => {
   assertLocalRequest(event)
 
+  const query = getQuery(event)
+  const profileId = typeof query.profileId === 'string' ? query.profileId : undefined
+
   try {
-    const { buffer, fileName } = await readLocalHistoryDb(event)
+    const { buffer, fileName } = await readLocalHistoryDb(event, profileId)
     setHeader(event, 'content-type', 'application/octet-stream')
     setHeader(event, 'content-disposition', `attachment; filename="${fileName}"`)
     return buffer
@@ -20,6 +23,12 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'Forbidden',
         message: err.message
       })
+    }
+    // resolveHistoryDbPath() throws its own H3 error (e.g. 400 for a
+    // malformed profileId) — pass it through as-is instead of masking it
+    // with a generic 500 below.
+    if (err && typeof err === 'object' && 'statusCode' in err) {
+      throw err
     }
     throw createError({
       statusCode: 500,

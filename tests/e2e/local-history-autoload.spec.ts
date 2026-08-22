@@ -9,7 +9,7 @@ test.describe('ローカル履歴自動読込', () => {
   test('shows the auto-load button when the server reports History.db is available', async ({
     page
   }) => {
-    await page.route('**/api/local-history/status', (route) =>
+    await page.route('**/api/local-history/status*', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -32,7 +32,7 @@ test.describe('ローカル履歴自動読込', () => {
   test('hides the auto-load button when the server reports History.db is unavailable', async ({
     page
   }) => {
-    await page.route('**/api/local-history/status', (route) =>
+    await page.route('**/api/local-history/status*', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -56,7 +56,7 @@ test.describe('ローカル履歴自動読込', () => {
   test('disables the load controls while an auto-load request is in flight, preventing a duplicate load', async ({
     page
   }) => {
-    await page.route('**/api/local-history/status', (route) =>
+    await page.route('**/api/local-history/status*', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -71,7 +71,7 @@ test.describe('ローカル履歴自動読込', () => {
     )
 
     let requestCount = 0
-    await page.route('**/api/local-history', async (route) => {
+    await page.route('**/api/local-history*', async (route) => {
       requestCount += 1
       // Hold the response open long enough to observe the loading state and
       // to give a would-be duplicate click a window to fire.

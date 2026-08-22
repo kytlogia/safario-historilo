@@ -1,18 +1,28 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { SafariProfile } from '~/types/history'
 
-defineProps<{
-  isLoading: boolean
-  loadError: string
-  serverAutoLoadAvailable: boolean
-  serverDbPath: string
-  serverPermissionHint: boolean
-  serverStatusWarning: string
-}>()
+withDefaults(
+  defineProps<{
+    isLoading: boolean
+    loadError: string
+    serverAutoLoadAvailable: boolean
+    serverDbPath: string
+    serverPermissionHint: boolean
+    serverStatusWarning: string
+    serverProfiles?: SafariProfile[]
+    selectedProfileId?: string
+  }>(),
+  {
+    serverProfiles: () => [],
+    selectedProfileId: 'default'
+  }
+)
 
 const emit = defineEmits<{
   'file-selected': [file: File]
   'load-from-server': []
+  'update:selectedProfileId': [profileId: string]
 }>()
 
 const isDragging = ref(false)
@@ -56,6 +66,21 @@ function onDragLeave(event: DragEvent) {
           title="Safariの History.db をドラッグ&ドロップ"
           text="またはファイルを選択してください。解析はすべてこのブラウザ内で行われ、データは外部に送信されません。"
           class="mb-2"
+        />
+
+        <v-select
+          v-if="serverProfiles.length > 1"
+          :model-value="selectedProfileId"
+          :items="serverProfiles"
+          item-title="name"
+          item-value="id"
+          label="読み込むプロファイル"
+          variant="outlined"
+          density="comfortable"
+          hide-details
+          class="mb-4 text-left"
+          data-testid="profile-select"
+          @update:model-value="emit('update:selectedProfileId', $event)"
         />
 
         <template v-if="serverAutoLoadAvailable">
