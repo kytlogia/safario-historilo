@@ -96,7 +96,7 @@ describe('FilterBar', () => {
   it('clears domainFilter via the clear button once a domain is selected', async () => {
     const wrapper = mountFilterBar({ domainFilter: 'example.com' })
 
-    await wrapper.find('[data-testid="domain-filter"] .v-field__clearable .v-icon').trigger('click')
+    await wrapper.find('[data-testid="domain-filter-clear"]').trigger('click')
 
     expect(wrapper.emitted('update:domainFilter')).toEqual([[null]])
   })

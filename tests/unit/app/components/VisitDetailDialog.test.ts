@@ -2,6 +2,7 @@ import { DOMWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import VisitDetailDialog from '~/components/VisitDetailDialog.vue'
 import type { HistoryVisit } from '~/types/history'
+import { formatDateTime } from '~/utils/format'
 import { mountWithVuetify } from '../../support/mountWithVuetify'
 
 function makeVisit(overrides: Partial<HistoryVisit> = {}): HistoryVisit {
@@ -60,12 +61,13 @@ describe('VisitDetailDialog', () => {
   })
 
   it('renders the visit title, URL, domain and formatted visit time', async () => {
-    const { body } = await mountDialog(makeVisit())
+    const visitTime = new Date('2024-01-02T03:04:05.000Z')
+    const { body } = await mountDialog(makeVisit({ visitTime }))
 
     expect(body.text()).toContain('Example Domain')
     expect(body.text()).toContain('https://example.com/')
     expect(body.text()).toContain('example.com')
-    expect(body.text()).toContain('2024/01/02')
+    expect(body.text()).toContain(formatDateTime(visitTime))
     expect(body.text()).toContain('7')
   })
 

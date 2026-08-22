@@ -51,7 +51,11 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           density="comfortable"
           clearable
           hide-details
-        />
+        >
+          <template #clear="{ props: clearProps }">
+            <v-icon icon="$clear" data-testid="domain-filter-clear" v-bind="clearProps" />
+          </template>
+        </v-autocomplete>
       </v-col>
       <v-col cols="6" md="2">
         <v-date-input

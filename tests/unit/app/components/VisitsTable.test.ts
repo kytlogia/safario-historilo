@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import VisitsTable from '~/components/VisitsTable.vue'
 import type { HistoryVisit } from '~/types/history'
+import { formatDateTime } from '~/utils/format'
 import { mountWithVuetify } from '../../support/mountWithVuetify'
 
 function makeVisit(overrides: Partial<HistoryVisit> = {}): HistoryVisit {
@@ -40,13 +41,16 @@ function mountTable(items: HistoryVisit[]) {
 
 // v-data-table-virtual pads the body with empty spacer <tr>s (for virtual
 // scroll offsetting) that also match a bare `tbody > tr` selector — filter
-// down to the actual data rows by their content class.
+// down to the actual data rows via the data-testid button every real row renders.
 function dataRows(wrapper: ReturnType<typeof mountTable>) {
-  return wrapper.findAll('tbody > tr').filter((row) => row.classes().includes('v-data-table__tr'))
+  return wrapper
+    .findAll('tbody > tr')
+    .filter((row) => row.find('[data-testid="row-detail-button"]').exists())
 }
 
 describe('VisitsTable', () => {
   it('renders one row per visit, delegating title/url/domain to the stubbed TruncatedCell', () => {
+    const visitTime = new Date('2024-01-02T03:04:05.000Z')
     const wrapper = mountTable([
       makeVisit({
         visitId: 1,
@@ -54,7 +58,7 @@ describe('VisitsTable', () => {
         url: 'https://example.com/',
         domain: 'example.com',
         visitCount: 3,
-        visitTime: new Date('2024-01-02T03:04:05.000Z')
+        visitTime
       })
     ])
 
@@ -65,7 +69,7 @@ describe('VisitsTable', () => {
       'example.com'
     ])
     expect(wrapper.text()).toContain('3')
-    expect(wrapper.text()).toContain('2024/01/02')
+    expect(wrapper.text()).toContain(formatDateTime(visitTime))
   })
 
   it('shows a failed/redirect/synthesized chip only for visits with that flag', () => {
