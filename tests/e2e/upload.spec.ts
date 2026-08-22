@@ -1,4 +1,9 @@
-import { createSampleHistoryDatabaseBytes, expect, SAMPLE_HISTORY_DATA, test } from './support/fixtures'
+import {
+  createSampleHistoryDatabaseBytes,
+  expect,
+  SAMPLE_HISTORY_DATA,
+  test
+} from './support/fixtures'
 
 test.describe('アップロード', () => {
   test('loads a History.db via the file picker and lists every visit', async ({

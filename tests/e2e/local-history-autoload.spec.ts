@@ -1,4 +1,9 @@
-import { createSampleHistoryDatabaseBytes, expect, SAMPLE_HISTORY_DATA, test } from './support/fixtures'
+import {
+  createSampleHistoryDatabaseBytes,
+  expect,
+  SAMPLE_HISTORY_DATA,
+  test
+} from './support/fixtures'
 
 test.describe('ローカル履歴自動読込', () => {
   test('shows the auto-load button when the server reports History.db is available', async ({

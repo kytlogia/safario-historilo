@@ -3,7 +3,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test as base, expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { createSampleHistoryDatabaseBytes, SAMPLE_HISTORY_DATA } from '../../fixtures/build-history-db'
+import {
+  createSampleHistoryDatabaseBytes,
+  SAMPLE_HISTORY_DATA
+} from '../../fixtures/build-history-db'
 
 interface WorkerFixtures {
   fixturePath: string
