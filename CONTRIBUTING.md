@@ -89,6 +89,18 @@ Vue公式スタイルガイドには要素セレクタよりクラスセレク�
 
 stylelintなど機械的なチェックの導入は本issueでは見送り、必要になった時点で別issueとして検討します。
 
+## テストの配置基準
+
+`tests/` 配下は `unit` / `integration` / `e2e` の3ディレクトリに分かれています。判断基準は「実ファイルI/Oの有無」ではなく「実プロセス（サーバー・ブラウザ）を起動して越境するかどうか」です。
+
+- **unit**（`tests/unit/`）：モジュール境界内で完結するテスト。一時ディレクトリでの読み書きなど実ファイルI/Oを伴ってもよいが、外部プロセスの起動やネットワーク越しの実サーバー通信は伴わない。
+  - 例: [`tests/unit/server/utils/history-store.test.ts`](tests/unit/server/utils/history-store.test.ts) は `mkdtemp`/`writeFile`/`chmod` で実ファイルI/Oを行うが、`server/utils/history-store.ts` という単一モジュールの境界内で完結するため `unit` に置く。
+- **integration**（`tests/integration/`）：`@nuxt/test-utils/e2e` の `setup()` などで実Nitroサーバーを起動し、複数モジュールをまたいだ実際の起動・通信を検証する。
+  - 例: [`tests/integration/local-history-available.test.ts`](tests/integration/local-history-available.test.ts) など。
+- **e2e**（`tests/e2e/`）：Playwrightで実ブラウザから操作し、結合された一連のユーザーフロー（UI操作〜表示結果）を検証する。
+
+`unit`・`integration` はVitestの `npm run test`（[`vitest.config.ts`](vitest.config.ts) の `include` 参照）、`e2e` はPlaywrightの `npm run test:e2e`（[`playwright.config.ts`](playwright.config.ts) 参照）でそれぞれ実行されます。
+
 ## Dependabotが作成するPRの運用
 
 - Dependabotが作成する依存パッケージ更新PRも、他のPRと同様に常に手動でレビューしてからマージします（リポジトリ全体のAuto-merge機能は無効のままにしています）。
