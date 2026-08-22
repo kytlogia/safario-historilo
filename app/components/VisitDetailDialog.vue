@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onUnmounted, ref, watch } from 'vue'
 import { formatDateTime, isSafeUrl } from '~/utils/format'
 import type { HistoryVisit } from '~/types/history'
 
@@ -51,6 +52,7 @@ onUnmounted(() => {
           variant="text"
           size="small"
           aria-label="閉じる"
+          data-testid="detail-close-button"
           @click="open = false"
         />
       </v-card-title>
@@ -68,6 +70,7 @@ onUnmounted(() => {
                 size="small"
                 title="コピー"
                 aria-label="コピー"
+                data-testid="copy-title-button"
                 @click="copyToClipboard(visit.title, 'title')"
               />
             </template>
@@ -80,10 +83,13 @@ onUnmounted(() => {
                 target="_blank"
                 rel="noopener noreferrer"
                 class="text-primary detail-dialog__subtitle"
+                data-testid="detail-url-link"
               >
                 {{ visit.url }}
               </a>
-              <span v-else class="detail-dialog__subtitle">{{ visit.url }}</span>
+              <span v-else class="detail-dialog__subtitle" data-testid="detail-url-text">{{
+                visit.url
+              }}</span>
             </template>
             <template #append>
               <v-btn
@@ -92,6 +98,7 @@ onUnmounted(() => {
                 size="small"
                 title="コピー"
                 aria-label="コピー"
+                data-testid="copy-url-button"
                 @click="copyToClipboard(visit.url, 'url')"
               />
             </template>

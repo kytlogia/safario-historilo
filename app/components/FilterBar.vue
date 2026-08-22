@@ -31,6 +31,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
       <v-col cols="12" sm="6" md="4">
         <v-text-field
           v-model="search"
+          data-testid="search-input"
           label="タイトル・URLで検索"
           prepend-inner-icon="mdi-magnify"
           variant="outlined"
@@ -42,6 +43,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
       <v-col cols="12" sm="6" md="4">
         <v-autocomplete
           v-model="domainFilter"
+          data-testid="domain-filter"
           :items="domainOptions"
           :custom-filter="filterDomainOption"
           label="ドメインで絞り込み"
@@ -54,6 +56,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
       <v-col cols="6" md="2">
         <v-date-input
           v-model="dateFrom"
+          data-testid="date-from-input"
           label="開始日"
           variant="outlined"
           density="comfortable"
@@ -65,6 +68,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
       <v-col cols="6" md="2">
         <v-date-input
           v-model="dateTo"
+          data-testid="date-to-input"
           label="終了日"
           variant="outlined"
           density="comfortable"
@@ -76,24 +80,33 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
     </v-row>
     <v-row class="mt-1">
       <v-col cols="12" class="d-flex flex-wrap ga-2 align-center">
-        <v-checkbox v-model="onlyFailed" label="読み込み失敗のみ" density="compact" hide-details />
+        <v-checkbox
+          v-model="onlyFailed"
+          data-testid="only-failed-checkbox"
+          label="読み込み失敗のみ"
+          density="compact"
+          hide-details
+        />
         <v-checkbox
           v-model="onlyRedirects"
+          data-testid="only-redirects-checkbox"
           label="リダイレクトのみ"
           density="compact"
           hide-details
         />
         <v-checkbox
           v-model="onlySynthesized"
+          data-testid="only-synthesized-checkbox"
           label="自動生成された履歴のみ"
           density="compact"
           hide-details
         />
         <v-spacer />
-        <span class="text-body-2 text-medium-emphasis">
+        <span class="text-body-2 text-medium-emphasis" data-testid="visible-count">
           {{ filteredVisits.length.toLocaleString() }} / {{ totalCount.toLocaleString() }} 件を表示
         </span>
         <v-btn
+          data-testid="export-json-button"
           variant="text"
           size="small"
           prepend-icon="mdi-code-json"
@@ -102,6 +115,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           JSON出力
         </v-btn>
         <v-btn
+          data-testid="export-csv-button"
           variant="text"
           size="small"
           prepend-icon="mdi-file-delimited-outline"

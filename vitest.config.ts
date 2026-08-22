@@ -1,7 +1,11 @@
 import { fileURLToPath } from 'node:url'
+import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
+  // Component tests (tests/unit/app/components/) mount real .vue SFCs via
+  // @vue/test-utils, which needs the SFC compiler Nuxt otherwise wires up.
+  plugins: [vue()],
   // server/utils/history-store.ts checks `import.meta.dev` (a Nuxt/Vite build-time
   // macro) to gate its nuxt-dev-proxy fallback. Force it on so that branch is
   // exercisable from tests/unit/server/utils/history-store.test.ts; the flag is opt-in via

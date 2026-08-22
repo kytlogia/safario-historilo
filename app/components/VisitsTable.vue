@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { formatDateTime } from '~/utils/format'
 import type { HistoryVisit } from '~/types/history'
+import TruncatedCell from './TruncatedCell.vue'
 
 defineProps<{
   items: HistoryVisit[]
@@ -66,6 +67,7 @@ const headers = [
         variant="text"
         size="small"
         aria-label="詳細を見る"
+        data-testid="row-detail-button"
         @click.stop="emit('row-click', item)"
       />
     </template>

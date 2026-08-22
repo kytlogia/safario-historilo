@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 defineProps<{
   isLoading: boolean
   loadError: string
@@ -41,6 +43,7 @@ function onDragLeave(event: DragEvent) {
       <v-card
         class="drop-zone"
         :class="{ 'drop-zone--active': isDragging }"
+        data-testid="drop-zone"
         variant="outlined"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="onDragLeave"
@@ -62,6 +65,7 @@ function onDragLeave(event: DragEvent) {
             prepend-icon="mdi-database-sync-outline"
             block
             class="mb-1"
+            data-testid="load-from-server-button"
             :loading="isLoading"
             :disabled="isLoading"
             @click="emit('load-from-server')"
@@ -84,6 +88,7 @@ function onDragLeave(event: DragEvent) {
           variant="tonal"
           density="compact"
           class="drop-zone__alert drop-zone__alert--spaced"
+          data-testid="permission-hint-alert"
         >
           この Mac 上の History.db
           を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 →
@@ -98,6 +103,7 @@ function onDragLeave(event: DragEvent) {
           variant="tonal"
           density="compact"
           class="drop-zone__alert drop-zone__alert--spaced"
+          data-testid="status-warning-alert"
         >
           {{ serverStatusWarning }}
         </v-alert>
@@ -108,12 +114,19 @@ function onDragLeave(event: DragEvent) {
           variant="outlined"
           density="comfortable"
           hide-details
+          data-testid="history-file-input"
           :loading="isLoading"
           :disabled="isLoading"
           @update:model-value="onFileInputChange"
         />
 
-        <v-alert v-if="loadError" type="error" variant="tonal" class="drop-zone__alert mt-4">
+        <v-alert
+          v-if="loadError"
+          type="error"
+          variant="tonal"
+          class="drop-zone__alert mt-4"
+          data-testid="load-error-alert"
+        >
           {{ loadError }}
         </v-alert>
 
