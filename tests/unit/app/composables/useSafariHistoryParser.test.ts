@@ -12,9 +12,14 @@ import {
   createHistoryDatabase
 } from '../../../fixtures/build-history-db'
 
-// useSafariHistoryParser's getSqlJs() detects the Node test environment (no
+// parseHistoryDatabase's getSqlJs() detects the Node test environment (no
 // `window`) and points sql.js at the real wasm binary in node_modules on its own,
 // so no vi.mock('sql.js', ...) workaround is needed here anymore (see issue #119).
+//
+// This test environment has no `Worker` global either, so parseSafariHistoryFile
+// runs parseHistoryBuffer() directly on the calling thread instead of offloading
+// to historyDatabase.worker.ts (see issue #83) — the worker-dispatch branch itself
+// is covered separately in useSafariHistoryParser.worker.test.ts.
 
 async function fileFromDb(build: () => Promise<Awaited<ReturnType<typeof createHistoryDatabase>>>) {
   const db = await build()
@@ -123,15 +128,18 @@ describe('parseSafariHistoryFile', () => {
     await expect(parseSafariHistoryFile(file)).rejects.toThrow(/status_code/)
   })
 
-  it('throws when the file is not a valid SQLite database', async () => {
+  it('throws a Japanese-language error when the file is not a valid SQLite database', async () => {
     const { parseSafariHistoryFile } = await import('~/composables/useSafariHistoryParser')
     const file = new File([new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])], 'garbage.db')
 
     // sql.js accepts arbitrary bytes at construction time and only fails once a
     // query actually touches the (corrupt) page structure, so this exercises the
-    // schema/query error path rather than the constructor's own try/catch — either
-    // way, the important behavior is that it rejects instead of silently returning.
-    await expect(parseSafariHistoryFile(file)).rejects.toThrow()
+    // guard around the first query in assertHistorySchema() rather than the
+    // constructor's own try/catch — either way, the user should see the same
+    // friendly "couldn't open the file" message rather than a raw sql.js error.
+    await expect(parseSafariHistoryFile(file)).rejects.toThrow(
+      /ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。/
+    )
   })
 })
 

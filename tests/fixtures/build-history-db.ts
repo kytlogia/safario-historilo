@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import initSqlJs, { type Database } from 'sql.js'
 
 // Safari (Core Data) timestamps are seconds since 2001-01-01T00:00:00Z — kept
-// in sync with app/composables/useSafariHistoryParser.ts for readable fixture data.
+// in sync with app/utils/parseHistoryDatabase.ts for readable fixture data.
 export const CORE_DATA_EPOCH_OFFSET_SECONDS = 978307200
 
 export interface SampleHistoryItem {
