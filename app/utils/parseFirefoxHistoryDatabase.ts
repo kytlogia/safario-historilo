@@ -96,7 +96,6 @@ export async function parseFirefoxHistoryBuffer(
         hv.from_visit    AS from_visit,
         hv.session       AS session,
         p.hidden         AS hidden,
-        p.typed          AS typed,
         p.frecency       AS frecency,
         p.guid           AS guid
       FROM moz_historyvisits hv
@@ -117,7 +116,6 @@ export async function parseFirefoxHistoryBuffer(
         fromVisit,
         session,
         hidden,
-        typed,
         frecency,
         guid
       ] = row
@@ -125,6 +123,7 @@ export async function parseFirefoxHistoryBuffer(
       const rawMicroseconds = Number(visitDateRaw ?? 0)
       const urlStr = String(url ?? '')
       const fromVisitNum = Number(fromVisit ?? 0)
+      const visitTypeNum = Number(visitType ?? 0)
 
       return {
         visitId: Number(visitId),
@@ -135,11 +134,18 @@ export async function parseFirefoxHistoryBuffer(
         visitTime: new Date(rawMicroseconds / MICROSECONDS_PER_MILLISECOND),
         visitTimeRaw: rawMicroseconds,
         visitCount: Number(visitCount ?? 0),
-        visitType: Number(visitType ?? 0),
+        visitType: visitTypeNum,
         fromVisit: fromVisitNum === 0 ? null : fromVisitNum,
         session: Number(session ?? 0),
         hidden: toBool(hidden),
-        typed: toBool(typed),
+        // moz_places.typed is a URL-level flag ("has this URL ever been typed"),
+        // not a per-visit one — using it directly here would misreport every
+        // visit to a URL (e.g. a plain link click) as "typed" the moment that
+        // URL was ever typed once, on any visit. visit_type === 2 is Firefox's
+        // own per-visit signal for "this specific visit was a typed
+        // navigation", which is what a detail view or export for one visit
+        // should reflect.
+        typed: visitTypeNum === 2,
         frecency: Number(frecency ?? 0),
         guid: guid ? String(guid) : ''
       }

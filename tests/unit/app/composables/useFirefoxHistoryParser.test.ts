@@ -55,19 +55,48 @@ describe('parseFirefoxHistoryFile', () => {
     expect(normal.visitTime.toISOString()).toBe(new Date(1700000000000000 / 1000).toISOString())
   })
 
-  it('maps 0/1 integer flags to booleans (hidden/typed)', async () => {
+  it('maps moz_places.hidden (0/1) to a boolean', async () => {
     const { parseFirefoxHistoryFile } = await import('~/composables/useFirefoxHistoryParser')
     const file = await fileFromDb(() => createFirefoxHistoryDatabase(SAMPLE_PLACES_DATA))
 
     const result = await parseFirefoxHistoryFile(file)
 
-    const typed = result.visits.find((v) => v.visitId === 102)!
-    expect(typed.typed).toBe(true)
-    expect(typed.visitType).toBe(2)
-
     const hidden = result.visits.find((v) => v.visitId === 103)!
     expect(hidden.hidden).toBe(true)
     expect(hidden.title).toBe('(タイトルなし)')
+  })
+
+  it('derives typed per-visit from visit_type === 2, not from moz_places.typed', async () => {
+    // moz_places.typed is a URL-level flag ("has this URL ever been typed"),
+    // not a per-visit one — a visit must be reported as typed only when its
+    // own visit_type says so, regardless of what the underlying URL's
+    // aggregate typed flag says.
+    const { parseFirefoxHistoryFile } = await import('~/composables/useFirefoxHistoryParser')
+    const db = await createFirefoxHistoryDatabase({
+      places: [
+        { id: 1, url: 'https://example.com/typed-place', typed: true },
+        { id: 2, url: 'https://example.com/untyped-place', typed: false }
+      ],
+      visits: [
+        // A link-click visit (visit_type 1) to a URL whose place.typed=1
+        // (typed on some *other* visit) must not itself read as typed.
+        { id: 201, placeId: 1, visitDate: 1, visitType: 1 },
+        // A typed-navigation visit (visit_type 2) to a URL whose
+        // place.typed=0 must still read as typed.
+        { id: 202, placeId: 2, visitDate: 2, visitType: 2 }
+      ]
+    })
+    const bytes = db.export()
+    db.close()
+    const file = new File([bytes], 'typed-vs-place.sqlite')
+
+    const result = await parseFirefoxHistoryFile(file)
+
+    const linkClickOnTypedUrl = result.visits.find((v) => v.visitId === 201)!
+    expect(linkClickOnTypedUrl.typed).toBe(false)
+
+    const typedNavOnUntypedUrl = result.visits.find((v) => v.visitId === 202)!
+    expect(typedNavOnUntypedUrl.typed).toBe(true)
   })
 
   it('treats from_visit = 0 as null, and surfaces a numeric value when set', async () => {

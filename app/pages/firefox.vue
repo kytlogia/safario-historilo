@@ -138,8 +138,7 @@ async function loadFromServer() {
 }
 
 onMounted(async () => {
-  await loadFirefoxProfiles()
-  await checkServerAutoLoadAvailability()
+  await Promise.all([checkServerAutoLoadAvailability(), loadFirefoxProfiles()])
 })
 
 function openDetail(visit: FirefoxHistoryVisit) {

@@ -117,10 +117,10 @@ describe('useFirefoxHistoryFilters', () => {
       expect(filteredVisits.value).toHaveLength(1)
     })
 
-    it('onlyTyped keeps only visit_type === 2 (typed) visits', () => {
+    it('onlyTyped keeps only typed visits', () => {
       const visits = ref<FirefoxHistoryVisit[]>([
-        makeVisit({ visitType: 1 }),
-        makeVisit({ visitType: 2 })
+        makeVisit({ visitType: 1, typed: false }),
+        makeVisit({ visitType: 2, typed: true })
       ])
       const { filteredVisits } = useFirefoxHistoryFilters(
         visits,
@@ -161,9 +161,9 @@ describe('useFirefoxHistoryFilters', () => {
 
     it('applies multiple filters simultaneously (AND semantics)', () => {
       const visits = ref<FirefoxHistoryVisit[]>([
-        makeVisit({ domain: 'a.com', title: 'Match', visitType: 2 }),
-        makeVisit({ domain: 'a.com', title: 'Match', visitType: 1 }),
-        makeVisit({ domain: 'b.com', title: 'Match', visitType: 2 })
+        makeVisit({ domain: 'a.com', title: 'Match', visitType: 2, typed: true }),
+        makeVisit({ domain: 'a.com', title: 'Match', visitType: 1, typed: false }),
+        makeVisit({ domain: 'b.com', title: 'Match', visitType: 2, typed: true })
       ])
       const { filteredVisits } = useFirefoxHistoryFilters(
         visits,

@@ -10,27 +10,6 @@ export default defineEventHandler(async (event) => {
     setHeader(event, 'content-disposition', `attachment; filename="${fileName}"`)
     return buffer
   } catch (err) {
-    if (err instanceof HistoryDbNotFoundError) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: 'Not Found',
-        message: err.message
-      })
-    }
-    if (err instanceof HistoryDbNotReadableError) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden',
-        message: err.message
-      })
-    }
-    if (isError(err)) {
-      throw err
-    }
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Internal Server Error',
-      message: err instanceof Error ? err.message : 'places.sqlite を読み込めませんでした。'
-    })
+    throw toHistoryDbHttpError(err, 'places.sqlite を読み込めませんでした。')
   }
 })

@@ -52,7 +52,14 @@ describe('resolveFirefoxProfile', () => {
     expect(profile?.name).toBe('default-release')
   })
 
-  it('resolves the default profile when profileId is the "default" sentinel', async () => {
+  it('does not treat the literal string "default" as a sentinel for the default profile', async () => {
+    // Unlike Safari (a fixed DEFAULT_PROFILE_ID sentinel distinct from any
+    // real container UUID), a Firefox profile's id is its raw profiles.ini
+    // Path value, so a profile could legitimately be pathed exactly
+    // "default" (e.g. via `firefox -CreateProfile default`). Treating that
+    // string as an alias for "use the default profile" would silently load
+    // the wrong profile for such a user — so with no profile actually
+    // id'd "default" here, passing it should resolve to nothing.
     await createProfile('Profiles/aaaaaaaa.default-release', true)
     await writeFile(
       profilesIniPath,
@@ -60,7 +67,18 @@ describe('resolveFirefoxProfile', () => {
     )
 
     const profile = await resolveFirefoxProfile('default', { profilesIniPath, firefoxDir })
-    expect(profile?.name).toBe('default-release')
+    expect(profile).toBeNull()
+  })
+
+  it('resolves a profile whose id genuinely is "default" by exact match, not as the sentinel', async () => {
+    await createProfile('default', true)
+    await writeFile(
+      profilesIniPath,
+      '[Profile0]\nName=Literal Default\nIsRelative=1\nPath=default\n'
+    )
+
+    const profile = await resolveFirefoxProfile('default', { profilesIniPath, firefoxDir })
+    expect(profile?.name).toBe('Literal Default')
   })
 
   it('resolves a specific profile by its id (profiles.ini Path value)', async () => {
