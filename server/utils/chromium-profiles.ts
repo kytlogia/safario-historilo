@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { ChromiumProfile } from '../../shared/types/profile'
+import { promoteFirstAsDefaultIfNoneSet } from '../../shared/utils/profile'
 
 export type ChromiumBrand = 'chrome' | 'edge'
 
@@ -20,6 +21,15 @@ interface ChromiumProfileInfoCacheEntry {
 interface ChromiumLocalState {
   profile?: {
     info_cache?: Record<string, ChromiumProfileInfoCacheEntry>
+  }
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await access(path)
+    return true
+  } catch {
+    return false
   }
 }
 
@@ -77,25 +87,29 @@ export async function listChromiumProfiles(
   const infoCache = localState?.profile?.info_cache
   const dirNames = (infoCache ? Object.keys(infoCache) : ['Default']).filter(isValidProfileDirName)
 
+  // Checked concurrently via the async fs API rather than a sequential
+  // existsSync() loop — this runs inside a Nitro request handler, where a
+  // synchronous stat call per profile directory would otherwise block the
+  // event loop from servicing other concurrent requests.
+  const dbPaths = dirNames.map((dirName) => join(userDataDir, dirName, 'History'))
+  const dbPathExists = await Promise.all(dbPaths.map((dbPath) => pathExists(dbPath)))
+
   const profiles: ChromiumProfile[] = []
-  for (const dirName of dirNames) {
-    const dbPath = join(userDataDir, dirName, 'History')
-    if (!existsSync(dbPath)) continue
+  dirNames.forEach((dirName, i) => {
+    if (!dbPathExists[i]) return
     profiles.push({
       id: dirName,
       name: infoCache?.[dirName]?.name || dirName,
-      dbPath,
+      dbPath: dbPaths[i]!,
       isDefault: dirName === 'Default'
     })
-  }
+  })
 
   // Local State doesn't guarantee a "Default" entry survives in info_cache
   // (e.g. it was deleted/renamed), so fall back to the first profile with a
   // readable History so a default is always available whenever at least one
   // profile exists — mirrors resolveDefaultFirefoxProfile's fallback.
-  if (profiles.length > 0 && !profiles.some((p) => p.isDefault)) {
-    profiles[0]!.isDefault = true
-  }
+  promoteFirstAsDefaultIfNoneSet(profiles)
 
   return profiles
 }

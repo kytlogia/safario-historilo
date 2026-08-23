@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { isAbsolute, join } from 'node:path'
 import type { FirefoxProfile } from '../../shared/types/profile'
+import { promoteFirstAsDefaultIfNoneSet } from '../../shared/utils/profile'
 
 export const FIREFOX_DIR = join(homedir(), 'Library/Application Support/Firefox')
 export const PROFILES_INI_PATH = join(FIREFOX_DIR, 'profiles.ini')
@@ -101,9 +102,7 @@ export async function listFirefoxProfiles(
   // versions track the default profile separately (installs.ini) instead.
   // Fall back to the first profile with a readable places.sqlite so a
   // default is always available whenever at least one profile exists.
-  if (profiles.length > 0 && !profiles.some((p) => p.isDefault)) {
-    profiles[0]!.isDefault = true
-  }
+  promoteFirstAsDefaultIfNoneSet(profiles)
 
   return profiles
 }

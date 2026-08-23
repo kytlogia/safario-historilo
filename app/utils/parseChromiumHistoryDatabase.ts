@@ -1,7 +1,7 @@
 import type { Database } from 'sql.js'
 import type { ChromiumHistoryVisit, ParsedChromiumHistory } from '~/types/history'
 import { coreTransitionType } from './chromiumVisitType'
-import { getSqlJs } from './sqlJs'
+import { extractDomain, getSqlJs, getTableColumns, toBool } from './sqlJs'
 
 // Chrome/Edge (WebKit epoch) timestamps in visits.visit_time and
 // urls.last_visit_time are microseconds since 1601-01-01T00:00:00Z — the
@@ -19,26 +19,9 @@ const WEBKIT_EPOCH_OFFSET_MICROSECONDS = 11644473600n * 1_000_000n
 // type table.
 const CORE_TRANSITION_TYPED = 1
 
-function extractDomain(url: string): string {
-  try {
-    return new URL(url).hostname || url
-  } catch {
-    return url
-  }
-}
-
-function toBool(value: unknown): boolean {
-  return Number(value) === 1
-}
-
 const REQUIRED_COLUMNS: Record<string, string[]> = {
   urls: ['id', 'url', 'title', 'visit_count', 'typed_count', 'hidden'],
   visits: ['id', 'url', 'visit_time', 'from_visit', 'transition', 'visit_duration']
-}
-
-function getTableColumns(db: Database, table: string): Set<string> {
-  const result = db.exec(`PRAGMA table_info(${table})`)
-  return new Set((result[0]?.values ?? []).map((row) => String(row[1])))
 }
 
 function assertHistorySchema(db: Database) {
@@ -117,6 +100,20 @@ export async function parseChromiumHistoryBuffer(
       ORDER BY v.visit_time DESC
     `)
 
+    // The urls/visits JOIN repeats each distinct URL once per visit to it
+    // (a typical History has several visits per URL), so extractDomain()
+    // (URL parsing + a try/catch) is cached per url_id instead of re-run for
+    // every row that shares the same URL.
+    const domainByUrlId = new Map<number, string>()
+    function domainForUrl(urlId: number, url: string): string {
+      let domain = domainByUrlId.get(urlId)
+      if (domain === undefined) {
+        domain = extractDomain(url)
+        domainByUrlId.set(urlId, domain)
+      }
+      return domain
+    }
+
     const rows = result[0]?.values ?? []
     const visits: ChromiumHistoryVisit[] = rows.map((row) => {
       const [
@@ -138,15 +135,16 @@ export async function parseChromiumHistoryBuffer(
       // 64-bit value through a JS Number first.
       const visitTimeRawStr = String(visitTimeRaw ?? '0')
       const rawMicroseconds = BigInt(visitTimeRawStr)
+      const urlIdNum = Number(urlId)
       const urlStr = String(url ?? '')
       const fromVisitNum = Number(fromVisit ?? 0)
       const transitionNum = Number(transition ?? 0)
 
       return {
         visitId: Number(visitId),
-        urlId: Number(urlId),
+        urlId: urlIdNum,
         url: urlStr,
-        domain: extractDomain(urlStr),
+        domain: domainForUrl(urlIdNum, urlStr),
         title: title ? String(title) : '(タイトルなし)',
         // The millisecond count Date() needs is always far below
         // Number.MAX_SAFE_INTEGER even for the BigInt division result, so

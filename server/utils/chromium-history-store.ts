@@ -1,5 +1,8 @@
-import { accessSync, constants, existsSync } from 'node:fs'
-import { HistoryDbNotFoundError, HistoryDbNotReadableError } from './history-store'
+import {
+  checkDbFileAccess,
+  HistoryDbNotFoundError,
+  HistoryDbNotReadableError
+} from './history-store'
 import { backupSqliteDatabaseToBuffer } from './sqlite-backup'
 import { listChromiumProfiles, resolveDefaultChromiumProfile } from './chromium-profiles'
 import type { ChromiumBrand } from './chromium-profiles'
@@ -29,24 +32,12 @@ export async function resolveChromiumProfile(
   return profiles.find((p) => p.id === profileId) ?? null
 }
 
-/**
- * `existsSync` alone can't tell us whether we're actually allowed to read the
- * file — see the equivalent comment on checkHistoryDbAccess() in
- * history-store.ts.
- */
 export function checkChromiumHistoryDbAccess(dbPath: string | null): {
   present: boolean
   readable: boolean
   path: string
 } {
-  if (!dbPath) return { present: false, readable: false, path: '' }
-  if (!existsSync(dbPath)) return { present: false, readable: false, path: dbPath }
-  try {
-    accessSync(dbPath, constants.R_OK)
-    return { present: true, readable: true, path: dbPath }
-  } catch {
-    return { present: true, readable: false, path: dbPath }
-  }
+  return checkDbFileAccess(dbPath)
 }
 
 export async function readLocalChromiumHistoryDb(

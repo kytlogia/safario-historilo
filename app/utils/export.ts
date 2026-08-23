@@ -12,6 +12,14 @@ function downloadBlob(content: BlobPart, mimeType: string, fileName: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
+// Shared by every *AsCsv exporter below (Safari/Firefox/Chromium): quotes a
+// cell when it contains a comma, double quote, or newline, doubling any
+// embedded double quotes, per RFC 4180.
+function escapeCsvCell(value: unknown): string {
+  const str = value === null || value === undefined ? '' : String(value)
+  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
+}
+
 export function exportVisitsAsJson(visits: HistoryVisit[], fileName = 'safari-history.json') {
   downloadBlob(JSON.stringify(visits, null, 2), 'application/json', fileName)
 }
@@ -33,11 +41,6 @@ export function exportVisitsAsCsv(visits: HistoryVisit[], fileName = 'safari-his
     'statusCode'
   ] as const
 
-  const escapeCell = (value: unknown) => {
-    const str = value === null || value === undefined ? '' : String(value)
-    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
-  }
-
   const lines = [headers.join(',')]
   for (const visit of visits) {
     lines.push(
@@ -56,7 +59,7 @@ export function exportVisitsAsCsv(visits: HistoryVisit[], fileName = 'safari-his
         visit.origin,
         visit.statusCode
       ]
-        .map(escapeCell)
+        .map(escapeCsvCell)
         .join(',')
     )
   }
@@ -90,11 +93,6 @@ export function exportFirefoxVisitsAsCsv(
     'frecency'
   ] as const
 
-  const escapeCell = (value: unknown) => {
-    const str = value === null || value === undefined ? '' : String(value)
-    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
-  }
-
   const lines = [headers.join(',')]
   for (const visit of visits) {
     lines.push(
@@ -112,7 +110,7 @@ export function exportFirefoxVisitsAsCsv(
         visit.typed,
         visit.frecency
       ]
-        .map(escapeCell)
+        .map(escapeCsvCell)
         .join(',')
     )
   }
@@ -146,11 +144,6 @@ export function exportChromiumVisitsAsCsv(
     'typed'
   ] as const
 
-  const escapeCell = (value: unknown) => {
-    const str = value === null || value === undefined ? '' : String(value)
-    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
-  }
-
   const lines = [headers.join(',')]
   for (const visit of visits) {
     lines.push(
@@ -168,7 +161,7 @@ export function exportChromiumVisitsAsCsv(
         visit.hidden,
         visit.typed
       ]
-        .map(escapeCell)
+        .map(escapeCsvCell)
         .join(',')
     )
   }

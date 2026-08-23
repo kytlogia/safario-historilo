@@ -1,31 +1,14 @@
 import type { Database } from 'sql.js'
 import type { FirefoxHistoryVisit, ParsedFirefoxHistory } from '~/types/history'
-import { getSqlJs } from './sqlJs'
+import { extractDomain, getSqlJs, getTableColumns, toBool } from './sqlJs'
 
 // Firefox (Unix epoch) timestamps in moz_historyvisits.visit_date are
 // microseconds since 1970-01-01T00:00:00Z.
 const MICROSECONDS_PER_MILLISECOND = 1000
 
-function extractDomain(url: string): string {
-  try {
-    return new URL(url).hostname || url
-  } catch {
-    return url
-  }
-}
-
-function toBool(value: unknown): boolean {
-  return Number(value) === 1
-}
-
 const REQUIRED_COLUMNS: Record<string, string[]> = {
   moz_places: ['id', 'url', 'title', 'visit_count', 'hidden', 'typed', 'frecency', 'guid'],
   moz_historyvisits: ['id', 'from_visit', 'place_id', 'visit_date', 'visit_type', 'session']
-}
-
-function getTableColumns(db: Database, table: string): Set<string> {
-  const result = db.exec(`PRAGMA table_info(${table})`)
-  return new Set((result[0]?.values ?? []).map((row) => String(row[1])))
 }
 
 function assertPlacesSchema(db: Database) {

@@ -1,4 +1,4 @@
-import initSqlJs from 'sql.js'
+import initSqlJs, { type Database } from 'sql.js'
 
 // sql.js (Emscripten) hands whatever locateFile() returns straight to
 // fs.readFileSync() when running under Node. A path that only makes sense for the
@@ -41,4 +41,27 @@ export function getSqlJs() {
       })
   }
   return sqlJsPromise
+}
+
+// Row-mapping helpers shared by parseHistoryDatabase.ts (Safari),
+// parseFirefoxHistoryDatabase.ts (Firefox), and parseChromiumHistoryDatabase.ts
+// (Chrome/Edge) — each browser's schema differs, but extracting a domain from
+// a URL string, coercing SQLite's 0/1 integer flags to booleans, and
+// introspecting a table's columns via PRAGMA are identical operations
+// regardless of which browser's schema is being read.
+export function extractDomain(url: string): string {
+  try {
+    return new URL(url).hostname || url
+  } catch {
+    return url
+  }
+}
+
+export function toBool(value: unknown): boolean {
+  return Number(value) === 1
+}
+
+export function getTableColumns(db: Database, table: string): Set<string> {
+  const result = db.exec(`PRAGMA table_info(${table})`)
+  return new Set((result[0]?.values ?? []).map((row) => String(row[1])))
 }
