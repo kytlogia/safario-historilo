@@ -1,46 +1,9 @@
-import initSqlJs, { type Database } from 'sql.js'
+import type { Database } from 'sql.js'
 import type { HistoryVisit, ParsedHistory } from '~/types/history'
+import { getSqlJs } from './sqlJs'
 
 // Safari (Core Data) timestamps are seconds since 2001-01-01T00:00:00Z.
 const CORE_DATA_EPOCH_OFFSET_SECONDS = 978307200
-
-let sqlJsPromise: ReturnType<typeof initSqlJs> | null = null
-
-// sql.js (Emscripten) hands whatever locateFile() returns straight to
-// fs.readFileSync() when running under Node. A path that only makes sense for the
-// browser (root-relative "/sql-wasm.wasm") resolves to nothing on disk there, and
-// once that first call aborts, sql.js's module-scope singleton stays aborted for
-// every later call in the same process — even ones with a correct locateFile. So
-// this must branch on the actual runtime rather than assume a browser.
-//
-// sql.js itself picks its Node-vs-browser code path via `process.versions.node`
-// (dist/sql-wasm.js), not via `window` presence, so checking `window` here would
-// disagree with sql.js under e.g. a jsdom test environment (window defined, but
-// still Node underneath) — and inside the dedicated Worker this module also runs
-// in, `process` is undefined just like in a real browser, so this same check
-// resolves the browser branch there too. Match sql.js's own check.
-const isNodeRuntime = typeof globalThis.process?.versions?.node === 'string'
-
-async function resolveWasmLocateFile(): Promise<(file: string) => string> {
-  let prefix = '/'
-  if (isNodeRuntime) {
-    const { fileURLToPath } = await import('node:url')
-    prefix = fileURLToPath(new URL('.', import.meta.resolve('sql.js/dist/sql-wasm.wasm')))
-  }
-  return (file) => `${prefix}${file}`
-}
-
-function getSqlJs() {
-  if (!sqlJsPromise) {
-    sqlJsPromise = resolveWasmLocateFile()
-      .then((locateFile) => initSqlJs({ locateFile }))
-      .catch((err) => {
-        sqlJsPromise = null
-        throw err
-      })
-  }
-  return sqlJsPromise
-}
 
 function extractDomain(url: string): string {
   try {

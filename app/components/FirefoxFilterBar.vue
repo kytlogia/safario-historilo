@@ -1,0 +1,133 @@
+<script setup lang="ts">
+import { exportFirefoxVisitsAsCsv, exportFirefoxVisitsAsJson } from '~/utils/export'
+import { formatDateInputValue } from '~/utils/format'
+import type { FirefoxHistoryVisit } from '~/types/history'
+
+defineProps<{
+  domainOptions: { title: string; value: string }[]
+  filteredVisits: FirefoxHistoryVisit[]
+  totalCount: number
+}>()
+
+const search = defineModel<string>('search', { required: true })
+const domainFilter = defineModel<string | null>('domainFilter', { required: true })
+const dateFrom = defineModel<Date | null>('dateFrom', { required: true })
+const dateTo = defineModel<Date | null>('dateTo', { required: true })
+const onlyTyped = defineModel<boolean>('onlyTyped', { required: true })
+const onlyRedirects = defineModel<boolean>('onlyRedirects', { required: true })
+const onlyHidden = defineModel<boolean>('onlyHidden', { required: true })
+
+// v-autocomplete's default filter matches the displayed title, which includes
+// the "(件数)" suffix — restrict matching to the domain itself so typing a
+// number that happens to be another domain's visit count doesn't match it.
+function filterDomainOption(_itemTitle: string, query: string, item?: { value: string }) {
+  return (item?.value ?? '').toLowerCase().includes(query.toLowerCase())
+}
+</script>
+
+<template>
+  <v-card-text>
+    <v-row>
+      <v-col cols="12" sm="6" md="4">
+        <v-text-field
+          v-model="search"
+          data-testid="search-input"
+          label="タイトル・URLで検索"
+          prepend-inner-icon="mdi-magnify"
+          variant="outlined"
+          density="comfortable"
+          clearable
+          hide-details
+        />
+      </v-col>
+      <v-col cols="12" sm="6" md="4">
+        <v-autocomplete
+          v-model="domainFilter"
+          data-testid="domain-filter"
+          :items="domainOptions"
+          :custom-filter="filterDomainOption"
+          label="ドメインで絞り込み"
+          variant="outlined"
+          density="comfortable"
+          clearable
+          hide-details
+        >
+          <template #clear="{ props: clearProps }">
+            <v-icon icon="$clear" data-testid="domain-filter-clear" v-bind="clearProps" />
+          </template>
+        </v-autocomplete>
+      </v-col>
+      <v-col cols="6" md="2">
+        <v-date-input
+          v-model="dateFrom"
+          data-testid="date-from-input"
+          label="開始日"
+          variant="outlined"
+          density="comfortable"
+          :display-format="formatDateInputValue"
+          hide-details
+          clearable
+        />
+      </v-col>
+      <v-col cols="6" md="2">
+        <v-date-input
+          v-model="dateTo"
+          data-testid="date-to-input"
+          label="終了日"
+          variant="outlined"
+          density="comfortable"
+          :display-format="formatDateInputValue"
+          hide-details
+          clearable
+        />
+      </v-col>
+    </v-row>
+    <v-row class="mt-1">
+      <v-col cols="12" class="d-flex flex-wrap ga-2 align-center">
+        <v-checkbox
+          v-model="onlyTyped"
+          data-testid="only-typed-checkbox"
+          label="URL直接入力のみ"
+          density="compact"
+          hide-details
+        />
+        <v-checkbox
+          v-model="onlyRedirects"
+          data-testid="only-redirects-checkbox"
+          label="リダイレクトのみ"
+          density="compact"
+          hide-details
+        />
+        <v-checkbox
+          v-model="onlyHidden"
+          data-testid="only-hidden-checkbox"
+          label="非表示の履歴のみ"
+          density="compact"
+          hide-details
+        />
+        <v-spacer />
+        <span class="text-body-2 text-medium-emphasis" data-testid="visible-count">
+          {{ filteredVisits.length.toLocaleString() }} / {{ totalCount.toLocaleString() }} 件を表示
+        </span>
+        <v-btn
+          data-testid="export-json-button"
+          variant="text"
+          size="small"
+          prepend-icon="mdi-code-json"
+          @click="exportFirefoxVisitsAsJson(filteredVisits)"
+        >
+          JSON出力
+        </v-btn>
+        <v-btn
+          data-testid="export-csv-button"
+          variant="text"
+          size="small"
+          prepend-icon="mdi-file-delimited-outline"
+          @click="exportFirefoxVisitsAsCsv(filteredVisits)"
+        >
+          CSV出力
+        </v-btn>
+      </v-col>
+    </v-row>
+  </v-card-text>
+</template>

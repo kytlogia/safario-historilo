@@ -20,6 +20,24 @@ export interface HistoryVisit {
   score: number
 }
 
+export interface FirefoxHistoryVisit {
+  visitId: number
+  placeId: number
+  url: string
+  domain: string
+  title: string
+  visitTime: Date
+  visitTimeRaw: number
+  visitCount: number
+  visitType: number
+  fromVisit: number | null
+  session: number
+  hidden: boolean
+  typed: boolean
+  frecency: number
+  guid: string
+}
+
 export interface DomainSummary {
   domain: string
   visitCount: number
@@ -30,4 +48,9 @@ export interface ParsedHistory {
   fileName: string
 }
 
-export type { SafariProfile } from '../../shared/types/profile'
+export interface ParsedFirefoxHistory {
+  visits: FirefoxHistoryVisit[]
+  fileName: string
+}
+
+export type { SafariProfile, FirefoxProfile } from '../../shared/types/profile'

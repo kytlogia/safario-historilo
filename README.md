@@ -2,19 +2,22 @@
 
 [![CI](https://github.com/kytlogia/safario-historilo/actions/workflows/ci.yml/badge.svg)](https://github.com/kytlogia/safario-historilo/actions/workflows/ci.yml)
 
-Safariのブラウズ履歴データベース（`History.db`）を読み込み、訪問履歴を詳細に確認できるWebアプリです。
+SafariおよびFirefoxのブラウズ履歴データベース（`History.db` / `places.sqlite`）を読み込み、訪問履歴を詳細に確認できるWebアプリです。
 
-- **プライバシー重視**: `History.db` はどちらの読み込み方法でも外部サーバーへ送信されません。ファイルの解析処理そのものは常にブラウザ内でWebAssembly版SQLite ([sql.js](https://sql.js.org/)) を使って行われます。
+- **プライバシー重視**: 履歴データベースはどちらの読み込み方法でも外部サーバーへ送信されません。ファイルの解析処理そのものは常にブラウザ内でWebAssembly版SQLite ([sql.js](https://sql.js.org/)) を使って行われます。
 - Nuxt 4 + Vuetify 4 + Vite + pnpm で構築。
-- `History.db` の読み込みは**自動読み込みとドラッグ&ドロップの両対応**です（詳細は下記）。
+- 履歴データベースの読み込みは**自動読み込みとドラッグ&ドロップの両対応**です（詳細は下記）。
+- `/` がSafari向け、`/firefox` がFirefox向けのページです（画面右上のボタンで切り替え可能）。
 
 ## 主な機能
 
-- `pnpm dev` などNodeサーバーとして起動している場合、ボタン一つで `~/Library/Safari/History.db` を自動読み込み（後述）
-- `History.db` をドラッグ&ドロップ／ファイル選択で読み込み
+- `pnpm dev` などNodeサーバーとして起動している場合、ボタン一つで `~/Library/Safari/History.db`（Firefoxは `places.sqlite`）を自動読み込み（後述）
+- 履歴データベースをドラッグ&ドロップ／ファイル選択で読み込み
 - 訪問履歴一覧（タイトル・URL・ドメイン・訪問日時・そのURLの累計訪問回数・状態フラグ）を仮想スクロールテーブルで表示
-- タイトル/URL検索、ドメイン絞り込み、日付範囲、読み込み失敗のみ／リダイレクトのみ／自動生成履歴のみのフィルタ
-- 行をクリックすると詳細ダイアログを表示（内部タイムスタンプの変換値、HTTPステータス、読み込み成否、リダイレクト元/先のvisit ID、origin/generation/attributes/scoreなどSQLiteの生データ）
+- タイトル/URL検索、ドメイン絞り込み、日付範囲によるフィルタ
+  - Safari: 読み込み失敗のみ／リダイレクトのみ／自動生成履歴のみ
+  - Firefox: URL直接入力のみ／リダイレクトのみ／非表示の履歴のみ
+- 行をクリックすると詳細ダイアログを表示（内部タイムスタンプの変換値やSQLiteの生データなど、ブラウザごとの詳細フィールド）
 - よく訪れたドメインTop 10の集計
 - フィルタ後のデータをJSON/CSVでエクスポート
 
@@ -53,6 +56,15 @@ Safariを終了してから、Finderの「移動」→「フォルダへ移動�
 
 `History.db` をコピーし、このアプリの画面にドラッグ&ドロップしてください（Safari実行中はDBがロックされているため、必ずコピーしてから読み込んでください）。
 
+## Firefoxのplaces.sqlite（`/firefox`）
+
+`/firefox` ページはSafari向けページと同等のUI（フィルタ・テーブル・詳細ダイアログ・エクスポート）をFirefoxの `places.sqlite` 向けに提供します。読み込み方法もSafariと同様に自動読み込み/ドラッグ&ドロップの両対応です。
+
+- 既定のプロファイル一覧は `~/Library/Application Support/Firefox/profiles.ini` を解析して取得します（複数プロファイル対応）。`profiles.ini` の `Path` は各プロファイルの一意なIDとして扱われ、`places.sqlite` が実在するプロファイルのみが選択肢に表示されます。
+- `Default=1` が設定されたプロファイルを既定として選択します。どのプロファイルにも設定がない場合は先頭のプロファイルにフォールバックします。
+- 自動読み込みはSafariと同じくSQLiteのOnline Backup API（`node:sqlite`）でホットバックアップするため、Firefox実行中でも安全に読み取れます。ローカルホスト/同一オリジン制限やフルディスクアクセスに関する注意点もSafariと共通です。
+- 手動で読み込む場合は、Firefoxを終了してから `~/Library/Application Support/Firefox/Profiles/<プロファイル>/` 内の `places.sqlite` をコピーし、画面にドラッグ&ドロップしてください。
+
 ## セットアップ
 
 - 必要な環境: Node.js `>=22.5.0`、pnpm `11.21.0`（`package.json` の `engines` / `packageManager` を参照。Corepackの利用を推奨します）
@@ -87,10 +99,10 @@ pnpm test:watch    # Vitest をウォッチモードで実行
 pnpm test:e2e      # Playwright: E2Eテスト（初回のみ `pnpm exec playwright install chromium` が必要）
 ```
 
-- **ユニットテスト**（`tests/unit/`）: `History.db` のパース処理（Core Dataエポック変換・スキーマ検証・異常系）、CSV/JSONエクスポート、`server/utils/history-store.ts` のローカルアクセス制御（`assertLocalRequest` のセキュリティ境界）、`app/composables/useHistoryFilters.ts` の検索・絞り込み・Top10集計ロジック、`isSafeUrl` によるURLプロトコルのホワイトリスト判定を対象にしています。
+- **ユニットテスト**（`tests/unit/`）: `History.db` / `places.sqlite` のパース処理（エポック変換・スキーマ検証・異常系）、CSV/JSONエクスポート、`server/utils/history-store.ts` / `server/utils/firefox-history-store.ts` のローカルアクセス制御（`assertLocalRequest` のセキュリティ境界）、`server/utils/firefox-profiles.ts` の `profiles.ini` 解析、`app/composables/useHistoryFilters.ts` / `useFirefoxHistoryFilters.ts` の検索・絞り込み・Top10集計ロジック、`isSafeUrl` によるURLプロトコルのホワイトリスト判定を対象にしています。
 - **インテグレーションテスト**（`tests/integration/`）: [`@nuxt/test-utils`](https://nuxt.com/docs/getting-started/testing) でビルド済みのNitroサーバーを実際に起動し、`/api/local-history/*` に対するHTTPリクエスト〜レスポンスを検証します。
 - **E2Eテスト**（`tests/e2e/`）: Playwrightで `nuxt dev` を起動し、ドラッグ&ドロップ/ファイル選択での読み込み、検索・フィルタ、詳細ダイアログ、CSV/JSON出力、自動読み込みボタンの表示切り替えといった主要フローをブラウザ上で検証します。
-- テスト用の `History.db` は `tests/fixtures/build-history-db.ts` がsql.jsでその場に組み立てます（バイナリを直接コミットしていません）。
+- テスト用の `History.db` / `places.sqlite` は `tests/fixtures/build-history-db.ts` / `build-firefox-history-db.ts` がsql.jsでその場に組み立てます（バイナリを直接コミットしていません）。
 
 ## Lint / Format / 型チェック
 
@@ -140,6 +152,8 @@ CI環境で使う場合は `--ci` フラグ付きでセットアップします�
 - `visit_time` はCore Dataのタイムスタンプ（2001-01-01 UTCからの秒数）のため、`+ 978307200` 秒したうえで `Date` に変換しています。
 - 自動読み込み関連のサーバーコードは `server/utils/history-store.ts`（`History.db`のパス解決・読み取り権限判定・`node:sqlite`のBackup APIによるホットバックアップ・ローカル/同一オリジン判定）と `server/api/local-history/`（`status.get.ts` で利用可否判定、`index.get.ts` でバイト列を返却）にあります。フロントエンドは `GET /api/local-history/status` で利用可否を判定し、利用可能な場合のみ `GET /api/local-history` からバイト列を取得して既存の `parseSafariHistoryFile`（ドラッグ&ドロップと共通のsql.jsパーサー）に渡します。
 - プロファイル対応は `server/utils/safari-profiles.ts`（`Profiles/` ディレクトリのスキャンと `SafariTabs.db` からのプロファイル名解決）と `server/api/local-history/profiles.get.ts` にあります。`status.get.ts` / `index.get.ts` はクエリパラメータ `?profileId=<UUID>` を受け取り、`resolveHistoryDbPath()` に渡すことで対象のプロファイルを切り替えます（未指定または `default` は従来通り既定プロファイル）。
+- Firefoxの `moz_places` / `moz_historyvisits` テーブルを `hv.place_id = p.id` で結合して1訪問=1行として取得しています（`app/utils/parseFirefoxHistoryDatabase.ts`）。`visit_date` はUnixエポックからのマイクロ秒のため、1000で割ってミリ秒に変換したうえで `Date` に変換しています。sql.jsの初期化処理自体はSafari向けパーサーと共通化し `app/utils/sqlJs.ts` に切り出しています。
+- Firefoxの自動読み込み関連のサーバーコードは `server/utils/firefox-profiles.ts`（`profiles.ini` の解析とプロファイル一覧の取得）と `server/utils/firefox-history-store.ts`（プロファイル解決・読み取り権限判定・ホットバックアップ）、`server/api/local-history/firefox/` にあります。`profileId` はプロファイルの `Path`（profiles.ini上の値）で指定し、必ず `listFirefoxProfiles()` が返した一覧と突き合わせて解決するため、未知の値がそのままファイルパスの組み立てに使われることはありません。
 
 ## 開発に参加する
 

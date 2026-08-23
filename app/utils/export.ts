@@ -1,4 +1,4 @@
-import type { HistoryVisit } from '~/types/history'
+import type { FirefoxHistoryVisit, HistoryVisit } from '~/types/history'
 
 function downloadBlob(content: BlobPart, mimeType: string, fileName: string) {
   const blob = new Blob([content], { type: mimeType })
@@ -55,6 +55,62 @@ export function exportVisitsAsCsv(visits: HistoryVisit[], fileName = 'safari-his
         visit.redirectDestination ?? '',
         visit.origin,
         visit.statusCode
+      ]
+        .map(escapeCell)
+        .join(',')
+    )
+  }
+
+  downloadBlob('﻿' + lines.join('\n'), 'text/csv;charset=utf-8', fileName)
+}
+
+export function exportFirefoxVisitsAsJson(
+  visits: FirefoxHistoryVisit[],
+  fileName = 'firefox-history.json'
+) {
+  downloadBlob(JSON.stringify(visits, null, 2), 'application/json', fileName)
+}
+
+export function exportFirefoxVisitsAsCsv(
+  visits: FirefoxHistoryVisit[],
+  fileName = 'firefox-history.csv'
+) {
+  const headers = [
+    'visitId',
+    'title',
+    'url',
+    'domain',
+    'visitTime',
+    'visitCount',
+    'visitType',
+    'fromVisit',
+    'session',
+    'hidden',
+    'typed',
+    'frecency'
+  ] as const
+
+  const escapeCell = (value: unknown) => {
+    const str = value === null || value === undefined ? '' : String(value)
+    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
+  }
+
+  const lines = [headers.join(',')]
+  for (const visit of visits) {
+    lines.push(
+      [
+        visit.visitId,
+        visit.title,
+        visit.url,
+        visit.domain,
+        visit.visitTime.toISOString(),
+        visit.visitCount,
+        visit.visitType,
+        visit.fromVisit ?? '',
+        visit.session,
+        visit.hidden,
+        visit.typed,
+        visit.frecency
       ]
         .map(escapeCell)
         .join(',')
