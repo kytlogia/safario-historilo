@@ -82,4 +82,22 @@ export interface ParsedChromiumHistory {
   fileName: string
 }
 
+export type UnifiedHistorySource = 'safari' | 'firefox' | 'chrome' | 'edge'
+
+/**
+ * Common minimal shape used by the cross-browser search page (app/pages/all.vue)
+ * to search/filter/list visits from Safari/Firefox/Chrome/Edge together. Each
+ * source-specific visit type carries far more fields than this — see
+ * app/utils/unifiedHistory.ts for the per-source conversion functions.
+ */
+export interface UnifiedHistoryVisit {
+  source: UnifiedHistorySource
+  sourceLabel: string
+  url: string
+  domain: string
+  title: string
+  visitTime: Date
+  visitCount: number
+}
+
 export type { SafariProfile, FirefoxProfile, ChromiumProfile } from '../../shared/types/profile'

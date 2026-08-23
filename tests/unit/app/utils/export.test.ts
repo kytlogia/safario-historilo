@@ -1,11 +1,18 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ChromiumHistoryVisit, FirefoxHistoryVisit, HistoryVisit } from '~/types/history'
+import type {
+  ChromiumHistoryVisit,
+  FirefoxHistoryVisit,
+  HistoryVisit,
+  UnifiedHistoryVisit
+} from '~/types/history'
 import {
   exportChromiumVisitsAsCsv,
   exportChromiumVisitsAsJson,
   exportFirefoxVisitsAsCsv,
   exportFirefoxVisitsAsJson,
+  exportUnifiedVisitsAsCsv,
+  exportUnifiedVisitsAsJson,
   exportVisitsAsCsv,
   exportVisitsAsJson
 } from '~/utils/export'
@@ -72,6 +79,19 @@ function makeChromiumVisit(overrides: Partial<ChromiumHistoryVisit> = {}): Chrom
     visitDuration: 0,
     hidden: false,
     typed: false,
+    ...overrides
+  }
+}
+
+function makeUnifiedVisit(overrides: Partial<UnifiedHistoryVisit> = {}): UnifiedHistoryVisit {
+  return {
+    source: 'safari',
+    sourceLabel: 'Safari',
+    url: 'https://example.com/',
+    domain: 'example.com',
+    title: 'Example',
+    visitTime: new Date('2024-01-02T03:04:05.000Z'),
+    visitCount: 1,
     ...overrides
   }
 }
@@ -341,6 +361,53 @@ describe('export.ts', () => {
       const cells = text.slice(1).split('\n')[1].split(',')
       // header: visitId,title,url,domain,visitTime,visitCount,typedCount,transition,fromVisit,visitDuration,hidden,typed
       expect(cells[8]).toBe('')
+    })
+  })
+
+  describe('exportUnifiedVisitsAsJson', () => {
+    it('serializes visits as pretty-printed JSON and triggers a download', () => {
+      vi.useFakeTimers()
+      const visits = [makeUnifiedVisit()]
+
+      exportUnifiedVisitsAsJson(visits, 'out.json')
+
+      expect(createObjectURL).toHaveBeenCalledTimes(1)
+      const blob = createObjectURL.mock.calls[0][0] as Blob
+      expect(blob.type).toBe('application/json')
+      expect(capturedAnchor?.download).toBe('out.json')
+      expect(clickSpy).toHaveBeenCalledTimes(1)
+
+      vi.advanceTimersByTime(1000)
+      expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
+      vi.useRealTimers()
+    })
+  })
+
+  describe('exportUnifiedVisitsAsCsv', () => {
+    function getCsvText(visits: UnifiedHistoryVisit[]) {
+      exportUnifiedVisitsAsCsv(visits, 'out.csv')
+      return createObjectURL.mock.calls[0][0] as Blob
+    }
+
+    it('writes the expected header row in order', async () => {
+      const blob = getCsvText([])
+      expect(blob.type).toBe('text/csv;charset=utf-8')
+      const text = await blobText(blob)
+      const [header] = text.split('\n')
+      expect(header).toBe(['source', 'title', 'url', 'domain', 'visitTime', 'visitCount'].join(','))
+    })
+
+    it('prefixes the file with a UTF-8 BOM', async () => {
+      const blob = getCsvText([])
+      const bytes = await blobBytes(blob)
+      expect(Array.from(bytes.slice(0, 3))).toEqual([0xef, 0xbb, 0xbf])
+    })
+
+    it('renders the sourceLabel (not the internal source key) in the source column', async () => {
+      const blob = getCsvText([makeUnifiedVisit({ source: 'firefox', sourceLabel: 'Firefox' })])
+      const text = await blobText(blob)
+      const cells = text.slice(1).split('\n')[1].split(',')
+      expect(cells[0]).toBe('Firefox')
     })
   })
 })

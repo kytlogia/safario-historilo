@@ -1,0 +1,146 @@
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    label: string
+    icon: string
+    color: string
+    isLoading: boolean
+    loadError: string
+    hasData: boolean
+    visitCount: number
+    fileName: string
+    serverAutoLoadAvailable: boolean
+    serverDbPath: string
+    serverPermissionHint: boolean
+    serverStatusWarning: string
+    serverProfiles?: { id: string; name: string }[]
+    selectedProfileId?: string
+  }>(),
+  {
+    serverProfiles: () => [],
+    selectedProfileId: ''
+  }
+)
+
+const emit = defineEmits<{
+  'file-selected': [file: File]
+  'load-from-server': []
+  'update:selectedProfileId': [profileId: string]
+  reset: []
+}>()
+
+function onFileInputChange(files: File[] | File | null) {
+  const file = Array.isArray(files) ? files[0] : files
+  if (file) emit('file-selected', file)
+}
+</script>
+
+<template>
+  <v-card variant="outlined" :data-testid="`source-card-${label}`">
+    <v-card-item>
+      <template #prepend>
+        <v-icon :icon="icon" :color="color" />
+      </template>
+      <v-card-title class="text-subtitle-1">{{ label }}</v-card-title>
+      <template #append>
+        <v-chip v-if="hasData" size="small" :color="color" variant="tonal">
+          {{ visitCount.toLocaleString() }} 件
+        </v-chip>
+      </template>
+    </v-card-item>
+
+    <v-card-text>
+      <template v-if="hasData">
+        <div class="text-body-2 text-medium-emphasis text-truncate mb-2">{{ fileName }}</div>
+        <v-btn
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-refresh"
+          block
+          data-testid="source-card-reset-button"
+          @click="emit('reset')"
+        >
+          読み込み直す
+        </v-btn>
+      </template>
+
+      <template v-else>
+        <v-select
+          v-if="serverProfiles.length > 1"
+          :model-value="selectedProfileId"
+          :items="serverProfiles"
+          item-title="name"
+          item-value="id"
+          label="プロファイル"
+          variant="outlined"
+          density="compact"
+          hide-details
+          class="mb-3"
+          data-testid="source-card-profile-select"
+          @update:model-value="emit('update:selectedProfileId', $event)"
+        />
+
+        <v-btn
+          v-if="serverAutoLoadAvailable"
+          color="primary"
+          variant="flat"
+          size="small"
+          prepend-icon="mdi-database-sync-outline"
+          block
+          class="mb-2"
+          data-testid="source-card-server-load-button"
+          :loading="isLoading"
+          :disabled="isLoading"
+          @click="emit('load-from-server')"
+        >
+          自動で読み込む
+        </v-btn>
+
+        <v-alert
+          v-else-if="serverPermissionHint"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mb-2"
+          data-testid="source-card-permission-hint"
+        >
+          読み取り権限がありません。フルディスクアクセスを許可してください。
+        </v-alert>
+
+        <v-alert
+          v-else-if="serverStatusWarning"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mb-2"
+          data-testid="source-card-status-warning"
+        >
+          {{ serverStatusWarning }}
+        </v-alert>
+
+        <v-file-input
+          label="ファイルを選択"
+          prepend-icon="mdi-file-upload-outline"
+          variant="outlined"
+          density="compact"
+          hide-details
+          data-testid="source-card-file-input"
+          :loading="isLoading"
+          :disabled="isLoading"
+          @update:model-value="onFileInputChange"
+        />
+
+        <v-alert
+          v-if="loadError"
+          type="error"
+          variant="tonal"
+          density="compact"
+          class="mt-2"
+          data-testid="source-card-load-error"
+        >
+          {{ loadError }}
+        </v-alert>
+      </template>
+    </v-card-text>
+  </v-card>
+</template>

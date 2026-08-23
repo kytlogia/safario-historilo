@@ -185,6 +185,7 @@ function resetAll() {
         <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2"
           >Edgeの履歴を見る</v-btn
         >
+        <v-btn variant="text" to="/all" prepend-icon="mdi-magnify" class="mr-2">横断検索</v-btn>
         <v-btn
           :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
           :aria-label="isDark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え'"
