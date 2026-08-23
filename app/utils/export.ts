@@ -1,4 +1,4 @@
-import type { FirefoxHistoryVisit, HistoryVisit } from '~/types/history'
+import type { ChromiumHistoryVisit, FirefoxHistoryVisit, HistoryVisit } from '~/types/history'
 
 function downloadBlob(content: BlobPart, mimeType: string, fileName: string) {
   const blob = new Blob([content], { type: mimeType })
@@ -10,6 +10,14 @@ function downloadBlob(content: BlobPart, mimeType: string, fileName: string) {
   anchor.click()
   anchor.remove()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+// Shared by every *AsCsv exporter below (Safari/Firefox/Chromium): quotes a
+// cell when it contains a comma, double quote, or newline, doubling any
+// embedded double quotes, per RFC 4180.
+function escapeCsvCell(value: unknown): string {
+  const str = value === null || value === undefined ? '' : String(value)
+  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
 }
 
 export function exportVisitsAsJson(visits: HistoryVisit[], fileName = 'safari-history.json') {
@@ -33,11 +41,6 @@ export function exportVisitsAsCsv(visits: HistoryVisit[], fileName = 'safari-his
     'statusCode'
   ] as const
 
-  const escapeCell = (value: unknown) => {
-    const str = value === null || value === undefined ? '' : String(value)
-    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
-  }
-
   const lines = [headers.join(',')]
   for (const visit of visits) {
     lines.push(
@@ -56,7 +59,7 @@ export function exportVisitsAsCsv(visits: HistoryVisit[], fileName = 'safari-his
         visit.origin,
         visit.statusCode
       ]
-        .map(escapeCell)
+        .map(escapeCsvCell)
         .join(',')
     )
   }
@@ -90,11 +93,6 @@ export function exportFirefoxVisitsAsCsv(
     'frecency'
   ] as const
 
-  const escapeCell = (value: unknown) => {
-    const str = value === null || value === undefined ? '' : String(value)
-    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
-  }
-
   const lines = [headers.join(',')]
   for (const visit of visits) {
     lines.push(
@@ -112,7 +110,58 @@ export function exportFirefoxVisitsAsCsv(
         visit.typed,
         visit.frecency
       ]
-        .map(escapeCell)
+        .map(escapeCsvCell)
+        .join(',')
+    )
+  }
+
+  downloadBlob('﻿' + lines.join('\n'), 'text/csv;charset=utf-8', fileName)
+}
+
+export function exportChromiumVisitsAsJson(
+  visits: ChromiumHistoryVisit[],
+  fileName = 'chromium-history.json'
+) {
+  downloadBlob(JSON.stringify(visits, null, 2), 'application/json', fileName)
+}
+
+export function exportChromiumVisitsAsCsv(
+  visits: ChromiumHistoryVisit[],
+  fileName = 'chromium-history.csv'
+) {
+  const headers = [
+    'visitId',
+    'title',
+    'url',
+    'domain',
+    'visitTime',
+    'visitCount',
+    'typedCount',
+    'transition',
+    'fromVisit',
+    'visitDuration',
+    'hidden',
+    'typed'
+  ] as const
+
+  const lines = [headers.join(',')]
+  for (const visit of visits) {
+    lines.push(
+      [
+        visit.visitId,
+        visit.title,
+        visit.url,
+        visit.domain,
+        visit.visitTime.toISOString(),
+        visit.visitCount,
+        visit.typedCount,
+        visit.transition,
+        visit.fromVisit ?? '',
+        visit.visitDuration,
+        visit.hidden,
+        visit.typed
+      ]
+        .map(escapeCsvCell)
         .join(',')
     )
   }

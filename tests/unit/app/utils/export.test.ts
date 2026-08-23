@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FirefoxHistoryVisit, HistoryVisit } from '~/types/history'
+import type { ChromiumHistoryVisit, FirefoxHistoryVisit, HistoryVisit } from '~/types/history'
 import {
+  exportChromiumVisitsAsCsv,
+  exportChromiumVisitsAsJson,
   exportFirefoxVisitsAsCsv,
   exportFirefoxVisitsAsJson,
   exportVisitsAsCsv,
@@ -50,6 +52,26 @@ function makeFirefoxVisit(overrides: Partial<FirefoxHistoryVisit> = {}): Firefox
     typed: false,
     frecency: 100,
     guid: 'guid-1',
+    ...overrides
+  }
+}
+
+function makeChromiumVisit(overrides: Partial<ChromiumHistoryVisit> = {}): ChromiumHistoryVisit {
+  return {
+    visitId: 1,
+    urlId: 1,
+    url: 'https://example.com/',
+    domain: 'example.com',
+    title: 'Example',
+    visitTime: new Date('2024-01-02T03:04:05.000Z'),
+    visitTimeRaw: '123',
+    visitCount: 1,
+    typedCount: 0,
+    transition: 0,
+    fromVisit: null,
+    visitDuration: 0,
+    hidden: false,
+    typed: false,
     ...overrides
   }
 }
@@ -256,6 +278,69 @@ describe('export.ts', () => {
       const cells = text.slice(1).split('\n')[1].split(',')
       // header: visitId,title,url,domain,visitTime,visitCount,visitType,fromVisit,session,hidden,typed,frecency
       expect(cells[7]).toBe('')
+    })
+  })
+
+  describe('exportChromiumVisitsAsJson', () => {
+    it('serializes visits as pretty-printed JSON and triggers a download', () => {
+      vi.useFakeTimers()
+      const visits = [makeChromiumVisit()]
+
+      exportChromiumVisitsAsJson(visits, 'out.json')
+
+      expect(createObjectURL).toHaveBeenCalledTimes(1)
+      const blob = createObjectURL.mock.calls[0][0] as Blob
+      expect(blob.type).toBe('application/json')
+      expect(capturedAnchor?.download).toBe('out.json')
+      expect(clickSpy).toHaveBeenCalledTimes(1)
+
+      vi.advanceTimersByTime(1000)
+      expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
+      vi.useRealTimers()
+    })
+  })
+
+  describe('exportChromiumVisitsAsCsv', () => {
+    function getCsvText(visits: ChromiumHistoryVisit[]) {
+      exportChromiumVisitsAsCsv(visits, 'out.csv')
+      return createObjectURL.mock.calls[0][0] as Blob
+    }
+
+    it('writes the expected header row in order', async () => {
+      const blob = getCsvText([])
+      expect(blob.type).toBe('text/csv;charset=utf-8')
+      const text = await blobText(blob)
+      const [header] = text.split('\n')
+      expect(header).toBe(
+        [
+          'visitId',
+          'title',
+          'url',
+          'domain',
+          'visitTime',
+          'visitCount',
+          'typedCount',
+          'transition',
+          'fromVisit',
+          'visitDuration',
+          'hidden',
+          'typed'
+        ].join(',')
+      )
+    })
+
+    it('prefixes the file with a UTF-8 BOM', async () => {
+      const blob = getCsvText([])
+      const bytes = await blobBytes(blob)
+      expect(Array.from(bytes.slice(0, 3))).toEqual([0xef, 0xbb, 0xbf])
+    })
+
+    it('renders a null fromVisit as an empty cell', async () => {
+      const blob = getCsvText([makeChromiumVisit({ fromVisit: null })])
+      const text = await blobText(blob)
+      const cells = text.slice(1).split('\n')[1].split(',')
+      // header: visitId,title,url,domain,visitTime,visitCount,typedCount,transition,fromVisit,visitDuration,hidden,typed
+      expect(cells[8]).toBe('')
     })
   })
 })

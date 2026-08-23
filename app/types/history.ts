@@ -53,4 +53,33 @@ export interface ParsedFirefoxHistory {
   fileName: string
 }
 
-export type { SafariProfile, FirefoxProfile } from '../../shared/types/profile'
+export interface ChromiumHistoryVisit {
+  visitId: number
+  urlId: number
+  url: string
+  domain: string
+  title: string
+  visitTime: Date
+  /**
+   * The exact WebKit-epoch microsecond value as a decimal string. Chrome's
+   * visit_time values are large enough (~1.3e16+) to exceed
+   * Number.MAX_SAFE_INTEGER, so this is kept as a string (round-tripped via
+   * SQLite's own TEXT cast, never through a JS Number) rather than losing
+   * precision — see parseChromiumHistoryDatabase.ts.
+   */
+  visitTimeRaw: string
+  visitCount: number
+  typedCount: number
+  transition: number
+  fromVisit: number | null
+  visitDuration: number
+  hidden: boolean
+  typed: boolean
+}
+
+export interface ParsedChromiumHistory {
+  visits: ChromiumHistoryVisit[]
+  fileName: string
+}
+
+export type { SafariProfile, FirefoxProfile, ChromiumProfile } from '../../shared/types/profile'

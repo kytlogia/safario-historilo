@@ -81,21 +81,32 @@ export function resolveHistoryDbPath(event: H3Event, profileId?: string): string
  * in directory listings, but any real read fails with EPERM. Checking R_OK
  * up front lets the UI explain *why* auto-load isn't available instead of
  * surfacing a raw filesystem error only after the user clicks the button.
+ *
+ * Shared by history-store.ts (Safari), firefox-history-store.ts (Firefox),
+ * and chromium-history-store.ts (Chrome/Edge) — the present-vs-readable check
+ * itself is identical for all three, only how each resolves its own dbPath
+ * differs.
  */
+export function checkDbFileAccess(dbPath: string | null): {
+  present: boolean
+  readable: boolean
+  path: string
+} {
+  if (!dbPath) return { present: false, readable: false, path: '' }
+  if (!existsSync(dbPath)) return { present: false, readable: false, path: dbPath }
+  try {
+    accessSync(dbPath, constants.R_OK)
+    return { present: true, readable: true, path: dbPath }
+  } catch {
+    return { present: true, readable: false, path: dbPath }
+  }
+}
+
 export function checkHistoryDbAccess(
   event: H3Event,
   profileId?: string
 ): { present: boolean; readable: boolean; path: string } {
-  const path = resolveHistoryDbPath(event, profileId)
-  if (!existsSync(path)) {
-    return { present: false, readable: false, path }
-  }
-  try {
-    accessSync(path, constants.R_OK)
-    return { present: true, readable: true, path }
-  } catch {
-    return { present: true, readable: false, path }
-  }
+  return checkDbFileAccess(resolveHistoryDbPath(event, profileId))
 }
 
 export async function loadSqliteBindings() {

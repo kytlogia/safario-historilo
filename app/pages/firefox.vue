@@ -179,6 +179,12 @@ function resetAll() {
         <v-btn variant="text" to="/" prepend-icon="mdi-compass-outline" class="mr-2"
           >Safariの履歴を見る</v-btn
         >
+        <v-btn variant="text" to="/chrome" prepend-icon="mdi-google-chrome" class="mr-2"
+          >Chromeの履歴を見る</v-btn
+        >
+        <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2"
+          >Edgeの履歴を見る</v-btn
+        >
         <v-btn
           :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
           :aria-label="isDark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え'"
