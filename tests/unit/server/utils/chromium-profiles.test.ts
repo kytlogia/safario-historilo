@@ -119,6 +119,34 @@ describe('listChromiumProfiles', () => {
     expect(profiles[0]?.name).toBe('Profile 1')
   })
 
+  it('ignores info_cache keys that are not a plain path segment, so they can never escape userDataDir', async () => {
+    // A tampered/malicious Local State could contain a directory name with a
+    // path separator or a ".." component — that must never reach join() and
+    // be resolved against the filesystem, since profileId later resolves
+    // against this exact list by exact match (see chromium-history-store.ts).
+    await createProfileDir('Default', true)
+    const outsideDir = join(dir, 'outside')
+    await mkdir(outsideDir, { recursive: true })
+    await writeFile(join(outsideDir, 'History'), 'dummy')
+    await writeLocalState({
+      Default: { name: 'Alice' },
+      '../outside': { name: 'Escaped' },
+      'sub/dir': { name: 'Nested' },
+      '..': { name: 'ParentDir' }
+    })
+
+    const profiles = await listChromiumProfiles({ userDataDir, localStatePath })
+
+    expect(profiles).toEqual([
+      {
+        id: 'Default',
+        name: 'Alice',
+        dbPath: join(userDataDir, 'Default', 'History'),
+        isDefault: true
+      }
+    ])
+  })
+
   it('falls back to just "Default" when Local State is unparsable JSON', async () => {
     await createProfileDir('Default', true)
     await writeFile(localStatePath, '{not json')

@@ -41,7 +41,7 @@ const SAMPLE_VISIT: ChromiumHistoryVisit = {
   domain: 'example.com',
   title: 'Example',
   visitTime: new Date('2024-01-01T00:00:00Z'),
-  visitTimeRaw: 13345469600000000,
+  visitTimeRaw: '13345469600000000',
   visitCount: 1,
   typedCount: 0,
   transition: 0,

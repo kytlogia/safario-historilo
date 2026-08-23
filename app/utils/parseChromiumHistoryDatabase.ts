@@ -7,8 +7,13 @@ import { getSqlJs } from './sqlJs'
 // urls.last_visit_time are microseconds since 1601-01-01T00:00:00Z — the
 // number of seconds between that and the Unix epoch (1970-01-01) is
 // 11644473600.
-const MICROSECONDS_PER_MILLISECOND = 1000
-const WEBKIT_EPOCH_OFFSET_MICROSECONDS = 11644473600 * 1_000_000
+//
+// Real values (~1.3e16+ for any modern date) already exceed
+// Number.MAX_SAFE_INTEGER (~9e15), so this arithmetic is done in BigInt
+// throughout rather than via `Number(visit_time)`, which would round the
+// 64-bit SQLite integer as soon as it crossed into a JS double.
+const MICROSECONDS_PER_MILLISECOND = 1000n
+const WEBKIT_EPOCH_OFFSET_MICROSECONDS = 11644473600n * 1_000_000n
 
 // PAGE_TRANSITION_TYPED — see chromiumVisitType.ts for the full transition
 // type table.
@@ -96,17 +101,17 @@ export async function parseChromiumHistoryBuffer(
 
     const result = db.exec(`
       SELECT
-        v.id              AS visit_id,
-        u.id              AS url_id,
-        u.url             AS url,
-        u.title           AS title,
-        v.visit_time      AS visit_time,
-        u.visit_count     AS visit_count,
-        u.typed_count     AS typed_count,
-        v.transition      AS transition,
-        v.from_visit      AS from_visit,
-        v.visit_duration  AS visit_duration,
-        u.hidden          AS hidden
+        v.id                          AS visit_id,
+        u.id                          AS url_id,
+        u.url                         AS url,
+        u.title                       AS title,
+        CAST(v.visit_time AS TEXT)    AS visit_time,
+        u.visit_count                 AS visit_count,
+        u.typed_count                 AS typed_count,
+        v.transition                  AS transition,
+        v.from_visit                  AS from_visit,
+        v.visit_duration              AS visit_duration,
+        u.hidden                      AS hidden
       FROM visits v
       JOIN urls u ON v.url = u.id
       ORDER BY v.visit_time DESC
@@ -128,7 +133,11 @@ export async function parseChromiumHistoryBuffer(
         hidden
       ] = row
 
-      const rawMicroseconds = Number(visitTimeRaw ?? 0)
+      // visit_time comes through as an exact decimal string (see the CAST in
+      // the query above), so BigInt() parses it without ever routing the
+      // 64-bit value through a JS Number first.
+      const visitTimeRawStr = String(visitTimeRaw ?? '0')
+      const rawMicroseconds = BigInt(visitTimeRawStr)
       const urlStr = String(url ?? '')
       const fromVisitNum = Number(fromVisit ?? 0)
       const transitionNum = Number(transition ?? 0)
@@ -139,10 +148,15 @@ export async function parseChromiumHistoryBuffer(
         url: urlStr,
         domain: extractDomain(urlStr),
         title: title ? String(title) : '(タイトルなし)',
+        // The millisecond count Date() needs is always far below
+        // Number.MAX_SAFE_INTEGER even for the BigInt division result, so
+        // converting only at this last step loses no precision.
         visitTime: new Date(
-          (rawMicroseconds - WEBKIT_EPOCH_OFFSET_MICROSECONDS) / MICROSECONDS_PER_MILLISECOND
+          Number(
+            (rawMicroseconds - WEBKIT_EPOCH_OFFSET_MICROSECONDS) / MICROSECONDS_PER_MILLISECOND
+          )
         ),
-        visitTimeRaw: rawMicroseconds,
+        visitTimeRaw: visitTimeRawStr,
         visitCount: Number(visitCount ?? 0),
         typedCount: Number(typedCount ?? 0),
         transition: transitionNum,

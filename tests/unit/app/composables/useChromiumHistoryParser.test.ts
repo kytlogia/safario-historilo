@@ -37,8 +37,8 @@ describe('parseChromiumHistoryFile', () => {
     expect(result.visits).toHaveLength(SAMPLE_CHROMIUM_DATA.visits.length)
 
     // Visits are ordered by visit_time DESC.
-    const times = result.visits.map((v) => v.visitTimeRaw)
-    expect(times).toEqual([...times].sort((a, b) => b - a))
+    const times = result.visits.map((v) => BigInt(v.visitTimeRaw))
+    expect(times).toEqual([...times].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0)))
 
     const normal = result.visits.find((v) => v.visitId === 101)!
     expect(normal.url).toBe('https://www.example.com/')
@@ -52,9 +52,36 @@ describe('parseChromiumHistoryFile', () => {
 
     // WebKit epoch conversion: microseconds since 1601-01-01T00:00:00Z, minus
     // the 1601->1970 offset, converted to ms.
-    expect(normal.visitTimeRaw).toBe(SAMPLE_WEBKIT_BASE_TIME)
+    expect(normal.visitTimeRaw).toBe(String(SAMPLE_WEBKIT_BASE_TIME))
     const expectedMs = (SAMPLE_WEBKIT_BASE_TIME - 11644473600 * 1_000_000) / 1000
     expect(normal.visitTime.getTime()).toBe(expectedMs)
+  })
+
+  it('preserves visitTimeRaw exactly for values beyond Number.MAX_SAFE_INTEGER', async () => {
+    // Real-world Chrome/Edge visit_time values (~1.3e16+ for any modern date)
+    // already exceed Number.MAX_SAFE_INTEGER (~9.007e15) — visitTimeRaw must
+    // come through as the exact decimal string SQLite stored, not a value
+    // that was ever rounded by passing through a JS Number. This literal is
+    // odd and above 2^53, so `Number(preciseValue)` would silently round it
+    // to a different (even) value if the fix regressed — inserted via a raw
+    // SQL literal (not a bound parameter) so the fixture layer's own
+    // Number-typed binding can't be the thing rounding it instead.
+    const { parseChromiumHistoryFile } = await import('~/composables/useChromiumHistoryParser')
+    const preciseValue = '13398765432109877'
+    const db = await createChromiumHistoryDatabase({
+      urls: [{ id: 1, url: 'https://example.com/' }],
+      visits: []
+    })
+    db.run(
+      `INSERT INTO visits (id, url, visit_time, from_visit, transition, visit_duration) VALUES (1, 1, ${preciseValue}, 0, 0, 0)`
+    )
+    const bytes = db.export()
+    db.close()
+    const file = new File([bytes], 'precise-time')
+
+    const result = await parseChromiumHistoryFile(file)
+
+    expect(result.visits[0]?.visitTimeRaw).toBe(preciseValue)
   })
 
   it('maps urls.hidden (0/1) to a boolean', async () => {

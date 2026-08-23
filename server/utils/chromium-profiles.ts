@@ -39,6 +39,21 @@ interface ListChromiumProfilesOptions {
 }
 
 /**
+ * `Local State` is a JSON file Chrome/Edge itself writes, but it's still
+ * arbitrary data by the time it reaches here — a directory name from
+ * `profile.info_cache` gets `join()`-ed straight onto userDataDir below, so a
+ * key containing a path separator or a `..` segment could otherwise escape
+ * userDataDir entirely (and `profileId` in the API routes resolves against
+ * this exact same list, so a path-escaping id here would become a path
+ * traversal there too). Real Chrome/Edge profile directory names are always
+ * one plain path segment (`Default`, `Profile 1`, ...), so rejecting
+ * anything else is a safe filter, not a compatibility risk.
+ */
+function isValidProfileDirName(name: string): boolean {
+  return name !== '' && name !== '.' && name !== '..' && !name.includes('/') && !name.includes('\\')
+}
+
+/**
  * Lists profiles by reading `Local State`'s `profile.info_cache`, keeping
  * only entries whose profile directory actually contains a `History` file (a
  * profile can be listed without ever having been browsed in). Falls back to
@@ -60,7 +75,7 @@ export async function listChromiumProfiles(
 
   const localState = await readLocalState(localStatePath)
   const infoCache = localState?.profile?.info_cache
-  const dirNames = infoCache ? Object.keys(infoCache) : ['Default']
+  const dirNames = (infoCache ? Object.keys(infoCache) : ['Default']).filter(isValidProfileDirName)
 
   const profiles: ChromiumProfile[] = []
   for (const dirName of dirNames) {

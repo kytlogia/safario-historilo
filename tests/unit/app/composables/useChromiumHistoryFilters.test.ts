@@ -12,7 +12,7 @@ function makeVisit(overrides: Partial<ChromiumHistoryVisit> = {}): ChromiumHisto
     domain: 'example.com',
     title: 'Example',
     visitTime: new Date('2024-01-02T03:04:05.000Z'),
-    visitTimeRaw: 123,
+    visitTimeRaw: '123',
     visitCount: 1,
     typedCount: 0,
     transition: 0,
