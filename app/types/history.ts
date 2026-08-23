@@ -29,3 +29,5 @@ export interface ParsedHistory {
   visits: HistoryVisit[]
   fileName: string
 }
+
+export type { SafariProfile } from '../../shared/types/profile'
