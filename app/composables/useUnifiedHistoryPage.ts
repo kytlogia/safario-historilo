@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { formatDate } from '~/utils/format'
 import type {
   ChromiumHistoryVisit,
   ChromiumProfile,
@@ -71,12 +72,19 @@ export function useUnifiedHistoryPage() {
     loadErrorFallback: 'History の自動読み込みに失敗しました。'
   })
 
-  const visits = computed<UnifiedHistoryVisit[]>(() => [
-    ...safari.unifiedVisits.value,
-    ...firefox.unifiedVisits.value,
-    ...chrome.unifiedVisits.value,
-    ...edge.unifiedVisits.value
-  ])
+  // Each source's own visits already arrive sorted (visit_time DESC, see the
+  // per-brand SQL), but concatenating four independently-sorted arrays does
+  // not itself produce a sorted result — re-sort the merged list so /all
+  // actually reads as one interleaved timeline instead of "all of Safari,
+  // then all of Firefox, ...".
+  const visits = computed<UnifiedHistoryVisit[]>(() =>
+    [
+      ...safari.unifiedVisits.value,
+      ...firefox.unifiedVisits.value,
+      ...chrome.unifiedVisits.value,
+      ...edge.unifiedVisits.value
+    ].sort((a, b) => b.visitTime.getTime() - a.visitTime.getTime())
+  )
 
   const hasData = computed(
     () =>
@@ -90,10 +98,31 @@ export function useUnifiedHistoryPage() {
   const dateTo = ref<Date | null>(null)
   const enabledSources = ref<UnifiedHistorySource[]>([...UNIFIED_HISTORY_SOURCES])
 
-  const { domainOptions, filteredVisits, topDomains, dateRangeLabel } = useUnifiedHistoryFilters(
-    visits,
-    { search: debouncedSearch, domainFilter, dateFrom, dateTo, enabledSources }
-  )
+  const { domainOptions, filteredVisits, topDomains } = useUnifiedHistoryFilters(visits, {
+    search: debouncedSearch,
+    domainFilter,
+    dateFrom,
+    dateTo,
+    enabledSources
+  })
+
+  // useVisitFilterEngine's own dateRangeLabel deliberately ignores every
+  // filter (search/domain/date) and always spans *all* loaded visits — see
+  // useVisitFilterEngine.ts. /all adds a filter no single-browser page has,
+  // though: whole sources can be switched off via enabledSources. Left as
+  // useVisitFilterEngine's dateRangeLabel, that switch would be silently
+  // ignored and the "期間" summary would keep including a source the user
+  // just hid — so this recomputes it from a source-only-filtered view
+  // instead, keeping the "ignore search/domain/date" behavior intentional
+  // elsewhere while still respecting which sources are enabled.
+  const dateRangeLabel = computed(() => {
+    const sourceVisits = visits.value.filter((v) => enabledSources.value.includes(v.source))
+    if (sourceVisits.length === 0) return '-'
+    const times = sourceVisits.map((v) => v.visitTime.getTime())
+    const min = new Date(Math.min(...times))
+    const max = new Date(Math.max(...times))
+    return `${formatDate(min)} 〜 ${formatDate(max)}`
+  })
 
   const uniqueUrlCount = computed(() => new Set(visits.value.map((v) => v.url)).size)
   const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domain)).size)

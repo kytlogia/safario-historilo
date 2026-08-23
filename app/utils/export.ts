@@ -191,7 +191,7 @@ export function exportUnifiedVisitsAsCsv(
   for (const visit of visits) {
     lines.push(
       [
-        visit.sourceLabel,
+        visit.source,
         visit.title,
         visit.url,
         visit.domain,

@@ -56,11 +56,17 @@ describe('UnifiedSourceCard', () => {
     expect(wrapper.emitted('file-selected')).toEqual([[file]])
   })
 
-  it('shows the server auto-load button when available and emits load-from-server on click', async () => {
-    const wrapper = mountCard({ serverAutoLoadAvailable: true })
+  it('shows the server auto-load button and db path when available, and emits load-from-server on click', async () => {
+    const wrapper = mountCard({
+      serverAutoLoadAvailable: true,
+      serverDbPath: '/Users/example/Library/Application Support/Google/Chrome/Default/History'
+    })
 
     const button = wrapper.find('[data-testid="source-card-server-load-button"]')
     expect(button.exists()).toBe(true)
+    expect(wrapper.find('[data-testid="source-card-server-db-path"]').text()).toBe(
+      '/Users/example/Library/Application Support/Google/Chrome/Default/History'
+    )
 
     await button.trigger('click')
     expect(wrapper.emitted('load-from-server')).toHaveLength(1)

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onUnmounted, ref, watch } from 'vue'
 import { formatDateTime, isSafeUrl } from '~/utils/format'
 import type { UnifiedHistoryVisit } from '~/types/history'
 import { unifiedSourceMeta } from '~/utils/unifiedHistory'
@@ -8,6 +9,36 @@ defineProps<{
 }>()
 
 const open = defineModel<boolean>({ required: true })
+
+const copiedField = ref<string | null>(null)
+let copiedTimer: ReturnType<typeof setTimeout> | undefined
+
+function resetCopiedState() {
+  clearTimeout(copiedTimer)
+  copiedTimer = undefined
+  copiedField.value = null
+}
+
+async function copyToClipboard(text: string, field: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    copiedField.value = field
+    clearTimeout(copiedTimer)
+    copiedTimer = setTimeout(() => {
+      copiedField.value = null
+    }, 1500)
+  } catch {
+    // クリップボードAPIが使用不可(権限拒否など)の場合は何もしない
+  }
+}
+
+watch(open, (isOpen) => {
+  if (!isOpen) resetCopiedState()
+})
+
+onUnmounted(() => {
+  clearTimeout(copiedTimer)
+})
 </script>
 
 <template>
@@ -45,6 +76,17 @@ const open = defineModel<boolean>({ required: true })
             <template #subtitle>
               <span class="detail-dialog__subtitle">{{ visit.title }}</span>
             </template>
+            <template #append>
+              <v-btn
+                :icon="copiedField === 'title' ? 'mdi-check' : 'mdi-content-copy'"
+                variant="text"
+                size="small"
+                title="コピー"
+                aria-label="コピー"
+                data-testid="unified-copy-title-button"
+                @click="copyToClipboard(visit.title, 'title')"
+              />
+            </template>
           </v-list-item>
           <v-list-item title="URL">
             <template #subtitle>
@@ -61,6 +103,17 @@ const open = defineModel<boolean>({ required: true })
               <span v-else class="detail-dialog__subtitle" data-testid="unified-detail-url-text">{{
                 visit.url
               }}</span>
+            </template>
+            <template #append>
+              <v-btn
+                :icon="copiedField === 'url' ? 'mdi-check' : 'mdi-content-copy'"
+                variant="text"
+                size="small"
+                title="コピー"
+                aria-label="コピー"
+                data-testid="unified-copy-url-button"
+                @click="copyToClipboard(visit.url, 'url')"
+              />
             </template>
           </v-list-item>
           <v-list-item title="ドメイン" :subtitle="visit.domain" />

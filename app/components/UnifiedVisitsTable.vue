@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { formatDateTime } from '~/utils/format'
 import type { UnifiedHistoryVisit } from '~/types/history'
 import { unifiedSourceMeta } from '~/utils/unifiedHistory'
 import TruncatedCell from './TruncatedCell.vue'
 
-defineProps<{
+const props = defineProps<{
   items: UnifiedHistoryVisit[]
 }>()
 
@@ -13,11 +14,13 @@ const emit = defineEmits<{
 }>()
 
 // UnifiedHistoryVisit has no stable id of its own (it's a merged projection
-// of four different visit types) — key rows by source + url + timestamp,
-// which is unique enough to satisfy v-data-table-virtual's internal tracking.
-function rowKey(item: UnifiedHistoryVisit) {
-  return `${item.source}:${item.url}:${item.visitTime.getTime()}`
-}
+// of four different visit types), and a composite key like
+// `source:url:visitTime` can still collide — e.g. the same URL visited twice
+// in the same source within the same millisecond. Decorate each row with its
+// position in the current `items` array instead: it's guaranteed unique for
+// any given render, which is all v-data-table-virtual's internal tracking
+// needs (it isn't persisted across items array changes, e.g. re-filtering).
+const indexedItems = computed(() => props.items.map((item, rowIndex) => ({ ...item, rowIndex })))
 
 const headers = [
   { title: 'ソース', key: 'source', width: 120 },
@@ -32,8 +35,8 @@ const headers = [
 <template>
   <v-data-table-virtual
     :headers="headers"
-    :items="items"
-    :item-value="rowKey"
+    :items="indexedItems"
+    item-value="rowIndex"
     height="600"
     fixed-header
     @click:row="(_e: Event, row: { item: UnifiedHistoryVisit }) => emit('row-click', row.item)"

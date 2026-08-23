@@ -403,11 +403,11 @@ describe('export.ts', () => {
       expect(Array.from(bytes.slice(0, 3))).toEqual([0xef, 0xbb, 0xbf])
     })
 
-    it('renders the sourceLabel (not the internal source key) in the source column', async () => {
+    it('renders the internal source key (not sourceLabel) in the source column, matching the header', async () => {
       const blob = getCsvText([makeUnifiedVisit({ source: 'firefox', sourceLabel: 'Firefox' })])
       const text = await blobText(blob)
       const cells = text.slice(1).split('\n')[1].split(',')
-      expect(cells[0]).toBe('Firefox')
+      expect(cells[0]).toBe('firefox')
     })
   })
 })

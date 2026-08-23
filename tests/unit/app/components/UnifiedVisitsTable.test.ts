@@ -72,6 +72,31 @@ describe('UnifiedVisitsTable', () => {
     const row = dataRows(wrapper)[0]
     await row!.trigger('click')
 
-    expect(wrapper.emitted('row-click')).toEqual([[visit]])
+    // The emitted item carries an internal rowIndex field alongside the
+    // visit's own fields — see the rowIndex-decoration comment in
+    // UnifiedVisitsTable.vue for why the table needs it.
+    expect(wrapper.emitted('row-click')).toEqual([[{ ...visit, rowIndex: 0 }]])
+  })
+
+  it('emits row-click with the matching visit when there are multiple rows', async () => {
+    const first = makeVisit({ url: 'https://example.com/first' })
+    const second = makeVisit({ url: 'https://example.com/second' })
+    const wrapper = mountTable([first, second])
+
+    const rows = dataRows(wrapper)
+    await rows[1]!.trigger('click')
+
+    expect(wrapper.emitted('row-click')).toEqual([[{ ...second, rowIndex: 1 }]])
+  })
+
+  it('renders every row separately even when source/url/visitTime are all identical', () => {
+    // Regression test: an earlier version keyed rows by `source:url:visitTime`,
+    // which collides for two visits to the same URL in the same millisecond
+    // (e.g. a fast reload) and made v-data-table-virtual collapse/misattribute
+    // rows. Rows are now keyed by their position in `items` instead.
+    const duplicate = makeVisit({ url: 'https://example.com/dup' })
+    const wrapper = mountTable([duplicate, { ...duplicate }])
+
+    expect(dataRows(wrapper)).toHaveLength(2)
   })
 })

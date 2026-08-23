@@ -160,10 +160,22 @@ export function useUnifiedHistorySource<V, P>(options: UnifiedHistorySourceOptio
   }
 
   onMounted(async () => {
-    await Promise.all([checkServerAutoLoadAvailability(), loadProfiles()])
+    // Sequential, not Promise.all: checkServerAutoLoadAvailability() reads
+    // selectedProfileId synchronously, but loadProfiles() is what resolves
+    // the default profile id (via resolveDefaultProfileId) when the caller
+    // didn't pass an initialProfileId. Running them in parallel risks the
+    // status check firing before a profile is selected — resolve the
+    // profile first.
+    await loadProfiles()
+    await checkServerAutoLoadAvailability()
   })
 
   return {
+    // Exposed so callers that need full-fidelity, source-specific fields
+    // (e.g. useChromiumHistoryPage.ts, which filters on onlyTyped/
+    // onlyRedirects/onlyHidden) can build their own filtering on top of this
+    // loader instead of the reduced UnifiedHistoryVisit projection.
+    rawVisits,
     fileName,
     isLoading,
     loadError,

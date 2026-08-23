@@ -80,21 +80,28 @@ function onFileInputChange(files: File[] | File | null) {
           @update:model-value="emit('update:selectedProfileId', $event)"
         />
 
-        <v-btn
-          v-if="serverAutoLoadAvailable"
-          color="primary"
-          variant="flat"
-          size="small"
-          prepend-icon="mdi-database-sync-outline"
-          block
-          class="mb-2"
-          data-testid="source-card-server-load-button"
-          :loading="isLoading"
-          :disabled="isLoading"
-          @click="emit('load-from-server')"
-        >
-          自動で読み込む
-        </v-btn>
+        <template v-if="serverAutoLoadAvailable">
+          <v-btn
+            color="primary"
+            variant="flat"
+            size="small"
+            prepend-icon="mdi-database-sync-outline"
+            block
+            class="mb-1"
+            data-testid="source-card-server-load-button"
+            :loading="isLoading"
+            :disabled="isLoading"
+            @click="emit('load-from-server')"
+          >
+            自動で読み込む
+          </v-btn>
+          <div
+            class="text-caption text-medium-emphasis mb-2 text-truncate"
+            data-testid="source-card-server-db-path"
+          >
+            {{ serverDbPath }}
+          </div>
+        </template>
 
         <v-alert
           v-else-if="serverPermissionHint"
