@@ -85,16 +85,16 @@ export function resolveHistoryDbPath(event: H3Event, profileId?: string): string
 export function checkHistoryDbAccess(
   event: H3Event,
   profileId?: string
-): { present: boolean; readable: boolean } {
-  const dbPath = resolveHistoryDbPath(event, profileId)
-  if (!existsSync(dbPath)) {
-    return { present: false, readable: false }
+): { present: boolean; readable: boolean; path: string } {
+  const path = resolveHistoryDbPath(event, profileId)
+  if (!existsSync(path)) {
+    return { present: false, readable: false, path }
   }
   try {
-    accessSync(dbPath, constants.R_OK)
-    return { present: true, readable: true }
+    accessSync(path, constants.R_OK)
+    return { present: true, readable: true, path }
   } catch {
-    return { present: true, readable: false }
+    return { present: true, readable: false, path }
   }
 }
 
@@ -210,8 +210,7 @@ export async function readLocalHistoryDb(
   event: H3Event,
   profileId?: string
 ): Promise<{ buffer: Buffer; fileName: string }> {
-  const dbPath = resolveHistoryDbPath(event, profileId)
-  const { present, readable } = checkHistoryDbAccess(event, profileId)
+  const { present, readable, path: dbPath } = checkHistoryDbAccess(event, profileId)
   if (!present) {
     throw new HistoryDbNotFoundError(`History.db が見つかりませんでした: ${dbPath}`)
   }

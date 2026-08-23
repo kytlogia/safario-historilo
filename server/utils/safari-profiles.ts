@@ -9,12 +9,7 @@ import {
   profileHistoryDbPath
 } from './history-store'
 import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
-
-export interface SafariProfile {
-  id: string
-  name: string
-  dbPath: string
-}
+import type { SafariProfile } from '../../shared/types/profile'
 
 /**
  * Safari doesn't keep a simple "profile id -> display name" file anywhere

@@ -165,15 +165,24 @@ describe('checkHistoryDbAccess', () => {
   })
 
   it('reports present:false, readable:false when the file does not exist', () => {
-    runtimeConfig.historyDbPath = join(dir, 'missing.db')
-    expect(checkHistoryDbAccess(fakeEvent())).toEqual({ present: false, readable: false })
+    const missingDbPath = join(dir, 'missing.db')
+    runtimeConfig.historyDbPath = missingDbPath
+    expect(checkHistoryDbAccess(fakeEvent())).toEqual({
+      present: false,
+      readable: false,
+      path: missingDbPath
+    })
   })
 
   it('reports present:true, readable:true for a normal, readable file', async () => {
     const dbPath = join(dir, 'History.db')
     await writeFile(dbPath, 'dummy')
     runtimeConfig.historyDbPath = dbPath
-    expect(checkHistoryDbAccess(fakeEvent())).toEqual({ present: true, readable: true })
+    expect(checkHistoryDbAccess(fakeEvent())).toEqual({
+      present: true,
+      readable: true,
+      path: dbPath
+    })
   })
 
   it('reports present:true, readable:false when the file exists but is not readable', async () => {
@@ -182,7 +191,11 @@ describe('checkHistoryDbAccess', () => {
     await writeFile(dbPath, 'dummy')
     await chmod(dbPath, 0o000)
     runtimeConfig.historyDbPath = dbPath
-    expect(checkHistoryDbAccess(fakeEvent())).toEqual({ present: true, readable: false })
+    expect(checkHistoryDbAccess(fakeEvent())).toEqual({
+      present: true,
+      readable: false,
+      path: dbPath
+    })
     await chmod(dbPath, 0o600) // restore so rm() can clean up
   })
 })

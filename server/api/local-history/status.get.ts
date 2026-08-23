@@ -5,13 +5,13 @@ export default defineEventHandler(async (event) => {
   const profileId = typeof query.profileId === 'string' ? query.profileId : undefined
 
   const supported = await isNodeSqliteSupported()
-  const { present, readable } = checkHistoryDbAccess(event, profileId)
+  const { present, readable, path } = checkHistoryDbAccess(event, profileId)
 
   return {
     available: supported && present && readable,
     supported,
     present,
     readable,
-    path: resolveHistoryDbPath(event, profileId)
+    path
   }
 })

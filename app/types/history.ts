@@ -30,8 +30,4 @@ export interface ParsedHistory {
   fileName: string
 }
 
-export interface SafariProfile {
-  id: string
-  name: string
-  dbPath: string
-}
+export type { SafariProfile } from '../../shared/types/profile'
