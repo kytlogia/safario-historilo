@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { FetchError } from 'ofetch'
-import type { FirefoxHistoryVisit, FirefoxProfile } from '~/types/history'
+import type { ChromiumHistoryVisit, ChromiumProfile } from '~/types/history'
 
-const visits = ref<FirefoxHistoryVisit[]>([])
+const visits = ref<ChromiumHistoryVisit[]>([])
 const fileName = ref('')
 const isLoading = ref(false)
 const loadError = ref('')
@@ -12,7 +12,7 @@ const serverDbPath = ref('')
 const serverPermissionHint = ref(false)
 const serverStatusWarning = ref('')
 
-const serverProfiles = ref<FirefoxProfile[]>([])
+const serverProfiles = ref<ChromiumProfile[]>([])
 const selectedProfileId = ref('')
 
 const search = ref('')
@@ -24,12 +24,12 @@ const onlyTyped = ref(false)
 const onlyRedirects = ref(false)
 const onlyHidden = ref(false)
 
-const selectedVisit = ref<FirefoxHistoryVisit | null>(null)
+const selectedVisit = ref<ChromiumHistoryVisit | null>(null)
 const detailDialog = ref(false)
 
 const hasData = computed(() => visits.value.length > 0)
 
-const { domainOptions, filteredVisits, topDomains, dateRangeLabel } = useFirefoxHistoryFilters(
+const { domainOptions, filteredVisits, topDomains, dateRangeLabel } = useChromiumHistoryFilters(
   visits,
   {
     search: debouncedSearch,
@@ -50,7 +50,7 @@ async function loadFile(file: File | null | undefined) {
   isLoading.value = true
   loadError.value = ''
   try {
-    const result = await parseFirefoxHistoryFile(file)
+    const result = await parseChromiumHistoryFile(file)
     visits.value = result.visits
     fileName.value = result.fileName
   } catch (err) {
@@ -71,7 +71,7 @@ async function checkServerAutoLoadAvailability() {
   const profileId = selectedProfileId.value || undefined
   serverStatusWarning.value = ''
   try {
-    const body = await $fetch('/api/local-history/firefox/status', { query: { profileId } })
+    const body = await $fetch('/api/local-history/chrome/status', { query: { profileId } })
     if (requestId !== statusRequestId) return
     serverAutoLoadAvailable.value = Boolean(body?.available)
     serverDbPath.value = typeof body?.path === 'string' ? body.path : ''
@@ -93,10 +93,10 @@ async function checkServerAutoLoadAvailability() {
   }
 }
 
-async function loadFirefoxProfiles() {
+async function loadChromeProfiles() {
   try {
-    const body = await $fetch('/api/local-history/firefox/profiles')
-    const profiles: FirefoxProfile[] = Array.isArray(body?.profiles) ? body.profiles : []
+    const body = await $fetch('/api/local-history/chrome/profiles')
+    const profiles: ChromiumProfile[] = Array.isArray(body?.profiles) ? body.profiles : []
     serverProfiles.value = profiles
     if (!selectedProfileId.value) {
       const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0]
@@ -120,15 +120,15 @@ async function loadFromServer() {
   isLoading.value = true
   loadError.value = ''
   try {
-    const blob = await $fetch<Blob>('/api/local-history/firefox', {
+    const blob = await $fetch<Blob>('/api/local-history/chrome', {
       query: { profileId: selectedProfileId.value || undefined }
     })
-    const result = await parseFirefoxHistoryFile(new File([blob], 'places.sqlite'))
+    const result = await parseChromiumHistoryFile(new File([blob], 'History'))
     visits.value = result.visits
     fileName.value = result.fileName
   } catch (err) {
     if (err instanceof FetchError) {
-      loadError.value = err.data?.message ?? 'places.sqlite の自動読み込みに失敗しました。'
+      loadError.value = err.data?.message ?? 'History の自動読み込みに失敗しました。'
     } else {
       loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
     }
@@ -138,10 +138,10 @@ async function loadFromServer() {
 }
 
 onMounted(async () => {
-  await Promise.all([checkServerAutoLoadAvailability(), loadFirefoxProfiles()])
+  await Promise.all([checkServerAutoLoadAvailability(), loadChromeProfiles()])
 })
 
-function openDetail(visit: FirefoxHistoryVisit) {
+function openDetail(visit: ChromiumHistoryVisit) {
   selectedVisit.value = visit
   detailDialog.value = true
 }
@@ -166,8 +166,8 @@ function resetAll() {
   <div>
     <v-app-bar flat density="comfortable" color="surface">
       <v-app-bar-title>
-        <v-icon icon="mdi-fire" class="mr-2" />
-        Firefox History Detail
+        <v-icon icon="mdi-google-chrome" class="mr-2" />
+        Chrome History Detail
       </v-app-bar-title>
       <template #append>
         <template v-if="hasData">
@@ -179,8 +179,8 @@ function resetAll() {
         <v-btn variant="text" to="/" prepend-icon="mdi-compass-outline" class="mr-2"
           >Safariの履歴を見る</v-btn
         >
-        <v-btn variant="text" to="/chrome" prepend-icon="mdi-google-chrome" class="mr-2"
-          >Chromeの履歴を見る</v-btn
+        <v-btn variant="text" to="/firefox" prepend-icon="mdi-fire" class="mr-2"
+          >Firefoxの履歴を見る</v-btn
         >
         <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2"
           >Edgeの履歴を見る</v-btn
@@ -196,8 +196,9 @@ function resetAll() {
 
     <v-main>
       <v-container fluid class="py-6">
-        <FirefoxUploadPanel
+        <ChromiumUploadPanel
           v-if="!hasData"
+          brand="chrome"
           :is-loading="isLoading"
           :load-error="loadError"
           :server-auto-load-available="serverAutoLoadAvailable"
@@ -222,7 +223,7 @@ function resetAll() {
           <v-row class="mt-2">
             <v-col cols="12" md="9">
               <v-card>
-                <FirefoxFilterBar
+                <ChromiumFilterBar
                   v-model:search="search"
                   v-model:domain-filter="domainFilter"
                   v-model:date-from="dateFrom"
@@ -230,6 +231,7 @@ function resetAll() {
                   v-model:only-typed="onlyTyped"
                   v-model:only-redirects="onlyRedirects"
                   v-model:only-hidden="onlyHidden"
+                  brand="chrome"
                   :domain-options="domainOptions"
                   :filtered-visits="filteredVisits"
                   :total-count="visits.length"
@@ -237,7 +239,7 @@ function resetAll() {
 
                 <v-divider />
 
-                <FirefoxVisitsTable :items="filteredVisits" @row-click="openDetail" />
+                <ChromiumVisitsTable :items="filteredVisits" @row-click="openDetail" />
               </v-card>
             </v-col>
 
@@ -249,6 +251,6 @@ function resetAll() {
       </v-container>
     </v-main>
 
-    <FirefoxVisitDetailDialog v-model="detailDialog" :visit="selectedVisit" />
+    <ChromiumVisitDetailDialog v-model="detailDialog" :visit="selectedVisit" />
   </div>
 </template>

@@ -53,4 +53,26 @@ export interface ParsedFirefoxHistory {
   fileName: string
 }
 
-export type { SafariProfile, FirefoxProfile } from '../../shared/types/profile'
+export interface ChromiumHistoryVisit {
+  visitId: number
+  urlId: number
+  url: string
+  domain: string
+  title: string
+  visitTime: Date
+  visitTimeRaw: number
+  visitCount: number
+  typedCount: number
+  transition: number
+  fromVisit: number | null
+  visitDuration: number
+  hidden: boolean
+  typed: boolean
+}
+
+export interface ParsedChromiumHistory {
+  visits: ChromiumHistoryVisit[]
+  fileName: string
+}
+
+export type { SafariProfile, FirefoxProfile, ChromiumProfile } from '../../shared/types/profile'
