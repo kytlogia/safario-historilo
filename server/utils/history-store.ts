@@ -1,9 +1,9 @@
 import { accessSync, constants, existsSync } from 'node:fs'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
-import { tmpdir, homedir } from 'node:os'
+import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type { H3Event } from 'h3'
 import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
+import { backupSqliteDatabaseToBuffer } from './sqlite-backup'
 
 export const DEFAULT_DB_PATH = join(homedir(), 'Library/Safari/History.db')
 
@@ -220,43 +220,6 @@ export async function readLocalHistoryDb(
     )
   }
 
-  const sqlite = await loadSqliteBindings()
-  if (!sqlite) {
-    throw new Error(
-      'この環境では node:sqlite (Node.js 22.5以降) が利用できないため、自動読み込みに対応していません。'
-    )
-  }
-
-  const tempDir = await mkdtemp(join(tmpdir(), 'safari-history-'))
-  const tempDbPath = join(tempDir, 'History.db')
-
-  try {
-    // Take a WAL-safe hot copy via SQLite's own Online Backup API instead of
-    // manually copying History.db/-wal/-shm as separate files. A hand-rolled
-    // multi-file copy can race with Safari's own writes (Safari may write to
-    // the WAL mid-copy), producing an inconsistent snapshot; the backup API
-    // reads a logically consistent view of the live database even while
-    // Safari keeps writing to it.
-    const sourceDb = new sqlite.DatabaseSync(dbPath, { readOnly: true })
-    try {
-      await sqlite.backup(sourceDb, tempDbPath)
-    } finally {
-      sourceDb.close()
-    }
-
-    // The backup can itself land in WAL mode with pending frames; checkpoint
-    // it so the bytes we hand back are a single self-contained file. This is
-    // safe (no race) because tempDbPath is our own private copy that nothing
-    // else writes to.
-    const backupDb = new sqlite.DatabaseSync(tempDbPath)
-    try {
-      backupDb.exec('PRAGMA wal_checkpoint(TRUNCATE)')
-    } finally {
-      backupDb.close()
-    }
-
-    return { buffer: await readFile(tempDbPath), fileName: 'History.db' }
-  } finally {
-    await rm(tempDir, { recursive: true, force: true })
-  }
+  const buffer = await backupSqliteDatabaseToBuffer(dbPath, 'safari-history-', 'History.db')
+  return { buffer, fileName: 'History.db' }
 }

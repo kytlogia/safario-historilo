@@ -5,11 +5,11 @@ export default defineEventHandler(async (event) => {
   const profileId = typeof query.profileId === 'string' ? query.profileId : undefined
 
   try {
-    const { buffer, fileName } = await readLocalHistoryDb(event, profileId)
+    const { buffer, fileName } = await readLocalFirefoxHistoryDb(profileId)
     setHeader(event, 'content-type', 'application/octet-stream')
     setHeader(event, 'content-disposition', `attachment; filename="${fileName}"`)
     return buffer
   } catch (err) {
-    throw toHistoryDbHttpError(err, 'History.db を読み込めませんでした。')
+    throw toHistoryDbHttpError(err, 'places.sqlite を読み込めませんでした。')
   }
 })

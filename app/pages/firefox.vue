@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { FetchError } from 'ofetch'
-import type { HistoryVisit, SafariProfile } from '~/types/history'
-import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
+import type { FirefoxHistoryVisit, FirefoxProfile } from '~/types/history'
 
-const visits = ref<HistoryVisit[]>([])
+const visits = ref<FirefoxHistoryVisit[]>([])
 const fileName = ref('')
 const isLoading = ref(false)
 const loadError = ref('')
@@ -13,32 +12,35 @@ const serverDbPath = ref('')
 const serverPermissionHint = ref(false)
 const serverStatusWarning = ref('')
 
-const serverProfiles = ref<SafariProfile[]>([])
-const selectedProfileId = ref(DEFAULT_PROFILE_ID)
+const serverProfiles = ref<FirefoxProfile[]>([])
+const selectedProfileId = ref('')
 
 const search = ref('')
 const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 const domainFilter = ref<string | null>(null)
 const dateFrom = ref<Date | null>(null)
 const dateTo = ref<Date | null>(null)
-const onlyFailed = ref(false)
+const onlyTyped = ref(false)
 const onlyRedirects = ref(false)
-const onlySynthesized = ref(false)
+const onlyHidden = ref(false)
 
-const selectedVisit = ref<HistoryVisit | null>(null)
+const selectedVisit = ref<FirefoxHistoryVisit | null>(null)
 const detailDialog = ref(false)
 
 const hasData = computed(() => visits.value.length > 0)
 
-const { domainOptions, filteredVisits, topDomains, dateRangeLabel } = useHistoryFilters(visits, {
-  search: debouncedSearch,
-  domainFilter,
-  dateFrom,
-  dateTo,
-  onlyFailed,
-  onlyRedirects,
-  onlySynthesized
-})
+const { domainOptions, filteredVisits, topDomains, dateRangeLabel } = useFirefoxHistoryFilters(
+  visits,
+  {
+    search: debouncedSearch,
+    domainFilter,
+    dateFrom,
+    dateTo,
+    onlyTyped,
+    onlyRedirects,
+    onlyHidden
+  }
+)
 
 const uniqueUrlCount = computed(() => new Set(visits.value.map((v) => v.url)).size)
 const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domain)).size)
@@ -48,7 +50,7 @@ async function loadFile(file: File | null | undefined) {
   isLoading.value = true
   loadError.value = ''
   try {
-    const result = await parseSafariHistoryFile(file)
+    const result = await parseFirefoxHistoryFile(file)
     visits.value = result.visits
     fileName.value = result.fileName
   } catch (err) {
@@ -66,10 +68,10 @@ let statusRequestId = 0
 
 async function checkServerAutoLoadAvailability() {
   const requestId = ++statusRequestId
-  const profileId = selectedProfileId.value
+  const profileId = selectedProfileId.value || undefined
   serverStatusWarning.value = ''
   try {
-    const body = await $fetch('/api/local-history/status', { query: { profileId } })
+    const body = await $fetch('/api/local-history/firefox/status', { query: { profileId } })
     if (requestId !== statusRequestId) return
     serverAutoLoadAvailable.value = Boolean(body?.available)
     serverDbPath.value = typeof body?.path === 'string' ? body.path : ''
@@ -91,14 +93,19 @@ async function checkServerAutoLoadAvailability() {
   }
 }
 
-async function loadSafariProfiles() {
+async function loadFirefoxProfiles() {
   try {
-    const body = await $fetch('/api/local-history/profiles')
-    serverProfiles.value = Array.isArray(body?.profiles) ? body.profiles : []
+    const body = await $fetch('/api/local-history/firefox/profiles')
+    const profiles: FirefoxProfile[] = Array.isArray(body?.profiles) ? body.profiles : []
+    serverProfiles.value = profiles
+    if (!selectedProfileId.value) {
+      const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0]
+      selectedProfileId.value = defaultProfile?.id ?? ''
+    }
   } catch {
     // Same fallback as checkServerAutoLoadAvailability(): no Nitro server, or
     // the localhost/same-origin check rejected the request. Either way, stay
-    // with the single default profile and no profile picker.
+    // with drag & drop only and no profile picker.
     serverProfiles.value = []
   }
 }
@@ -113,15 +120,15 @@ async function loadFromServer() {
   isLoading.value = true
   loadError.value = ''
   try {
-    const blob = await $fetch<Blob>('/api/local-history', {
-      query: { profileId: selectedProfileId.value }
+    const blob = await $fetch<Blob>('/api/local-history/firefox', {
+      query: { profileId: selectedProfileId.value || undefined }
     })
-    const result = await parseSafariHistoryFile(new File([blob], 'History.db'))
+    const result = await parseFirefoxHistoryFile(new File([blob], 'places.sqlite'))
     visits.value = result.visits
     fileName.value = result.fileName
   } catch (err) {
     if (err instanceof FetchError) {
-      loadError.value = err.data?.message ?? 'History.db の自動読み込みに失敗しました。'
+      loadError.value = err.data?.message ?? 'places.sqlite の自動読み込みに失敗しました。'
     } else {
       loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
     }
@@ -131,10 +138,10 @@ async function loadFromServer() {
 }
 
 onMounted(async () => {
-  await Promise.all([checkServerAutoLoadAvailability(), loadSafariProfiles()])
+  await Promise.all([checkServerAutoLoadAvailability(), loadFirefoxProfiles()])
 })
 
-function openDetail(visit: HistoryVisit) {
+function openDetail(visit: FirefoxHistoryVisit) {
   selectedVisit.value = visit
   detailDialog.value = true
 }
@@ -149,9 +156,9 @@ function resetAll() {
   domainFilter.value = null
   dateFrom.value = null
   dateTo.value = null
-  onlyFailed.value = false
+  onlyTyped.value = false
   onlyRedirects.value = false
-  onlySynthesized.value = false
+  onlyHidden.value = false
 }
 </script>
 
@@ -159,8 +166,8 @@ function resetAll() {
   <div>
     <v-app-bar flat density="comfortable" color="surface">
       <v-app-bar-title>
-        <v-icon icon="mdi-compass-outline" class="mr-2" />
-        Safari History Detail
+        <v-icon icon="mdi-fire" class="mr-2" />
+        Firefox History Detail
       </v-app-bar-title>
       <template #append>
         <template v-if="hasData">
@@ -169,8 +176,8 @@ function resetAll() {
             >別のファイルを読み込む</v-btn
           >
         </template>
-        <v-btn variant="text" to="/firefox" prepend-icon="mdi-fire" class="mr-2"
-          >Firefoxの履歴を見る</v-btn
+        <v-btn variant="text" to="/" prepend-icon="mdi-compass-outline" class="mr-2"
+          >Safariの履歴を見る</v-btn
         >
         <v-btn
           :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
@@ -183,7 +190,7 @@ function resetAll() {
 
     <v-main>
       <v-container fluid class="py-6">
-        <UploadPanel
+        <FirefoxUploadPanel
           v-if="!hasData"
           :is-loading="isLoading"
           :load-error="loadError"
@@ -209,14 +216,14 @@ function resetAll() {
           <v-row class="mt-2">
             <v-col cols="12" md="9">
               <v-card>
-                <FilterBar
+                <FirefoxFilterBar
                   v-model:search="search"
                   v-model:domain-filter="domainFilter"
                   v-model:date-from="dateFrom"
                   v-model:date-to="dateTo"
-                  v-model:only-failed="onlyFailed"
+                  v-model:only-typed="onlyTyped"
                   v-model:only-redirects="onlyRedirects"
-                  v-model:only-synthesized="onlySynthesized"
+                  v-model:only-hidden="onlyHidden"
                   :domain-options="domainOptions"
                   :filtered-visits="filteredVisits"
                   :total-count="visits.length"
@@ -224,7 +231,7 @@ function resetAll() {
 
                 <v-divider />
 
-                <VisitsTable :items="filteredVisits" @row-click="openDetail" />
+                <FirefoxVisitsTable :items="filteredVisits" @row-click="openDetail" />
               </v-card>
             </v-col>
 
@@ -236,6 +243,6 @@ function resetAll() {
       </v-container>
     </v-main>
 
-    <VisitDetailDialog v-model="detailDialog" :visit="selectedVisit" />
+    <FirefoxVisitDetailDialog v-model="detailDialog" :visit="selectedVisit" />
   </div>
 </template>

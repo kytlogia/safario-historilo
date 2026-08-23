@@ -1,0 +1,145 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { FirefoxHistoryVisit } from '~/types/history'
+import type {
+  FirefoxHistoryDatabaseWorkerRequest,
+  FirefoxHistoryDatabaseWorkerResponse
+} from '~/composables/firefoxHistoryDatabase.worker'
+
+// jsdom (this file's default environment) has no real Worker implementation, so
+// these tests stub `Worker` themselves to exercise the dispatch/response-handling
+// branch of useFirefoxHistoryParser.ts in isolation from the actual sql.js parsing
+// — mirrors useSafariHistoryParser.worker.test.ts.
+
+class FakeWorker {
+  static instances: FakeWorker[] = []
+
+  onmessage: ((event: MessageEvent<FirefoxHistoryDatabaseWorkerResponse>) => void) | null = null
+  onerror: ((event: ErrorEvent) => void) | null = null
+  terminated = false
+  posted: { data: unknown; transfer?: Transferable[] }[] = []
+
+  constructor(
+    public url: string | URL,
+    public options?: WorkerOptions
+  ) {
+    FakeWorker.instances.push(this)
+  }
+
+  postMessage(data: unknown, transfer?: Transferable[]) {
+    this.posted.push({ data, transfer })
+  }
+
+  terminate() {
+    this.terminated = true
+  }
+}
+
+const SAMPLE_VISIT: FirefoxHistoryVisit = {
+  visitId: 1,
+  placeId: 1,
+  url: 'https://example.com/',
+  domain: 'example.com',
+  title: 'Example',
+  visitTime: new Date('2024-01-01T00:00:00Z'),
+  visitTimeRaw: 1700000000000000,
+  visitCount: 1,
+  visitType: 1,
+  fromVisit: null,
+  session: 0,
+  hidden: false,
+  typed: false,
+  frecency: 100,
+  guid: 'guid-1'
+}
+
+async function latestWorker(): Promise<FakeWorker> {
+  await vi.waitFor(() => {
+    if (FakeWorker.instances.length === 0) throw new Error('worker not constructed yet')
+  })
+  return FakeWorker.instances.at(-1)!
+}
+
+function postedRequest(worker: FakeWorker, index = worker.posted.length - 1) {
+  return worker.posted[index]!.data as FirefoxHistoryDatabaseWorkerRequest
+}
+
+describe('parseFirefoxHistoryFile (Worker dispatch)', () => {
+  afterEach(() => {
+    FakeWorker.instances = []
+    vi.unstubAllGlobals()
+    vi.resetModules()
+  })
+
+  it('offloads parsing to a module Worker and resolves with its response', async () => {
+    vi.stubGlobal('Worker', FakeWorker)
+    const { parseFirefoxHistoryFile } = await import('~/composables/useFirefoxHistoryParser')
+    const file = new File([new Uint8Array([1, 2, 3])], 'places.sqlite')
+
+    const promise = parseFirefoxHistoryFile(file)
+    const worker = await latestWorker()
+
+    expect(worker.options?.type).toBe('module')
+    expect(worker.posted).toHaveLength(1)
+    const request = postedRequest(worker)
+    expect(request.fileName).toBe('places.sqlite')
+    expect(worker.posted[0]!.transfer).toEqual([request.buffer])
+
+    const response: FirefoxHistoryDatabaseWorkerResponse = {
+      requestId: request.requestId,
+      ok: true,
+      visits: [SAMPLE_VISIT]
+    }
+    worker.onmessage?.({ data: response } as MessageEvent<FirefoxHistoryDatabaseWorkerResponse>)
+
+    const result = await promise
+    expect(result.fileName).toBe('places.sqlite')
+    expect(result.visits).toEqual([SAMPLE_VISIT])
+    expect(worker.terminated).toBe(false)
+  })
+
+  it('rejects with the worker-reported message when parsing fails inside the worker', async () => {
+    vi.stubGlobal('Worker', FakeWorker)
+    const { parseFirefoxHistoryFile } = await import('~/composables/useFirefoxHistoryParser')
+    const file = new File([new Uint8Array([1, 2, 3])], 'not-places.sqlite')
+
+    const promise = parseFirefoxHistoryFile(file)
+    const worker = await latestWorker()
+
+    const response: FirefoxHistoryDatabaseWorkerResponse = {
+      requestId: postedRequest(worker).requestId,
+      ok: false,
+      message: 'このファイルはFirefoxの履歴データベース(places.sqlite)ではないようです。'
+    }
+    worker.onmessage?.({ data: response } as MessageEvent<FirefoxHistoryDatabaseWorkerResponse>)
+
+    await expect(promise).rejects.toThrow(
+      'このファイルはFirefoxの履歴データベース(places.sqlite)ではないようです。'
+    )
+    expect(worker.terminated).toBe(false)
+  })
+
+  it('rejects and drops the shared worker when the worker itself errors', async () => {
+    vi.stubGlobal('Worker', FakeWorker)
+    const { parseFirefoxHistoryFile } = await import('~/composables/useFirefoxHistoryParser')
+    const file = new File([new Uint8Array([1, 2, 3])], 'places.sqlite')
+
+    const promise = parseFirefoxHistoryFile(file)
+    const worker = await latestWorker()
+
+    worker.onerror?.({ message: 'script load failed' } as ErrorEvent)
+
+    await expect(promise).rejects.toThrow('script load failed')
+    expect(worker.terminated).toBe(true)
+
+    const nextPromise = parseFirefoxHistoryFile(file)
+    const nextWorker = await vi.waitFor(() => {
+      const instance = FakeWorker.instances.at(-1)!
+      if (instance === worker) throw new Error('worker was reused after erroring')
+      return instance
+    })
+    nextWorker.onmessage?.({
+      data: { requestId: postedRequest(nextWorker).requestId, ok: true, visits: [] }
+    } as MessageEvent<FirefoxHistoryDatabaseWorkerResponse>)
+    await nextPromise
+  })
+})
