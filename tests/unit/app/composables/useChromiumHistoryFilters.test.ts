@@ -198,6 +198,38 @@ describe('useChromiumHistoryFilters', () => {
     })
   })
 
+  describe('weekdayTrend', () => {
+    it('is derived from filteredVisits, not all visits', () => {
+      const visits = ref<ChromiumHistoryVisit[]>([
+        makeVisit({ domain: 'a.com', visitTime: new Date('2024-01-07T10:00:00.000') }),
+        makeVisit({ domain: 'b.com', visitTime: new Date('2024-01-08T10:00:00.000') })
+      ])
+      const { weekdayTrend } = useChromiumHistoryFilters(
+        visits,
+        makeFilters({ domainFilter: ref('a.com') })
+      )
+
+      expect(weekdayTrend.value).toHaveLength(7)
+      expect(weekdayTrend.value[0]).toEqual({ label: '日', count: 1, ratio: 100 })
+    })
+  })
+
+  describe('hourlyTrend', () => {
+    it('is derived from filteredVisits, not all visits', () => {
+      const visits = ref<ChromiumHistoryVisit[]>([
+        makeVisit({ domain: 'a.com', visitTime: new Date('2024-01-07T09:00:00.000') }),
+        makeVisit({ domain: 'b.com', visitTime: new Date('2024-01-08T22:00:00.000') })
+      ])
+      const { hourlyTrend } = useChromiumHistoryFilters(
+        visits,
+        makeFilters({ domainFilter: ref('a.com') })
+      )
+
+      expect(hourlyTrend.value).toHaveLength(24)
+      expect(hourlyTrend.value[9]).toEqual({ label: '9', count: 1, ratio: 100 })
+    })
+  })
+
   describe('dateRangeLabel', () => {
     it('returns "-" when there is no data', () => {
       const { dateRangeLabel } = useChromiumHistoryFilters(

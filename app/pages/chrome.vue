@@ -24,6 +24,8 @@ const {
   filteredVisits,
   topDomains,
   dateRangeLabel,
+  weekdayTrend,
+  hourlyTrend,
   uniqueUrlCount,
   uniqueDomainCount,
   loadFile,
@@ -120,6 +122,7 @@ const { isDark, toggleTheme } = useAppTheme()
 
             <v-col cols="12" md="3">
               <TopDomains :top-domains="topDomains" />
+              <VisitTrends :weekday-trend="weekdayTrend" :hourly-trend="hourlyTrend" class="mt-4" />
             </v-col>
           </v-row>
         </template>
