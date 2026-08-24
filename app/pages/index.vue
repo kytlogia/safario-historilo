@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { FetchError } from 'ofetch'
 import type { HistoryVisit, SafariProfile } from '~/types/history'
+import {
+  booleanCodec,
+  filterField,
+  nullableDateCodec,
+  nullableStringCodec,
+  stringCodec
+} from '~/composables/useFilterPersistence'
 import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 
 const visits = ref<HistoryVisit[]>([])
@@ -17,13 +24,24 @@ const serverProfiles = ref<SafariProfile[]>([])
 const selectedProfileId = ref(DEFAULT_PROFILE_ID)
 
 const search = ref('')
-const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 const domainFilter = ref<string | null>(null)
 const dateFrom = ref<Date | null>(null)
 const dateTo = ref<Date | null>(null)
 const onlyFailed = ref(false)
 const onlyRedirects = ref(false)
 const onlySynthesized = ref(false)
+
+useFilterPersistence('safari-history-filters', {
+  search: filterField(search, stringCodec),
+  domainFilter: filterField(domainFilter, nullableStringCodec),
+  dateFrom: filterField(dateFrom, nullableDateCodec),
+  dateTo: filterField(dateTo, nullableDateCodec),
+  onlyFailed: filterField(onlyFailed, booleanCodec),
+  onlyRedirects: filterField(onlyRedirects, booleanCodec),
+  onlySynthesized: filterField(onlySynthesized, booleanCodec)
+})
+
+const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 
 const selectedVisit = ref<HistoryVisit | null>(null)
 const detailDialog = ref(false)

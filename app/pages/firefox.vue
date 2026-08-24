@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { FetchError } from 'ofetch'
 import type { FirefoxHistoryVisit, FirefoxProfile } from '~/types/history'
+import {
+  booleanCodec,
+  filterField,
+  nullableDateCodec,
+  nullableStringCodec,
+  stringCodec
+} from '~/composables/useFilterPersistence'
 
 const visits = ref<FirefoxHistoryVisit[]>([])
 const fileName = ref('')
@@ -16,13 +23,24 @@ const serverProfiles = ref<FirefoxProfile[]>([])
 const selectedProfileId = ref('')
 
 const search = ref('')
-const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 const domainFilter = ref<string | null>(null)
 const dateFrom = ref<Date | null>(null)
 const dateTo = ref<Date | null>(null)
 const onlyTyped = ref(false)
 const onlyRedirects = ref(false)
 const onlyHidden = ref(false)
+
+useFilterPersistence('firefox-history-filters', {
+  search: filterField(search, stringCodec),
+  domainFilter: filterField(domainFilter, nullableStringCodec),
+  dateFrom: filterField(dateFrom, nullableDateCodec),
+  dateTo: filterField(dateTo, nullableDateCodec),
+  onlyTyped: filterField(onlyTyped, booleanCodec),
+  onlyRedirects: filterField(onlyRedirects, booleanCodec),
+  onlyHidden: filterField(onlyHidden, booleanCodec)
+})
+
+const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 
 const selectedVisit = ref<FirefoxHistoryVisit | null>(null)
 const detailDialog = ref(false)
