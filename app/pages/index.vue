@@ -48,15 +48,16 @@ const detailDialog = ref(false)
 
 const hasData = computed(() => visits.value.length > 0)
 
-const { domainOptions, filteredVisits, topDomains, dateRangeLabel } = useHistoryFilters(visits, {
-  search: debouncedSearch,
-  domainFilter,
-  dateFrom,
-  dateTo,
-  onlyFailed,
-  onlyRedirects,
-  onlySynthesized
-})
+const { domainOptions, filteredVisits, topDomains, dateRangeLabel, weekdayTrend, hourlyTrend } =
+  useHistoryFilters(visits, {
+    search: debouncedSearch,
+    domainFilter,
+    dateFrom,
+    dateTo,
+    onlyFailed,
+    onlyRedirects,
+    onlySynthesized
+  })
 
 const uniqueUrlCount = computed(() => new Set(visits.value.map((v) => v.url)).size)
 const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domain)).size)
@@ -255,6 +256,7 @@ function resetAll() {
 
             <v-col cols="12" md="3">
               <TopDomains :top-domains="topDomains" />
+              <VisitTrends :weekday-trend="weekdayTrend" :hourly-trend="hourlyTrend" class="mt-4" />
             </v-col>
           </v-row>
         </template>

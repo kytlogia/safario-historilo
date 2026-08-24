@@ -115,13 +115,14 @@ export function useUnifiedHistoryPage() {
 
   const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 
-  const { domainOptions, filteredVisits, topDomains } = useUnifiedHistoryFilters(visits, {
-    search: debouncedSearch,
-    domainFilter,
-    dateFrom,
-    dateTo,
-    enabledSources
-  })
+  const { domainOptions, filteredVisits, topDomains, weekdayTrend, hourlyTrend } =
+    useUnifiedHistoryFilters(visits, {
+      search: debouncedSearch,
+      domainFilter,
+      dateFrom,
+      dateTo,
+      enabledSources
+    })
 
   // useVisitFilterEngine's own dateRangeLabel deliberately ignores every
   // filter (search/domain/date) and always spans *all* loaded visits — see
@@ -177,6 +178,8 @@ export function useUnifiedHistoryPage() {
     filteredVisits,
     topDomains,
     dateRangeLabel,
+    weekdayTrend,
+    hourlyTrend,
     uniqueUrlCount,
     uniqueDomainCount,
     selectedVisit,

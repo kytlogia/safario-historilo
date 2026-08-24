@@ -15,6 +15,20 @@ export interface BaseVisitFilterState {
   dateTo: Ref<Date | null>
 }
 
+export interface TrendBucket {
+  label: string
+  count: number
+  ratio: number
+}
+
+const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土']
+const HOUR_LABELS = Array.from({ length: 24 }, (_, hour) => String(hour))
+
+function toTrendBuckets(counts: number[], labels: string[]): TrendBucket[] {
+  const max = counts.reduce((a, count) => Math.max(a, count), 1)
+  return counts.map((count, i) => ({ label: labels[i]!, count, ratio: (count / max) * 100 }))
+}
+
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0)
 }
@@ -83,5 +97,24 @@ export function useVisitFilterEngine<T extends FilterableVisit>(
     return `${formatDate(min)} 〜 ${formatDate(max)}`
   })
 
-  return { domainOptions, filteredVisits, topDomains, dateRangeLabel }
+  const weekdayTrend = computed(() => {
+    const counts = new Array(7).fill(0)
+    for (const v of filteredVisits.value) counts[v.visitTime.getDay()]++
+    return toTrendBuckets(counts, WEEKDAY_LABELS)
+  })
+
+  const hourlyTrend = computed(() => {
+    const counts = new Array(24).fill(0)
+    for (const v of filteredVisits.value) counts[v.visitTime.getHours()]++
+    return toTrendBuckets(counts, HOUR_LABELS)
+  })
+
+  return {
+    domainOptions,
+    filteredVisits,
+    topDomains,
+    dateRangeLabel,
+    weekdayTrend,
+    hourlyTrend
+  }
 }

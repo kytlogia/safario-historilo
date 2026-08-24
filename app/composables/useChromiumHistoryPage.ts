@@ -67,9 +67,8 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
   const selectedVisit = ref<ChromiumHistoryVisit | null>(null)
   const detailDialog = ref(false)
 
-  const { domainOptions, filteredVisits, topDomains, dateRangeLabel } = useChromiumHistoryFilters(
-    source.rawVisits,
-    {
+  const { domainOptions, filteredVisits, topDomains, dateRangeLabel, weekdayTrend, hourlyTrend } =
+    useChromiumHistoryFilters(source.rawVisits, {
       search: debouncedSearch,
       domainFilter,
       dateFrom,
@@ -77,8 +76,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
       onlyTyped,
       onlyRedirects,
       onlyHidden
-    }
-  )
+    })
 
   const uniqueUrlCount = computed(() => new Set(source.rawVisits.value.map((v) => v.url)).size)
   const uniqueDomainCount = computed(
@@ -127,6 +125,8 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     filteredVisits,
     topDomains,
     dateRangeLabel,
+    weekdayTrend,
+    hourlyTrend,
     uniqueUrlCount,
     uniqueDomainCount,
     loadFile: source.loadFile,

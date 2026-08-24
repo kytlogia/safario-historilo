@@ -238,6 +238,63 @@ describe('useHistoryFilters', () => {
     })
   })
 
+  describe('weekdayTrend', () => {
+    it('counts filtered visits per day of week, labeled 日〜土, with ratio scaled against the max', () => {
+      const visits = ref<HistoryVisit[]>([
+        makeVisit({ visitTime: new Date('2024-01-07T10:00:00.000') }), // Sun
+        makeVisit({ visitTime: new Date('2024-01-07T11:00:00.000') }), // Sun
+        makeVisit({ visitTime: new Date('2024-01-09T09:00:00.000') }) // Tue
+      ])
+      const { weekdayTrend } = useHistoryFilters(visits, makeFilters())
+
+      expect(weekdayTrend.value).toHaveLength(7)
+      expect(weekdayTrend.value[0]).toEqual({ label: '日', count: 2, ratio: 100 })
+      expect(weekdayTrend.value[1]).toEqual({ label: '月', count: 0, ratio: 0 })
+      expect(weekdayTrend.value[2]).toEqual({ label: '火', count: 1, ratio: 50 })
+    })
+
+    it('is derived from filteredVisits, not all visits', () => {
+      const visits = ref<HistoryVisit[]>([
+        makeVisit({ domain: 'a.com', visitTime: new Date('2024-01-07T10:00:00.000') }),
+        makeVisit({ domain: 'b.com', visitTime: new Date('2024-01-08T10:00:00.000') })
+      ])
+      const { weekdayTrend } = useHistoryFilters(
+        visits,
+        makeFilters({ domainFilter: ref('a.com') })
+      )
+
+      expect(weekdayTrend.value.reduce((sum, b) => sum + b.count, 0)).toBe(1)
+      expect(weekdayTrend.value[0]).toEqual({ label: '日', count: 1, ratio: 100 })
+    })
+
+    it('returns all-zero buckets when there is no data', () => {
+      const { weekdayTrend } = useHistoryFilters(ref<HistoryVisit[]>([]), makeFilters())
+      expect(weekdayTrend.value.every((b) => b.count === 0 && b.ratio === 0)).toBe(true)
+    })
+  })
+
+  describe('hourlyTrend', () => {
+    it('counts filtered visits per hour of day (0-23), with ratio scaled against the max', () => {
+      const visits = ref<HistoryVisit[]>([
+        makeVisit({ visitTime: new Date('2024-01-07T09:15:00.000') }),
+        makeVisit({ visitTime: new Date('2024-01-08T09:45:00.000') }),
+        makeVisit({ visitTime: new Date('2024-01-08T22:00:00.000') })
+      ])
+      const { hourlyTrend } = useHistoryFilters(visits, makeFilters())
+
+      expect(hourlyTrend.value).toHaveLength(24)
+      expect(hourlyTrend.value[9]).toEqual({ label: '9', count: 2, ratio: 100 })
+      expect(hourlyTrend.value[22]).toEqual({ label: '22', count: 1, ratio: 50 })
+      expect(hourlyTrend.value[0]).toEqual({ label: '0', count: 0, ratio: 0 })
+    })
+
+    it('returns all-zero buckets when there is no data', () => {
+      const { hourlyTrend } = useHistoryFilters(ref<HistoryVisit[]>([]), makeFilters())
+      expect(hourlyTrend.value).toHaveLength(24)
+      expect(hourlyTrend.value.every((b) => b.count === 0 && b.ratio === 0)).toBe(true)
+    })
+  })
+
   describe('dateRangeLabel', () => {
     it('returns "-" when there is no data', () => {
       const { dateRangeLabel } = useHistoryFilters(ref<HistoryVisit[]>([]), makeFilters())
