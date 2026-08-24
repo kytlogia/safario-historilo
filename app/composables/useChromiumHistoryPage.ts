@@ -1,24 +1,14 @@
-import { computed, onMounted, ref } from 'vue'
-import { FetchError } from 'ofetch'
+import { computed, ref } from 'vue'
 import type { ChromiumHistoryVisit, ChromiumProfile } from '~/types/history'
+import { toUnifiedChromiumVisit } from '~/utils/unifiedHistory'
 import { useChromiumHistoryFilters } from './useChromiumHistoryFilters'
-import { parseChromiumHistoryFile } from './useChromiumHistoryParser'
 import { useDebouncedRef } from './useDebouncedRef'
+import { parseChromiumHistoryFile } from './useChromiumHistoryParser'
+import { useUnifiedHistorySource } from './useUnifiedHistorySource'
 
-// $fetch's Nitro route-type inference only kicks in for a literal URL string
-// at the call site — `apiBase` below is a runtime template literal (since it
-// picks between /chrome and /edge), so these response shapes have to be
-// declared explicitly instead of relying on that inference.
-interface ChromiumHistoryStatusResponse {
-  available: boolean
-  supported: boolean
-  present: boolean
-  readable: boolean
-  path: string
-}
-
-interface ChromiumHistoryProfilesResponse {
-  profiles: ChromiumProfile[]
+function resolveDefaultProfileId(profiles: ChromiumProfile[]): string {
+  const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0]
+  return defaultProfile?.id ?? ''
 }
 
 /**
@@ -28,22 +18,23 @@ interface ChromiumHistoryProfilesResponse {
  * prop on ChromiumUploadPanel/ChromiumFilterBar), never in this loading /
  * filtering / auto-load logic itself. `brand` selects the matching
  * `/api/local-history/<brand>` routes.
+ *
+ * The load/status/profile orchestration itself is delegated to
+ * useUnifiedHistorySource.ts (shared with app/pages/all.vue) rather than
+ * duplicated here — only the Chromium-specific filtering
+ * (onlyTyped/onlyRedirects/onlyHidden, which needs the full
+ * ChromiumHistoryVisit shape, not the reduced UnifiedHistoryVisit
+ * projection) stays local to this composable.
  */
 export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
-  const apiBase = `/api/local-history/${brand}`
-
-  const visits = ref<ChromiumHistoryVisit[]>([])
-  const fileName = ref('')
-  const isLoading = ref(false)
-  const loadError = ref('')
-
-  const serverAutoLoadAvailable = ref(false)
-  const serverDbPath = ref('')
-  const serverPermissionHint = ref(false)
-  const serverStatusWarning = ref('')
-
-  const serverProfiles = ref<ChromiumProfile[]>([])
-  const selectedProfileId = ref('')
+  const source = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
+    apiBase: `/api/local-history/${brand}`,
+    serverFileName: 'History',
+    parseFile: parseChromiumHistoryFile,
+    toUnified: (v) => toUnifiedChromiumVisit(v, brand),
+    resolveDefaultProfileId,
+    loadErrorFallback: 'History の自動読み込みに失敗しました。'
+  })
 
   const search = ref('')
   const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
@@ -57,10 +48,8 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
   const selectedVisit = ref<ChromiumHistoryVisit | null>(null)
   const detailDialog = ref(false)
 
-  const hasData = computed(() => visits.value.length > 0)
-
   const { domainOptions, filteredVisits, topDomains, dateRangeLabel } = useChromiumHistoryFilters(
-    visits,
+    source.rawVisits,
     {
       search: debouncedSearch,
       domainFilter,
@@ -72,102 +61,10 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     }
   )
 
-  const uniqueUrlCount = computed(() => new Set(visits.value.map((v) => v.url)).size)
-  const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domain)).size)
-
-  async function loadFile(file: File | null | undefined) {
-    if (!file || isLoading.value) return
-    isLoading.value = true
-    loadError.value = ''
-    try {
-      const result = await parseChromiumHistoryFile(file)
-      visits.value = result.visits
-      fileName.value = result.fileName
-    } catch (err) {
-      loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  // Guards against out-of-order responses: switching profiles quickly fires
-  // overlapping requests, and without this a slower, stale response could
-  // overwrite the state after a newer one already resolved. Only the response
-  // whose requestId still matches the latest dispatched request is applied.
-  let statusRequestId = 0
-
-  async function checkServerAutoLoadAvailability() {
-    const requestId = ++statusRequestId
-    const profileId = selectedProfileId.value || undefined
-    serverStatusWarning.value = ''
-    try {
-      const body = await $fetch<ChromiumHistoryStatusResponse>(`${apiBase}/status`, {
-        query: { profileId }
-      })
-      if (requestId !== statusRequestId) return
-      serverAutoLoadAvailable.value = Boolean(body?.available)
-      serverDbPath.value = typeof body?.path === 'string' ? body.path : ''
-      serverPermissionHint.value = Boolean(body?.present) && !body?.readable
-    } catch (err) {
-      if (requestId !== statusRequestId) return
-      serverPermissionHint.value = false
-      // A same-origin same-machine request being rejected (403) means the
-      // server-side localhost check itself failed, not that this deployment
-      // simply lacks a Nitro server — surface that instead of silently
-      // falling back to drag & drop, which otherwise looks identical to
-      // "feature not available" and hides the real cause.
-      if (err instanceof FetchError && err.statusCode === 403) {
-        serverStatusWarning.value =
-          err.data?.message ?? 'サーバー側の制限により自動読み込みが利用できません。'
-      }
-      // No Nitro server backing this deployment (e.g. static hosting) — stay with drag & drop only.
-      serverAutoLoadAvailable.value = false
-    }
-  }
-
-  async function loadProfiles() {
-    try {
-      const body = await $fetch<ChromiumHistoryProfilesResponse>(`${apiBase}/profiles`)
-      const profiles: ChromiumProfile[] = Array.isArray(body?.profiles) ? body.profiles : []
-      serverProfiles.value = profiles
-      if (!selectedProfileId.value) {
-        const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0]
-        selectedProfileId.value = defaultProfile?.id ?? ''
-      }
-    } catch {
-      // Same fallback as checkServerAutoLoadAvailability(): no Nitro server, or
-      // the localhost/same-origin check rejected the request. Either way, stay
-      // with drag & drop only and no profile picker.
-      serverProfiles.value = []
-    }
-  }
-
-  async function onProfileChange(profileId: string) {
-    selectedProfileId.value = profileId
-    await checkServerAutoLoadAvailability()
-  }
-
-  async function loadFromServer() {
-    if (isLoading.value) return
-    isLoading.value = true
-    loadError.value = ''
-    try {
-      const blob = await $fetch<Blob>(apiBase, {
-        query: { profileId: selectedProfileId.value || undefined }
-      })
-      const result = await parseChromiumHistoryFile(new File([blob], 'History'))
-      visits.value = result.visits
-      fileName.value = result.fileName
-    } catch (err) {
-      if (err instanceof FetchError) {
-        loadError.value = err.data?.message ?? 'History の自動読み込みに失敗しました。'
-      } else {
-        loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
-      }
-    } finally {
-      isLoading.value = false
-    }
-  }
+  const uniqueUrlCount = computed(() => new Set(source.rawVisits.value.map((v) => v.url)).size)
+  const uniqueDomainCount = computed(
+    () => new Set(source.rawVisits.value.map((v) => v.domain)).size
+  )
 
   function openDetail(visit: ChromiumHistoryVisit) {
     selectedVisit.value = visit
@@ -175,8 +72,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
   }
 
   function resetAll() {
-    visits.value = []
-    fileName.value = ''
+    source.reset()
     search.value = ''
     resetDebouncedSearch()
     domainFilter.value = null
@@ -187,21 +83,17 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     onlyHidden.value = false
   }
 
-  onMounted(async () => {
-    await Promise.all([checkServerAutoLoadAvailability(), loadProfiles()])
-  })
-
   return {
-    visits,
-    fileName,
-    isLoading,
-    loadError,
-    serverAutoLoadAvailable,
-    serverDbPath,
-    serverPermissionHint,
-    serverStatusWarning,
-    serverProfiles,
-    selectedProfileId,
+    visits: source.rawVisits,
+    fileName: source.fileName,
+    isLoading: source.isLoading,
+    loadError: source.loadError,
+    serverAutoLoadAvailable: source.serverAutoLoadAvailable,
+    serverDbPath: source.serverDbPath,
+    serverPermissionHint: source.serverPermissionHint,
+    serverStatusWarning: source.serverStatusWarning,
+    serverProfiles: source.serverProfiles,
+    selectedProfileId: source.selectedProfileId,
     search,
     domainFilter,
     dateFrom,
@@ -211,16 +103,16 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     onlyHidden,
     selectedVisit,
     detailDialog,
-    hasData,
+    hasData: source.hasData,
     domainOptions,
     filteredVisits,
     topDomains,
     dateRangeLabel,
     uniqueUrlCount,
     uniqueDomainCount,
-    loadFile,
-    onProfileChange,
-    loadFromServer,
+    loadFile: source.loadFile,
+    onProfileChange: source.onProfileChange,
+    loadFromServer: source.loadFromServer,
     openDetail,
     resetAll
   }

@@ -59,6 +59,7 @@ const { isDark, toggleTheme } = useAppTheme()
         <v-btn variant="text" to="/chrome" prepend-icon="mdi-google-chrome" class="mr-2"
           >Chromeの履歴を見る</v-btn
         >
+        <v-btn variant="text" to="/all" prepend-icon="mdi-magnify" class="mr-2">横断検索</v-btn>
         <v-btn
           :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
           :aria-label="isDark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え'"

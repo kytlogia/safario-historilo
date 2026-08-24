@@ -1,4 +1,9 @@
-import type { ChromiumHistoryVisit, FirefoxHistoryVisit, HistoryVisit } from '~/types/history'
+import type {
+  ChromiumHistoryVisit,
+  FirefoxHistoryVisit,
+  HistoryVisit,
+  UnifiedHistoryVisit
+} from '~/types/history'
 
 function downloadBlob(content: BlobPart, mimeType: string, fileName: string) {
   const blob = new Blob([content], { type: mimeType })
@@ -160,6 +165,38 @@ export function exportChromiumVisitsAsCsv(
         visit.visitDuration,
         visit.hidden,
         visit.typed
+      ]
+        .map(escapeCsvCell)
+        .join(',')
+    )
+  }
+
+  downloadBlob('﻿' + lines.join('\n'), 'text/csv;charset=utf-8', fileName)
+}
+
+export function exportUnifiedVisitsAsJson(
+  visits: UnifiedHistoryVisit[],
+  fileName = 'unified-history.json'
+) {
+  downloadBlob(JSON.stringify(visits, null, 2), 'application/json', fileName)
+}
+
+export function exportUnifiedVisitsAsCsv(
+  visits: UnifiedHistoryVisit[],
+  fileName = 'unified-history.csv'
+) {
+  const headers = ['source', 'title', 'url', 'domain', 'visitTime', 'visitCount'] as const
+
+  const lines = [headers.join(',')]
+  for (const visit of visits) {
+    lines.push(
+      [
+        visit.source,
+        visit.title,
+        visit.url,
+        visit.domain,
+        visit.visitTime.toISOString(),
+        visit.visitCount
       ]
         .map(escapeCsvCell)
         .join(',')
