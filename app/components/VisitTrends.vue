@@ -16,11 +16,13 @@ const hasData = computed(() => props.weekdayTrend.some((b) => b.count > 0))
     <v-card-text>
       <template v-if="hasData">
         <div class="text-caption text-medium-emphasis mb-1">曜日別</div>
-        <div class="trend-chart" role="img" aria-label="曜日別の訪問数">
+        <div class="trend-chart" role="list" aria-label="曜日別の訪問数">
           <div
             v-for="bucket in weekdayTrend"
             :key="bucket.label"
             class="trend-bar"
+            role="listitem"
+            :aria-label="`${bucket.label}: ${bucket.count}件`"
             :title="`${bucket.label}: ${bucket.count}件`"
           >
             <div class="trend-bar__fill" :style="{ height: `${bucket.ratio}%` }" />
@@ -29,11 +31,13 @@ const hasData = computed(() => props.weekdayTrend.some((b) => b.count > 0))
         </div>
 
         <div class="text-caption text-medium-emphasis mb-1 mt-4">時間帯別</div>
-        <div class="trend-chart trend-chart--hourly" role="img" aria-label="時間帯別の訪問数">
+        <div class="trend-chart trend-chart--hourly" role="list" aria-label="時間帯別の訪問数">
           <div
             v-for="bucket in hourlyTrend"
             :key="bucket.label"
             class="trend-bar trend-bar--narrow"
+            role="listitem"
+            :aria-label="`${bucket.label}時: ${bucket.count}件`"
             :title="`${bucket.label}時: ${bucket.count}件`"
           >
             <div class="trend-bar__fill" :style="{ height: `${bucket.ratio}%` }" />
