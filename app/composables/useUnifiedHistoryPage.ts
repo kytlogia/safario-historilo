@@ -18,6 +18,14 @@ import {
 } from '~/utils/unifiedHistory'
 import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 import { useDebouncedRef } from './useDebouncedRef'
+import {
+  filterField,
+  nullableDateCodec,
+  nullableStringCodec,
+  stringArrayCodec,
+  stringCodec,
+  useFilterPersistence
+} from './useFilterPersistence'
 import { parseChromiumHistoryFile } from './useChromiumHistoryParser'
 import { parseFirefoxHistoryFile } from './useFirefoxHistoryParser'
 import { parseSafariHistoryFile } from './useSafariHistoryParser'
@@ -92,11 +100,20 @@ export function useUnifiedHistoryPage() {
   )
 
   const search = ref('')
-  const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
   const domainFilter = ref<string | null>(null)
   const dateFrom = ref<Date | null>(null)
   const dateTo = ref<Date | null>(null)
   const enabledSources = ref<UnifiedHistorySource[]>([...UNIFIED_HISTORY_SOURCES])
+
+  useFilterPersistence('unified-history-filters', {
+    search: filterField(search, stringCodec),
+    domainFilter: filterField(domainFilter, nullableStringCodec),
+    dateFrom: filterField(dateFrom, nullableDateCodec),
+    dateTo: filterField(dateTo, nullableDateCodec),
+    enabledSources: filterField(enabledSources, stringArrayCodec(UNIFIED_HISTORY_SOURCES))
+  })
+
+  const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 
   const { domainOptions, filteredVisits, topDomains } = useUnifiedHistoryFilters(visits, {
     search: debouncedSearch,

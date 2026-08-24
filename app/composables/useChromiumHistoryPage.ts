@@ -3,6 +3,14 @@ import type { ChromiumHistoryVisit, ChromiumProfile } from '~/types/history'
 import { toUnifiedChromiumVisit } from '~/utils/unifiedHistory'
 import { useChromiumHistoryFilters } from './useChromiumHistoryFilters'
 import { useDebouncedRef } from './useDebouncedRef'
+import {
+  booleanCodec,
+  filterField,
+  nullableDateCodec,
+  nullableStringCodec,
+  stringCodec,
+  useFilterPersistence
+} from './useFilterPersistence'
 import { parseChromiumHistoryFile } from './useChromiumHistoryParser'
 import { useUnifiedHistorySource } from './useUnifiedHistorySource'
 
@@ -37,13 +45,24 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
   })
 
   const search = ref('')
-  const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
   const domainFilter = ref<string | null>(null)
   const dateFrom = ref<Date | null>(null)
   const dateTo = ref<Date | null>(null)
   const onlyTyped = ref(false)
   const onlyRedirects = ref(false)
   const onlyHidden = ref(false)
+
+  useFilterPersistence(`${brand}-history-filters`, {
+    search: filterField(search, stringCodec),
+    domainFilter: filterField(domainFilter, nullableStringCodec),
+    dateFrom: filterField(dateFrom, nullableDateCodec),
+    dateTo: filterField(dateTo, nullableDateCodec),
+    onlyTyped: filterField(onlyTyped, booleanCodec),
+    onlyRedirects: filterField(onlyRedirects, booleanCodec),
+    onlyHidden: filterField(onlyHidden, booleanCodec)
+  })
+
+  const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 
   const selectedVisit = ref<ChromiumHistoryVisit | null>(null)
   const detailDialog = ref(false)
