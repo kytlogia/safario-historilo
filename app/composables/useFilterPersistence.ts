@@ -37,10 +37,16 @@ export function stringArrayCodec<T extends string>(
     toStorage: (value) => value,
     fromStorage: (value) => {
       if (!Array.isArray(value)) return undefined
-      return value.filter(
+      if (value.length === 0) return []
+      const filtered = value.filter(
         (item): item is T =>
           typeof item === 'string' && (allowed as readonly string[]).includes(item)
       )
+      // An intentionally-persisted empty array is valid (handled above); but if
+      // every entry in a *non-empty* stored array fails validation, that's not
+      // "the user disabled everything" — it's corrupted/foreign data. Fail
+      // closed like every other codec here rather than silently restoring [].
+      return filtered.length === 0 ? undefined : filtered
     }
   }
 }
@@ -122,6 +128,11 @@ export function useFilterPersistence(
         // Ignore write failures — filters still apply for this session, just
         // aren't persisted.
       }
-    }
+    },
+    // Some fields (e.g. enabledSources) hold an array/object ref that a
+    // consumer can mutate in place (push/splice) rather than always
+    // reassigning .value — a shallow watch misses those, so this needs to
+    // traverse into the current values to catch them too.
+    { deep: true }
   )
 }

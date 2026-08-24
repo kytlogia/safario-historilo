@@ -102,6 +102,55 @@ describe('useFilterPersistence', () => {
     expect(enabledSources.value).toEqual(['safari', 'chrome'])
   })
 
+  it('restores an intentionally-persisted empty array as-is', () => {
+    localStorage.setItem('test-filters', JSON.stringify({ enabledSources: [] }))
+    const enabledSources = ref<string[]>(['safari', 'firefox', 'chrome', 'edge'])
+
+    useFilterPersistence('test-filters', {
+      enabledSources: filterField(
+        enabledSources,
+        stringArrayCodec(['safari', 'firefox', 'chrome', 'edge'] as const)
+      )
+    })
+
+    expect(enabledSources.value).toEqual([])
+  })
+
+  it('keeps the default when a non-empty stored array has no valid entries', () => {
+    localStorage.setItem(
+      'test-filters',
+      JSON.stringify({ enabledSources: ['not-a-real-source', 'also-fake'] })
+    )
+    const enabledSources = ref<string[]>(['safari', 'firefox', 'chrome', 'edge'])
+
+    useFilterPersistence('test-filters', {
+      enabledSources: filterField(
+        enabledSources,
+        stringArrayCodec(['safari', 'firefox', 'chrome', 'edge'] as const)
+      )
+    })
+
+    expect(enabledSources.value).toEqual(['safari', 'firefox', 'chrome', 'edge'])
+  })
+
+  it('persists in-place mutations of an array ref (e.g. push/splice), not just reassignment', async () => {
+    const enabledSources = ref<string[]>(['safari'])
+
+    useFilterPersistence('test-filters', {
+      enabledSources: filterField(
+        enabledSources,
+        stringArrayCodec(['safari', 'firefox', 'chrome', 'edge'] as const)
+      )
+    })
+
+    enabledSources.value.push('firefox')
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('test-filters')!)).toEqual({
+      enabledSources: ['safari', 'firefox']
+    })
+  })
+
   it('ignores a value that fails its codec check and keeps the default', () => {
     localStorage.setItem('test-filters', JSON.stringify({ onlyFailed: 'not-a-boolean' }))
     const onlyFailed = ref(false)
