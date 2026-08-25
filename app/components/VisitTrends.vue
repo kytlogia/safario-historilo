@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { TrendBucket } from '~/composables/useVisitFilterEngine'
 
 const props = defineProps<{
@@ -7,38 +8,66 @@ const props = defineProps<{
   hourlyTrend: TrendBucket[]
 }>()
 
+const { t } = useI18n()
+
 const hasData = computed(() => props.weekdayTrend.some((b) => b.count > 0))
 </script>
 
 <template>
   <v-card class="h-100">
-    <v-card-title class="text-subtitle-1">曜日・時間帯別の訪問傾向</v-card-title>
+    <v-card-title class="text-subtitle-1">{{ t('components.visitTrends.title') }}</v-card-title>
     <v-card-text>
       <template v-if="hasData">
-        <div class="text-caption text-medium-emphasis mb-1">曜日別</div>
-        <div class="trend-chart" role="list" aria-label="曜日別の訪問数">
+        <div class="text-caption text-medium-emphasis mb-1">
+          {{ t('components.visitTrends.byWeekday') }}
+        </div>
+        <div
+          class="trend-chart"
+          role="list"
+          :aria-label="t('components.visitTrends.weekdayChartLabel')"
+        >
           <div
             v-for="bucket in weekdayTrend"
             :key="bucket.label"
             class="trend-bar"
             role="listitem"
-            :aria-label="`${bucket.label}: ${bucket.count}件`"
-            :title="`${bucket.label}: ${bucket.count}件`"
+            :aria-label="
+              t('components.visitTrends.weekdayBarLabel', {
+                label: bucket.label,
+                count: bucket.count
+              })
+            "
+            :title="
+              t('components.visitTrends.weekdayBarLabel', {
+                label: bucket.label,
+                count: bucket.count
+              })
+            "
           >
             <div class="trend-bar__fill" :style="{ height: `${bucket.ratio}%` }" />
             <div class="trend-bar__label text-caption">{{ bucket.label }}</div>
           </div>
         </div>
 
-        <div class="text-caption text-medium-emphasis mb-1 mt-4">時間帯別</div>
-        <div class="trend-chart trend-chart--hourly" role="list" aria-label="時間帯別の訪問数">
+        <div class="text-caption text-medium-emphasis mb-1 mt-4">
+          {{ t('components.visitTrends.byHour') }}
+        </div>
+        <div
+          class="trend-chart trend-chart--hourly"
+          role="list"
+          :aria-label="t('components.visitTrends.hourChartLabel')"
+        >
           <div
             v-for="bucket in hourlyTrend"
             :key="bucket.label"
             class="trend-bar trend-bar--narrow"
             role="listitem"
-            :aria-label="`${bucket.label}時: ${bucket.count}件`"
-            :title="`${bucket.label}時: ${bucket.count}件`"
+            :aria-label="
+              t('components.visitTrends.hourBarLabel', { label: bucket.label, count: bucket.count })
+            "
+            :title="
+              t('components.visitTrends.hourBarLabel', { label: bucket.label, count: bucket.count })
+            "
           >
             <div class="trend-bar__fill" :style="{ height: `${bucket.ratio}%` }" />
             <div v-if="Number(bucket.label) % 4 === 0" class="trend-bar__label text-caption">
@@ -47,7 +76,7 @@ const hasData = computed(() => props.weekdayTrend.some((b) => b.count > 0))
           </div>
         </div>
       </template>
-      <v-empty-state v-else icon="mdi-chart-bar" size="48" text="該当するデータがありません" />
+      <v-empty-state v-else icon="mdi-chart-bar" size="48" :text="t('common.noData')" />
     </v-card-text>
   </v-card>
 </template>

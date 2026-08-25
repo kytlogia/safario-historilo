@@ -1,21 +1,24 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { NuxtError } from '#app'
 
 const props = defineProps<{ error: NuxtError }>()
 
 // error.vue replaces app.vue's whole render tree for this page load, so
-// app.vue's own initTheme() call never runs here — without this, dark-mode
-// users would always see the light defaultTheme flash on a fatal error.
+// app.vue's own initTheme()/initLocale() calls never run here — without
+// this, dark-mode/non-Japanese users would always see the light
+// defaultTheme and the wrong <html lang> flash on a fatal error.
 useAppTheme().initTheme()
+useAppLocale().initLocale()
+
+const { t } = useI18n()
 
 const isNotFound = computed(() => props.error.statusCode === 404)
 const title = computed(() =>
-  isNotFound.value ? 'ページが見つかりません' : '予期しないエラーが発生しました'
+  isNotFound.value ? t('error.notFoundTitle') : t('error.unexpectedTitle')
 )
 const message = computed(() =>
-  isNotFound.value
-    ? 'お探しのページは存在しないか、移動した可能性があります。'
-    : 'アプリの処理中に問題が発生しました。お手数ですが、再読み込みしてやり直してください。'
+  isNotFound.value ? t('error.notFoundMessage') : t('error.unexpectedMessage')
 )
 
 function handleReload() {
@@ -39,7 +42,7 @@ function handleReload() {
               <h1 class="text-h5 mb-2">{{ title }}</h1>
               <p class="text-body-2 text-medium-emphasis mb-6">{{ message }}</p>
               <v-btn color="primary" block @click="handleReload">
-                {{ isNotFound ? 'トップに戻る' : '再読み込み' }}
+                {{ isNotFound ? t('error.backToTop') : t('error.reload') }}
               </v-btn>
             </v-card>
           </v-col>

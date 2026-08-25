@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 withDefaults(
   defineProps<{
     label: string
@@ -44,7 +48,11 @@ function onFileInputChange(files: File[] | File | null) {
       <v-card-title class="text-subtitle-1">{{ label }}</v-card-title>
       <template #append>
         <v-chip v-if="hasData" size="small" :color="color" variant="tonal">
-          {{ visitCount.toLocaleString() }} 件
+          {{
+            t('components.unifiedSourceCard.visitCountSuffix', {
+              count: visitCount.toLocaleString()
+            })
+          }}
         </v-chip>
       </template>
     </v-card-item>
@@ -60,7 +68,7 @@ function onFileInputChange(files: File[] | File | null) {
           data-testid="source-card-reset-button"
           @click="emit('reset')"
         >
-          読み込み直す
+          {{ t('components.unifiedSourceCard.reload') }}
         </v-btn>
       </template>
 
@@ -71,7 +79,7 @@ function onFileInputChange(files: File[] | File | null) {
           :items="serverProfiles"
           item-title="name"
           item-value="id"
-          label="プロファイル"
+          :label="t('components.unifiedSourceCard.profileLabel')"
           variant="outlined"
           density="compact"
           hide-details
@@ -93,7 +101,7 @@ function onFileInputChange(files: File[] | File | null) {
             :disabled="isLoading"
             @click="emit('load-from-server')"
           >
-            自動で読み込む
+            {{ t('components.unifiedSourceCard.autoLoad') }}
           </v-btn>
           <div
             class="text-caption text-medium-emphasis mb-2 text-truncate"
@@ -111,7 +119,7 @@ function onFileInputChange(files: File[] | File | null) {
           class="mb-2"
           data-testid="source-card-permission-hint"
         >
-          読み取り権限がありません。フルディスクアクセスを許可してください。
+          {{ t('components.unifiedSourceCard.permissionHint') }}
         </v-alert>
 
         <v-alert
@@ -126,7 +134,7 @@ function onFileInputChange(files: File[] | File | null) {
         </v-alert>
 
         <v-file-input
-          label="ファイルを選択"
+          :label="t('components.unifiedSourceCard.fileInputLabel')"
           prepend-icon="mdi-file-upload-outline"
           variant="outlined"
           density="compact"

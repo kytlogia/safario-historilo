@@ -1,9 +1,18 @@
 import type { FirefoxHistoryVisit, ParsedFirefoxHistory } from '~/types/history'
 import { parseFirefoxHistoryBuffer } from '~/utils/parseFirefoxHistoryDatabase'
+import type { AppLocale } from '~/composables/useAppLocale'
 import type {
   FirefoxHistoryDatabaseWorkerRequest,
   FirefoxHistoryDatabaseWorkerResponse
 } from './firefoxHistoryDatabase.worker'
+
+const WORKER_CRASH_MESSAGES: Record<AppLocale, string> = {
+  ja: 'places.sqliteの解析中にエラーが発生しました。',
+  en: 'An error occurred while parsing places.sqlite.',
+  zh: '解析 places.sqlite 时发生错误。'
+}
+
+let lastLocale: AppLocale = 'ja'
 
 // jsdom (used for unit/integration tests) doesn't implement Worker at all, and
 // the real parsing logic runs directly under Node for some tests — in both
@@ -55,7 +64,7 @@ function getWorker(): Worker {
     const error =
       event.error instanceof Error
         ? event.error
-        : new Error(event.message || 'places.sqliteの解析中にエラーが発生しました。')
+        : new Error(event.message || WORKER_CRASH_MESSAGES[lastLocale])
     for (const pending of pendingRequests.values()) {
       pending.reject(error)
     }
@@ -66,7 +75,11 @@ function getWorker(): Worker {
   return worker
 }
 
-function parseViaWorker(buffer: ArrayBuffer, fileName: string): Promise<ParsedFirefoxHistory> {
+function parseViaWorker(
+  buffer: ArrayBuffer,
+  fileName: string,
+  locale: AppLocale
+): Promise<ParsedFirefoxHistory> {
   return new Promise((resolve, reject) => {
     const worker = getWorker()
     const requestId = nextRequestId++
@@ -76,17 +89,21 @@ function parseViaWorker(buffer: ArrayBuffer, fileName: string): Promise<ParsedFi
       reject
     })
 
-    const request: FirefoxHistoryDatabaseWorkerRequest = { requestId, buffer, fileName }
+    const request: FirefoxHistoryDatabaseWorkerRequest = { requestId, buffer, fileName, locale }
     worker.postMessage(request, [buffer])
   })
 }
 
-export async function parseFirefoxHistoryFile(file: File): Promise<ParsedFirefoxHistory> {
+export async function parseFirefoxHistoryFile(
+  file: File,
+  locale: AppLocale = 'ja'
+): Promise<ParsedFirefoxHistory> {
+  lastLocale = locale
   const buffer = await file.arrayBuffer()
 
   if (supportsDedicatedWorker()) {
-    return parseViaWorker(buffer, file.name)
+    return parseViaWorker(buffer, file.name, locale)
   }
 
-  return parseFirefoxHistoryBuffer(buffer, file.name)
+  return parseFirefoxHistoryBuffer(buffer, file.name, locale)
 }

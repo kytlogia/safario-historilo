@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 const {
   safari,
   firefox,
@@ -41,7 +44,7 @@ function resetAllSources() {
     <v-app-bar flat density="comfortable" color="surface">
       <v-app-bar-title>
         <v-icon icon="mdi-magnify" class="mr-2" />
-        横断検索
+        {{ t('nav.crossSearch') }}
       </v-app-bar-title>
       <template #append>
         <v-btn
@@ -51,26 +54,27 @@ function resetAllSources() {
           class="mr-2"
           data-testid="unified-reset-all-button"
           @click="resetAllSources"
-          >すべてクリア</v-btn
+          >{{ t('nav.clearAll') }}</v-btn
         >
-        <v-btn variant="text" to="/" prepend-icon="mdi-compass-outline" class="mr-2"
-          >Safariの履歴を見る</v-btn
-        >
-        <v-btn variant="text" to="/firefox" prepend-icon="mdi-fire" class="mr-2"
-          >Firefoxの履歴を見る</v-btn
-        >
-        <v-btn variant="text" to="/chrome" prepend-icon="mdi-google-chrome" class="mr-2"
-          >Chromeの履歴を見る</v-btn
-        >
-        <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2"
-          >Edgeの履歴を見る</v-btn
-        >
+        <v-btn variant="text" to="/" prepend-icon="mdi-compass-outline" class="mr-2">{{
+          t('nav.viewSafari')
+        }}</v-btn>
+        <v-btn variant="text" to="/firefox" prepend-icon="mdi-fire" class="mr-2">{{
+          t('nav.viewFirefox')
+        }}</v-btn>
+        <v-btn variant="text" to="/chrome" prepend-icon="mdi-google-chrome" class="mr-2">{{
+          t('nav.viewChrome')
+        }}</v-btn>
+        <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2">{{
+          t('nav.viewEdge')
+        }}</v-btn>
         <v-btn
           :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-          :aria-label="isDark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え'"
+          :aria-label="isDark ? t('common.switchToLightTheme') : t('common.switchToDarkTheme')"
           variant="text"
           @click="toggleTheme"
         />
+        <LocaleSwitcher />
       </template>
     </v-app-bar>
 
@@ -208,8 +212,8 @@ function resetAllSources() {
           icon="mdi-magnify"
           size="56"
           class="mt-6"
-          title="読み込み済みのデータがありません"
-          text="上のカードから、横断検索したいブラウザの履歴ファイルを1つ以上読み込んでください。"
+          :title="t('pages.all.emptyTitle')"
+          :text="t('pages.all.emptyText')"
         />
       </v-container>
     </v-main>

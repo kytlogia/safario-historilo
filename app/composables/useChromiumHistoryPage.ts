@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import type { ChromiumHistoryVisit, ChromiumProfile } from '~/types/history'
 import { toUnifiedChromiumVisit } from '~/utils/unifiedHistory'
+import { useVisitFilterI18n } from '~/composables/useAppLocale'
 import { useChromiumHistoryFilters } from './useChromiumHistoryFilters'
 import { useDebouncedRef } from './useDebouncedRef'
 import {
@@ -41,7 +42,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     parseFile: parseChromiumHistoryFile,
     toUnified: (v) => toUnifiedChromiumVisit(v, brand),
     resolveDefaultProfileId,
-    loadErrorFallback: 'History の自動読み込みに失敗しました。'
+    loadErrorFallbackKey: 'error.autoLoadFailed.chromium'
   })
 
   const search = ref('')
@@ -68,15 +69,19 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
   const detailDialog = ref(false)
 
   const { domainOptions, filteredVisits, topDomains, dateRangeLabel, weekdayTrend, hourlyTrend } =
-    useChromiumHistoryFilters(source.rawVisits, {
-      search: debouncedSearch,
-      domainFilter,
-      dateFrom,
-      dateTo,
-      onlyTyped,
-      onlyRedirects,
-      onlyHidden
-    })
+    useChromiumHistoryFilters(
+      source.rawVisits,
+      {
+        search: debouncedSearch,
+        domainFilter,
+        dateFrom,
+        dateTo,
+        onlyTyped,
+        onlyRedirects,
+        onlyHidden
+      },
+      useVisitFilterI18n()
+    )
 
   const uniqueUrlCount = computed(() => new Set(source.rawVisits.value.map((v) => v.url)).size)
   const uniqueDomainCount = computed(

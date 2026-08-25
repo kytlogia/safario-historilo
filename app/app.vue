@@ -1,5 +1,6 @@
 <script setup lang="ts">
 useAppTheme().initTheme()
+useAppLocale().initLocale()
 </script>
 
 <template>

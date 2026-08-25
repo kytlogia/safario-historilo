@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { formatDateTime } from '~/utils/format'
 import type { HistoryVisit } from '~/types/history'
+import { useAppLocale } from '~/composables/useAppLocale'
 import TruncatedCell from './TruncatedCell.vue'
 
 defineProps<{
@@ -11,15 +14,29 @@ const emit = defineEmits<{
   'row-click': [visit: HistoryVisit]
 }>()
 
-const headers = [
-  { title: 'タイトル', key: 'title', width: '28%' },
-  { title: 'URL', key: 'url', width: '28%' },
-  { title: 'ドメイン', key: 'domain', width: 170 },
-  { title: '訪問日時', key: 'visitTime', width: 190 },
-  { title: 'URL累計訪問回数', key: 'visitCount', width: 130, align: 'end' as const },
-  { title: '状態', key: 'flags', width: 150, sortable: false },
-  { title: '操作', key: 'actions', width: 56, sortable: false, align: 'center' as const }
-]
+const { t } = useI18n()
+const { intlLocale } = useAppLocale()
+
+const headers = computed(() => [
+  { title: t('components.visitsTable.headerTitle'), key: 'title', width: '28%' },
+  { title: t('components.visitsTable.headerUrl'), key: 'url', width: '28%' },
+  { title: t('components.visitsTable.headerDomain'), key: 'domain', width: 170 },
+  { title: t('components.visitsTable.headerVisitTime'), key: 'visitTime', width: 190 },
+  {
+    title: t('components.visitsTable.headerVisitCount'),
+    key: 'visitCount',
+    width: 130,
+    align: 'end' as const
+  },
+  { title: t('components.visitsTable.headerStatus'), key: 'flags', width: 150, sortable: false },
+  {
+    title: t('components.visitsTable.headerActions'),
+    key: 'actions',
+    width: 56,
+    sortable: false,
+    align: 'center' as const
+  }
+])
 </script>
 
 <template>
@@ -41,14 +58,19 @@ const headers = [
       <TruncatedCell :text="item.domain" />
     </template>
     <template #item.visitTime="{ item }">
-      {{ formatDateTime(item.visitTime) }}
+      {{ formatDateTime(item.visitTime, intlLocale) }}
     </template>
     <template #item.visitCount="{ item }">
       {{ item.visitCount.toLocaleString() }}
     </template>
     <template #item.flags="{ item }">
-      <v-chip v-if="!item.loadSuccessful" size="x-small" color="error" variant="flat" class="mr-1"
-        >失敗</v-chip
+      <v-chip
+        v-if="!item.loadSuccessful"
+        size="x-small"
+        color="error"
+        variant="flat"
+        class="mr-1"
+        >{{ t('components.visitsTable.flagFailed') }}</v-chip
       >
       <v-chip
         v-if="item.redirectSource !== null || item.redirectDestination !== null"
@@ -57,16 +79,18 @@ const headers = [
         variant="flat"
         class="mr-1"
       >
-        リダイレクト
+        {{ t('components.visitsTable.flagRedirect') }}
       </v-chip>
-      <v-chip v-if="item.synthesized" size="x-small" color="secondary" variant="flat">自動</v-chip>
+      <v-chip v-if="item.synthesized" size="x-small" color="secondary" variant="flat">{{
+        t('components.visitsTable.flagSynthesized')
+      }}</v-chip>
     </template>
     <template #item.actions="{ item }">
       <v-btn
         icon="mdi-information-outline"
         variant="text"
         size="small"
-        aria-label="詳細を見る"
+        :aria-label="t('components.visitsTable.detailAriaLabel')"
         data-testid="row-detail-button"
         @click.stop="emit('row-click', item)"
       />

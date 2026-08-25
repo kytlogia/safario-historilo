@@ -1,5 +1,6 @@
 import { computed, type Ref } from 'vue'
 import { formatDate } from '~/utils/format'
+import ja from '../../i18n/locales/ja.json'
 
 export interface FilterableVisit {
   title: string
@@ -21,7 +22,45 @@ export interface TrendBucket {
   ratio: number
 }
 
-const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土']
+// The live translate/date-locale functions a caller with real Vue/i18n
+// component context (a page or a page-level composable) supplies — see
+// useAppLocale.ts's useVisitFilterI18n(). Kept as a plain interface (not a
+// direct useI18n()/useAppLocale() call in this file) so this engine stays
+// callable from plain unit tests with no Vue component instance at all; the
+// default below falls back to this app's own default locale (ja) rather
+// than a caller-supplied one.
+export interface VisitFilterEngineI18n {
+  t: (key: string, params?: Record<string, unknown>) => string
+  tm: (key: string) => string[]
+  intlLocale: () => string
+}
+
+function resolvePath(source: unknown, path: string): unknown {
+  return path.split('.').reduce<unknown>((acc, key) => {
+    if (acc && typeof acc === 'object') return (acc as Record<string, unknown>)[key]
+    return undefined
+  }, source)
+}
+
+function interpolate(template: string, params?: Record<string, unknown>): string {
+  if (!params) return template
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in params ? String(params[key]) : match
+  )
+}
+
+const DEFAULT_I18N: VisitFilterEngineI18n = {
+  t: (key, params) => {
+    const template = resolvePath(ja, key)
+    return typeof template === 'string' ? interpolate(template, params) : key
+  },
+  tm: (key) => {
+    const value = resolvePath(ja, key)
+    return Array.isArray(value) ? (value as string[]) : []
+  },
+  intlLocale: () => 'ja-JP'
+}
+
 const HOUR_LABELS = Array.from({ length: 24 }, (_, hour) => String(hour))
 
 function toTrendBuckets(counts: number[], labels: string[]): TrendBucket[] {
@@ -56,8 +95,11 @@ function countByDomain<T extends FilterableVisit>(visits: T[]) {
 export function useVisitFilterEngine<T extends FilterableVisit>(
   visits: Ref<T[]>,
   filters: BaseVisitFilterState,
-  matchesExtra: (visit: T) => boolean
+  matchesExtra: (visit: T) => boolean,
+  i18n: VisitFilterEngineI18n = DEFAULT_I18N
 ) {
+  const { t, tm, intlLocale } = i18n
+
   const domainOptions = computed(() =>
     countByDomain(visits.value).map(([domain, count]) => ({
       title: `${domain} (${count})`,
@@ -94,13 +136,16 @@ export function useVisitFilterEngine<T extends FilterableVisit>(
     const times = visits.value.map((v) => v.visitTime.getTime())
     const min = new Date(times.reduce((a, b) => Math.min(a, b)))
     const max = new Date(times.reduce((a, b) => Math.max(a, b)))
-    return `${formatDate(min)} 〜 ${formatDate(max)}`
+    return t('common.dateRange', {
+      from: formatDate(min, intlLocale()),
+      to: formatDate(max, intlLocale())
+    })
   })
 
   const weekdayTrend = computed(() => {
     const counts = new Array(7).fill(0)
     for (const v of filteredVisits.value) counts[v.visitTime.getDay()]++
-    return toTrendBuckets(counts, WEEKDAY_LABELS)
+    return toTrendBuckets(counts, tm('weekday'))
   })
 
   const hourlyTrend = computed(() => {

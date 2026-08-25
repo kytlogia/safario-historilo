@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { formatDateTime, isSafeUrl } from '~/utils/format'
 import type { UnifiedHistoryVisit } from '~/types/history'
 import { unifiedSourceMeta } from '~/utils/unifiedHistory'
+import { useAppLocale } from '~/composables/useAppLocale'
 
 defineProps<{
   visit: UnifiedHistoryVisit | null
 }>()
 
 const open = defineModel<boolean>({ required: true })
+
+const { t } = useI18n()
+const { intlLocale } = useAppLocale()
 
 const copiedField = ref<string | null>(null)
 let copiedTimer: ReturnType<typeof setTimeout> | undefined
@@ -46,13 +51,15 @@ onUnmounted(() => {
     <v-card v-if="visit" class="detail-dialog">
       <v-card-title class="d-flex align-center">
         <v-icon :icon="unifiedSourceMeta(visit.source).icon" class="mr-2" />
-        <span class="text-truncate">履歴の詳細（{{ visit.sourceLabel }}）</span>
+        <span class="text-truncate">{{
+          t('components.dialog.titleWithSource', { source: visit.sourceLabel })
+        }}</span>
         <v-spacer />
         <v-btn
           icon="mdi-close"
           variant="text"
           size="small"
-          aria-label="閉じる"
+          :aria-label="t('common.close')"
           data-testid="unified-detail-close-button"
           @click="open = false"
         />
@@ -60,7 +67,7 @@ onUnmounted(() => {
       <v-divider />
       <v-card-text>
         <v-list density="compact">
-          <v-list-item title="ソース">
+          <v-list-item :title="t('components.dialog.fieldSource')">
             <template #subtitle>
               <v-chip
                 size="small"
@@ -72,7 +79,7 @@ onUnmounted(() => {
               </v-chip>
             </template>
           </v-list-item>
-          <v-list-item title="タイトル">
+          <v-list-item :title="t('components.dialog.fieldTitle')">
             <template #subtitle>
               <span class="detail-dialog__subtitle">{{ visit.title }}</span>
             </template>
@@ -81,14 +88,14 @@ onUnmounted(() => {
                 :icon="copiedField === 'title' ? 'mdi-check' : 'mdi-content-copy'"
                 variant="text"
                 size="small"
-                title="コピー"
-                aria-label="コピー"
+                :title="t('common.copy')"
+                :aria-label="t('common.copy')"
                 data-testid="unified-copy-title-button"
                 @click="copyToClipboard(visit.title, 'title')"
               />
             </template>
           </v-list-item>
-          <v-list-item title="URL">
+          <v-list-item :title="t('components.dialog.fieldUrl')">
             <template #subtitle>
               <a
                 v-if="isSafeUrl(visit.url)"
@@ -109,16 +116,22 @@ onUnmounted(() => {
                 :icon="copiedField === 'url' ? 'mdi-check' : 'mdi-content-copy'"
                 variant="text"
                 size="small"
-                title="コピー"
-                aria-label="コピー"
+                :title="t('common.copy')"
+                :aria-label="t('common.copy')"
                 data-testid="unified-copy-url-button"
                 @click="copyToClipboard(visit.url, 'url')"
               />
             </template>
           </v-list-item>
-          <v-list-item title="ドメイン" :subtitle="visit.domain" />
-          <v-list-item title="訪問日時" :subtitle="formatDateTime(visit.visitTime)" />
-          <v-list-item title="累計訪問回数" :subtitle="visit.visitCount.toLocaleString()" />
+          <v-list-item :title="t('components.dialog.fieldDomain')" :subtitle="visit.domain" />
+          <v-list-item
+            :title="t('components.dialog.fieldVisitTime')"
+            :subtitle="formatDateTime(visit.visitTime, intlLocale)"
+          />
+          <v-list-item
+            :title="t('components.dialog.fieldVisitCountUnified')"
+            :subtitle="visit.visitCount.toLocaleString()"
+          />
         </v-list>
       </v-card-text>
     </v-card>

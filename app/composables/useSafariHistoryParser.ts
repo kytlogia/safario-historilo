@@ -1,9 +1,22 @@
 import type { HistoryVisit, ParsedHistory } from '~/types/history'
 import { parseHistoryBuffer } from '~/utils/parseHistoryDatabase'
+import type { AppLocale } from '~/composables/useAppLocale'
 import type {
   HistoryDatabaseWorkerRequest,
   HistoryDatabaseWorkerResponse
 } from './historyDatabase.worker'
+
+const WORKER_CRASH_MESSAGES: Record<AppLocale, string> = {
+  ja: 'History.dbの解析中にエラーが発生しました。',
+  en: 'An error occurred while parsing History.db.',
+  zh: '解析 History.db 时发生错误。'
+}
+
+// Tracks the locale most recently passed to parseSafariHistoryFile() so the
+// shared worker's onerror handler (set up once, not per-request — see
+// getWorker() below) can still report in the right language even though it
+// has no request of its own to read a locale from.
+let lastLocale: AppLocale = 'ja'
 
 // jsdom (used for unit/integration tests) doesn't implement Worker at all, and
 // the real parsing logic runs directly under Node for some tests (see
@@ -59,7 +72,7 @@ function getWorker(): Worker {
     const error =
       event.error instanceof Error
         ? event.error
-        : new Error(event.message || 'History.dbの解析中にエラーが発生しました。')
+        : new Error(event.message || WORKER_CRASH_MESSAGES[lastLocale])
     for (const pending of pendingRequests.values()) {
       pending.reject(error)
     }
@@ -70,7 +83,11 @@ function getWorker(): Worker {
   return worker
 }
 
-function parseViaWorker(buffer: ArrayBuffer, fileName: string): Promise<ParsedHistory> {
+function parseViaWorker(
+  buffer: ArrayBuffer,
+  fileName: string,
+  locale: AppLocale
+): Promise<ParsedHistory> {
   return new Promise((resolve, reject) => {
     const worker = getWorker()
     const requestId = nextRequestId++
@@ -80,17 +97,21 @@ function parseViaWorker(buffer: ArrayBuffer, fileName: string): Promise<ParsedHi
       reject
     })
 
-    const request: HistoryDatabaseWorkerRequest = { requestId, buffer, fileName }
+    const request: HistoryDatabaseWorkerRequest = { requestId, buffer, fileName, locale }
     worker.postMessage(request, [buffer])
   })
 }
 
-export async function parseSafariHistoryFile(file: File): Promise<ParsedHistory> {
+export async function parseSafariHistoryFile(
+  file: File,
+  locale: AppLocale = 'ja'
+): Promise<ParsedHistory> {
+  lastLocale = locale
   const buffer = await file.arrayBuffer()
 
   if (supportsDedicatedWorker()) {
-    return parseViaWorker(buffer, file.name)
+    return parseViaWorker(buffer, file.name, locale)
   }
 
-  return parseHistoryBuffer(buffer, file.name)
+  return parseHistoryBuffer(buffer, file.name, locale)
 }

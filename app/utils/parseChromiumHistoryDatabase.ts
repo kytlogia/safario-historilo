@@ -1,7 +1,44 @@
 import type { Database } from 'sql.js'
 import type { ChromiumHistoryVisit, ParsedChromiumHistory } from '~/types/history'
+import type { AppLocale } from '~/composables/useAppLocale'
 import { coreTransitionType } from './chromiumVisitType'
 import { extractDomain, getSqlJs, getTableColumns, toBool } from './sqlJs'
+
+// See the equivalent comment in parseHistoryDatabase.ts — this file runs
+// inside chromiumHistoryDatabase.worker.ts, so it can't use vue-i18n either.
+const MESSAGES: Record<
+  AppLocale,
+  {
+    openFailed: string
+    wrongSchema: string
+    missingColumns: (table: string, missing: string) => string
+    noTitle: string
+  }
+> = {
+  ja: {
+    openFailed: 'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。',
+    wrongSchema:
+      'このファイルはChrome/Edgeの履歴データベース(History)ではないようです。urls / visits テーブルが見つかりませんでした。',
+    missingColumns: (table, missing) =>
+      `このHistoryのスキーマは対応していません。テーブル "${table}" に想定していた列が見つかりませんでした: ${missing}`,
+    noTitle: '(タイトルなし)'
+  },
+  en: {
+    openFailed: 'Could not open the file. Please choose a valid SQLite database file.',
+    wrongSchema:
+      "This file doesn't look like Chrome/Edge's history database (History). The urls / visits tables were not found.",
+    missingColumns: (table, missing) =>
+      `This History's schema isn't supported. Table "${table}" is missing expected column(s): ${missing}`,
+    noTitle: '(no title)'
+  },
+  zh: {
+    openFailed: '无法打开文件。请选择一个有效的 SQLite 数据库文件。',
+    wrongSchema: '该文件似乎不是 Chrome/Edge 的历史记录数据库 (History)。未找到 urls / visits 表。',
+    missingColumns: (table, missing) =>
+      `此 History 的架构不受支持。表 "${table}" 缺少预期的列：${missing}`,
+    noTitle: '(无标题)'
+  }
+}
 
 // Chrome/Edge (WebKit epoch) timestamps in visits.visit_time and
 // urls.last_visit_time are microseconds since 1601-01-01T00:00:00Z — the
@@ -24,7 +61,8 @@ const REQUIRED_COLUMNS: Record<string, string[]> = {
   visits: ['id', 'url', 'visit_time', 'from_visit', 'transition', 'visit_duration']
 }
 
-function assertHistorySchema(db: Database) {
+function assertHistorySchema(db: Database, locale: AppLocale) {
+  const messages = MESSAGES[locale]
   // sql.js's `SQL.Database` constructor accepts arbitrary bytes and doesn't
   // validate the SQLite file header — it only fails lazily on the first query
   // that actually touches the page structure, which is this one. Map that
@@ -36,24 +74,18 @@ function assertHistorySchema(db: Database) {
       "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('urls', 'visits')"
     )
   } catch {
-    throw new Error(
-      'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。'
-    )
+    throw new Error(messages.openFailed)
   }
   const found = new Set((tables[0]?.values ?? []).map((row) => String(row[0])))
   if (!found.has('urls') || !found.has('visits')) {
-    throw new Error(
-      'このファイルはChrome/Edgeの履歴データベース(History)ではないようです。urls / visits テーブルが見つかりませんでした。'
-    )
+    throw new Error(messages.wrongSchema)
   }
 
   for (const [table, columns] of Object.entries(REQUIRED_COLUMNS)) {
     const existing = getTableColumns(db, table)
     const missing = columns.filter((column) => !existing.has(column))
     if (missing.length > 0) {
-      throw new Error(
-        `このHistoryのスキーマは対応していません。テーブル "${table}" に想定していた列が見つかりませんでした: ${missing.join(', ')}`
-      )
+      throw new Error(messages.missingColumns(table, missing.join(', ')))
     }
   }
 }
@@ -66,7 +98,8 @@ function assertHistorySchema(db: Database) {
 // support) or inside chromiumHistoryDatabase.worker.ts.
 export async function parseChromiumHistoryBuffer(
   buffer: ArrayBuffer,
-  fileName: string
+  fileName: string,
+  locale: AppLocale = 'ja'
 ): Promise<ParsedChromiumHistory> {
   const SQL = await getSqlJs()
 
@@ -74,13 +107,11 @@ export async function parseChromiumHistoryBuffer(
   try {
     db = new SQL.Database(new Uint8Array(buffer))
   } catch {
-    throw new Error(
-      'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。'
-    )
+    throw new Error(MESSAGES[locale].openFailed)
   }
 
   try {
-    assertHistorySchema(db)
+    assertHistorySchema(db, locale)
 
     const result = db.exec(`
       SELECT
@@ -145,7 +176,7 @@ export async function parseChromiumHistoryBuffer(
         urlId: urlIdNum,
         url: urlStr,
         domain: domainForUrl(urlIdNum, urlStr),
-        title: title ? String(title) : '(タイトルなし)',
+        title: title ? String(title) : MESSAGES[locale].noTitle,
         // The millisecond count Date() needs is always far below
         // Number.MAX_SAFE_INTEGER even for the BigInt division result, so
         // converting only at this last step loses no precision.

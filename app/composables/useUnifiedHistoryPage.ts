@@ -1,5 +1,7 @@
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { formatDate } from '~/utils/format'
+import { useAppLocale, useVisitFilterI18n } from '~/composables/useAppLocale'
 import type {
   ChromiumHistoryVisit,
   ChromiumProfile,
@@ -44,13 +46,16 @@ function pickDefaultProfileId(profiles: { id: string; isDefault: boolean }[]): s
  * applies search/domain/date/source filtering across the combined list.
  */
 export function useUnifiedHistoryPage() {
+  const { t } = useI18n()
+  const { intlLocale } = useAppLocale()
+
   const safari = useUnifiedHistorySource<HistoryVisit, SafariProfile>({
     apiBase: '/api/local-history',
     serverFileName: 'History.db',
     parseFile: parseSafariHistoryFile,
     toUnified: toUnifiedSafariVisit,
     initialProfileId: DEFAULT_PROFILE_ID,
-    loadErrorFallback: 'History.db の自動読み込みに失敗しました。'
+    loadErrorFallbackKey: 'error.autoLoadFailed.safari'
   })
 
   const firefox = useUnifiedHistorySource<FirefoxHistoryVisit, FirefoxProfile>({
@@ -59,7 +64,7 @@ export function useUnifiedHistoryPage() {
     parseFile: parseFirefoxHistoryFile,
     toUnified: toUnifiedFirefoxVisit,
     resolveDefaultProfileId: pickDefaultProfileId,
-    loadErrorFallback: 'places.sqlite の自動読み込みに失敗しました。'
+    loadErrorFallbackKey: 'error.autoLoadFailed.firefox'
   })
 
   const chrome = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
@@ -68,7 +73,7 @@ export function useUnifiedHistoryPage() {
     parseFile: parseChromiumHistoryFile,
     toUnified: (v) => toUnifiedChromiumVisit(v, 'chrome'),
     resolveDefaultProfileId: pickDefaultProfileId,
-    loadErrorFallback: 'History の自動読み込みに失敗しました。'
+    loadErrorFallbackKey: 'error.autoLoadFailed.chromium'
   })
 
   const edge = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
@@ -77,7 +82,7 @@ export function useUnifiedHistoryPage() {
     parseFile: parseChromiumHistoryFile,
     toUnified: (v) => toUnifiedChromiumVisit(v, 'edge'),
     resolveDefaultProfileId: pickDefaultProfileId,
-    loadErrorFallback: 'History の自動読み込みに失敗しました。'
+    loadErrorFallbackKey: 'error.autoLoadFailed.chromium'
   })
 
   // Each source's own visits already arrive sorted (visit_time DESC, see the
@@ -116,13 +121,17 @@ export function useUnifiedHistoryPage() {
   const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 
   const { domainOptions, filteredVisits, topDomains, weekdayTrend, hourlyTrend } =
-    useUnifiedHistoryFilters(visits, {
-      search: debouncedSearch,
-      domainFilter,
-      dateFrom,
-      dateTo,
-      enabledSources
-    })
+    useUnifiedHistoryFilters(
+      visits,
+      {
+        search: debouncedSearch,
+        domainFilter,
+        dateFrom,
+        dateTo,
+        enabledSources
+      },
+      useVisitFilterI18n()
+    )
 
   // useVisitFilterEngine's own dateRangeLabel deliberately ignores every
   // filter (search/domain/date) and always spans *all* loaded visits — see
@@ -139,7 +148,10 @@ export function useUnifiedHistoryPage() {
     const times = sourceVisits.map((v) => v.visitTime.getTime())
     const min = new Date(Math.min(...times))
     const max = new Date(Math.max(...times))
-    return `${formatDate(min)} 〜 ${formatDate(max)}`
+    return t('common.dateRange', {
+      from: formatDate(min, intlLocale.value),
+      to: formatDate(max, intlLocale.value)
+    })
   })
 
   const uniqueUrlCount = computed(() => new Set(visits.value.map((v) => v.url)).size)

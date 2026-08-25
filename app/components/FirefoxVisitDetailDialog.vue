@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { formatDateTime, isSafeUrl } from '~/utils/format'
 import { formatFirefoxVisitType } from '~/utils/firefoxVisitType'
 import type { FirefoxHistoryVisit } from '~/types/history'
+import { useAppLocale } from '~/composables/useAppLocale'
 
 defineProps<{
   visit: FirefoxHistoryVisit | null
 }>()
 
 const open = defineModel<boolean>({ required: true })
+
+const { t } = useI18n()
+const { intlLocale } = useAppLocale()
 
 const copiedField = ref<string | null>(null)
 let copiedTimer: ReturnType<typeof setTimeout> | undefined
@@ -46,13 +51,13 @@ onUnmounted(() => {
     <v-card v-if="visit" class="detail-dialog">
       <v-card-title class="d-flex align-center">
         <v-icon icon="mdi-web" class="mr-2" />
-        <span class="text-truncate">履歴の詳細</span>
+        <span class="text-truncate">{{ t('components.dialog.title') }}</span>
         <v-spacer />
         <v-btn
           icon="mdi-close"
           variant="text"
           size="small"
-          aria-label="閉じる"
+          :aria-label="t('common.close')"
           data-testid="detail-close-button"
           @click="open = false"
         />
@@ -60,7 +65,7 @@ onUnmounted(() => {
       <v-divider />
       <v-card-text>
         <v-list density="compact">
-          <v-list-item title="タイトル">
+          <v-list-item :title="t('components.dialog.fieldTitle')">
             <template #subtitle>
               <span class="detail-dialog__subtitle">{{ visit.title }}</span>
             </template>
@@ -69,14 +74,14 @@ onUnmounted(() => {
                 :icon="copiedField === 'title' ? 'mdi-check' : 'mdi-content-copy'"
                 variant="text"
                 size="small"
-                title="コピー"
-                aria-label="コピー"
+                :title="t('common.copy')"
+                :aria-label="t('common.copy')"
                 data-testid="copy-title-button"
                 @click="copyToClipboard(visit.title, 'title')"
               />
             </template>
           </v-list-item>
-          <v-list-item title="URL">
+          <v-list-item :title="t('components.dialog.fieldUrl')">
             <template #subtitle>
               <a
                 v-if="isSafeUrl(visit.url)"
@@ -97,48 +102,68 @@ onUnmounted(() => {
                 :icon="copiedField === 'url' ? 'mdi-check' : 'mdi-content-copy'"
                 variant="text"
                 size="small"
-                title="コピー"
-                aria-label="コピー"
+                :title="t('common.copy')"
+                :aria-label="t('common.copy')"
                 data-testid="copy-url-button"
                 @click="copyToClipboard(visit.url, 'url')"
               />
             </template>
           </v-list-item>
-          <v-list-item title="ドメイン" :subtitle="visit.domain" />
-          <v-list-item title="訪問日時" :subtitle="formatDateTime(visit.visitTime)" />
+          <v-list-item :title="t('components.dialog.fieldDomain')" :subtitle="visit.domain" />
           <v-list-item
-            title="内部タイムスタンプ (Unixエポック)"
-            :subtitle="`${visit.visitTimeRaw} マイクロ秒（1970-01-01 UTCから） / ISO: ${visit.visitTime.toISOString()}`"
+            :title="t('components.dialog.fieldVisitTime')"
+            :subtitle="formatDateTime(visit.visitTime, intlLocale)"
           />
-          <v-list-item title="このURLの総訪問回数" :subtitle="visit.visitCount.toLocaleString()" />
-          <v-list-item title="種別 (visit_type)">
+          <v-list-item
+            :title="t('components.dialog.firefox.fieldInternalTimestamp')"
+            :subtitle="
+              t('components.dialog.firefox.internalTimestampValue', {
+                microseconds: visit.visitTimeRaw,
+                iso: visit.visitTime.toISOString()
+              })
+            "
+          />
+          <v-list-item
+            :title="t('components.dialog.fieldVisitCount')"
+            :subtitle="visit.visitCount.toLocaleString()"
+          />
+          <v-list-item :title="t('components.dialog.firefox.fieldVisitType')">
             <template #subtitle>
-              {{ formatFirefoxVisitType(visit.visitType) }} ({{ visit.visitType }})
+              {{ formatFirefoxVisitType(visit.visitType, t) }} ({{ visit.visitType }})
             </template>
           </v-list-item>
-          <v-list-item title="非表示 (hidden)">
+          <v-list-item :title="t('components.dialog.firefox.fieldHidden')">
             <template #subtitle>
               <v-chip size="small" :color="visit.hidden ? 'secondary' : 'default'" variant="flat">
-                {{ visit.hidden ? 'はい' : 'いいえ' }}
+                {{ visit.hidden ? t('common.yes') : t('common.no') }}
               </v-chip>
             </template>
           </v-list-item>
-          <v-list-item title="URLを直接入力 (typed)">
+          <v-list-item :title="t('components.dialog.firefox.fieldTyped')">
             <template #subtitle>
               <v-chip size="small" :color="visit.typed ? 'success' : 'default'" variant="flat">
-                {{ visit.typed ? 'はい' : 'いいえ' }}
+                {{ visit.typed ? t('common.yes') : t('common.no') }}
               </v-chip>
             </template>
           </v-list-item>
           <v-list-item
-            title="リンク元 visit ID (from_visit)"
-            :subtitle="visit.fromVisit !== null ? String(visit.fromVisit) : '(なし)'"
+            :title="t('components.dialog.firefox.fieldFromVisit')"
+            :subtitle="visit.fromVisit !== null ? String(visit.fromVisit) : t('common.none')"
           />
-          <v-list-item title="セッション (session)" :subtitle="String(visit.session)" />
-          <v-list-item title="frecency" :subtitle="visit.frecency.toLocaleString()" />
-          <v-list-item title="GUID" :subtitle="visit.guid || '(なし)'" />
           <v-list-item
-            title="visit ID / place ID"
+            :title="t('components.dialog.firefox.fieldSession')"
+            :subtitle="String(visit.session)"
+          />
+          <v-list-item
+            :title="t('components.dialog.firefox.fieldFrecency')"
+            :subtitle="visit.frecency.toLocaleString()"
+          />
+          <v-list-item
+            :title="t('components.dialog.firefox.fieldGuid')"
+            :subtitle="visit.guid || t('common.none')"
+          />
+          <v-list-item
+            :title="t('components.dialog.firefox.fieldVisitPlaceId')"
             :subtitle="`${visit.visitId} / ${visit.placeId}`"
           />
         </v-list>

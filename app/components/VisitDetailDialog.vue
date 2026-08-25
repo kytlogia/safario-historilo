@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { formatDateTime, isSafeUrl } from '~/utils/format'
 import type { HistoryVisit } from '~/types/history'
+import { useAppLocale } from '~/composables/useAppLocale'
 
 defineProps<{
   visit: HistoryVisit | null
 }>()
 
 const open = defineModel<boolean>({ required: true })
+
+const { t } = useI18n()
+const { intlLocale } = useAppLocale()
 
 const copiedField = ref<string | null>(null)
 let copiedTimer: ReturnType<typeof setTimeout> | undefined
@@ -45,13 +50,13 @@ onUnmounted(() => {
     <v-card v-if="visit" class="detail-dialog">
       <v-card-title class="d-flex align-center">
         <v-icon icon="mdi-web" class="mr-2" />
-        <span class="text-truncate">履歴の詳細</span>
+        <span class="text-truncate">{{ t('components.dialog.title') }}</span>
         <v-spacer />
         <v-btn
           icon="mdi-close"
           variant="text"
           size="small"
-          aria-label="閉じる"
+          :aria-label="t('common.close')"
           data-testid="detail-close-button"
           @click="open = false"
         />
@@ -59,7 +64,7 @@ onUnmounted(() => {
       <v-divider />
       <v-card-text>
         <v-list density="compact">
-          <v-list-item title="タイトル">
+          <v-list-item :title="t('components.dialog.fieldTitle')">
             <template #subtitle>
               <span class="detail-dialog__subtitle">{{ visit.title }}</span>
             </template>
@@ -68,14 +73,14 @@ onUnmounted(() => {
                 :icon="copiedField === 'title' ? 'mdi-check' : 'mdi-content-copy'"
                 variant="text"
                 size="small"
-                title="コピー"
-                aria-label="コピー"
+                :title="t('common.copy')"
+                :aria-label="t('common.copy')"
                 data-testid="copy-title-button"
                 @click="copyToClipboard(visit.title, 'title')"
               />
             </template>
           </v-list-item>
-          <v-list-item title="URL">
+          <v-list-item :title="t('components.dialog.fieldUrl')">
             <template #subtitle>
               <a
                 v-if="isSafeUrl(visit.url)"
@@ -96,63 +101,94 @@ onUnmounted(() => {
                 :icon="copiedField === 'url' ? 'mdi-check' : 'mdi-content-copy'"
                 variant="text"
                 size="small"
-                title="コピー"
-                aria-label="コピー"
+                :title="t('common.copy')"
+                :aria-label="t('common.copy')"
                 data-testid="copy-url-button"
                 @click="copyToClipboard(visit.url, 'url')"
               />
             </template>
           </v-list-item>
-          <v-list-item title="ドメイン" :subtitle="visit.domain" />
-          <v-list-item title="ドメイン展開情報" :subtitle="visit.domainExpansion ?? '(なし)'" />
-          <v-list-item title="訪問日時" :subtitle="formatDateTime(visit.visitTime)" />
+          <v-list-item :title="t('components.dialog.fieldDomain')" :subtitle="visit.domain" />
           <v-list-item
-            title="内部タイムスタンプ (Core Data)"
-            :subtitle="`${visit.visitTimeRaw} 秒（2001-01-01 UTCから） / ISO: ${visit.visitTime.toISOString()}`"
+            :title="t('components.dialog.safari.fieldDomainExpansion')"
+            :subtitle="visit.domainExpansion ?? t('common.none')"
           />
-          <v-list-item title="このURLの総訪問回数" :subtitle="visit.visitCount.toLocaleString()" />
-          <v-list-item title="HTTPステータスコード" :subtitle="String(visit.statusCode)" />
-          <v-list-item title="読み込み成功">
+          <v-list-item
+            :title="t('components.dialog.fieldVisitTime')"
+            :subtitle="formatDateTime(visit.visitTime, intlLocale)"
+          />
+          <v-list-item
+            :title="t('components.dialog.safari.fieldInternalTimestamp')"
+            :subtitle="
+              t('components.dialog.safari.internalTimestampValue', {
+                seconds: visit.visitTimeRaw,
+                iso: visit.visitTime.toISOString()
+              })
+            "
+          />
+          <v-list-item
+            :title="t('components.dialog.fieldVisitCount')"
+            :subtitle="visit.visitCount.toLocaleString()"
+          />
+          <v-list-item
+            :title="t('components.dialog.safari.fieldStatusCode')"
+            :subtitle="String(visit.statusCode)"
+          />
+          <v-list-item :title="t('components.dialog.safari.fieldLoadSuccessful')">
             <template #subtitle>
               <v-chip
                 size="small"
                 :color="visit.loadSuccessful ? 'success' : 'error'"
                 variant="flat"
               >
-                {{ visit.loadSuccessful ? '成功' : '失敗' }}
+                {{
+                  visit.loadSuccessful
+                    ? t('components.dialog.safari.loadSuccess')
+                    : t('components.dialog.safari.loadFailure')
+                }}
               </v-chip>
             </template>
           </v-list-item>
-          <v-list-item title="HTTPメソッド" :subtitle="visit.httpNonGet ? 'GET以外' : 'GET'" />
-          <v-list-item title="自動生成された履歴 (synthesized)">
+          <v-list-item
+            :title="t('components.dialog.safari.fieldHttpMethod')"
+            :subtitle="visit.httpNonGet ? t('components.dialog.safari.httpMethodNonGet') : 'GET'"
+          />
+          <v-list-item :title="t('components.dialog.safari.fieldSynthesized')">
             <template #subtitle>
               <v-chip
                 size="small"
                 :color="visit.synthesized ? 'secondary' : 'default'"
                 variant="flat"
               >
-                {{ visit.synthesized ? 'はい' : 'いいえ' }}
+                {{ visit.synthesized ? t('common.yes') : t('common.no') }}
               </v-chip>
             </template>
           </v-list-item>
           <v-list-item
-            title="リダイレクト元 visit ID"
-            :subtitle="visit.redirectSource !== null ? String(visit.redirectSource) : '(なし)'"
-          />
-          <v-list-item
-            title="リダイレクト先 visit ID"
+            :title="t('components.dialog.safari.fieldRedirectSource')"
             :subtitle="
-              visit.redirectDestination !== null ? String(visit.redirectDestination) : '(なし)'
+              visit.redirectSource !== null ? String(visit.redirectSource) : t('common.none')
             "
           />
-          <v-list-item title="origin (内部コード)" :subtitle="String(visit.origin)" />
-          <v-list-item title="generation / attributes / score">
+          <v-list-item
+            :title="t('components.dialog.safari.fieldRedirectDestination')"
+            :subtitle="
+              visit.redirectDestination !== null
+                ? String(visit.redirectDestination)
+                : t('common.none')
+            "
+          />
+          <v-list-item
+            :title="t('components.dialog.safari.fieldOrigin')"
+            :subtitle="String(visit.origin)"
+          />
+          <v-list-item :title="t('components.dialog.safari.fieldGenerationAttributesScore')">
             <template #subtitle>
               {{ visit.generation }} / {{ visit.attributes }} / {{ visit.score }}
             </template>
           </v-list-item>
           <v-list-item
-            title="visit ID / item ID"
+            :title="t('components.dialog.safari.fieldVisitItemId')"
             :subtitle="`${visit.visitId} / ${visit.itemId}`"
           />
         </v-list>

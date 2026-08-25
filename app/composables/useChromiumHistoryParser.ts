@@ -1,9 +1,18 @@
 import type { ChromiumHistoryVisit, ParsedChromiumHistory } from '~/types/history'
 import { parseChromiumHistoryBuffer } from '~/utils/parseChromiumHistoryDatabase'
+import type { AppLocale } from '~/composables/useAppLocale'
 import type {
   ChromiumHistoryDatabaseWorkerRequest,
   ChromiumHistoryDatabaseWorkerResponse
 } from './chromiumHistoryDatabase.worker'
+
+const WORKER_CRASH_MESSAGES: Record<AppLocale, string> = {
+  ja: 'Historyの解析中にエラーが発生しました。',
+  en: 'An error occurred while parsing History.',
+  zh: '解析 History 时发生错误。'
+}
+
+let lastLocale: AppLocale = 'ja'
 
 // jsdom (used for unit/integration tests) doesn't implement Worker at all, and
 // the real parsing logic runs directly under Node for some tests — in both
@@ -57,7 +66,7 @@ function getWorker(): Worker {
     const error =
       event.error instanceof Error
         ? event.error
-        : new Error(event.message || 'Historyの解析中にエラーが発生しました。')
+        : new Error(event.message || WORKER_CRASH_MESSAGES[lastLocale])
     for (const pending of pendingRequests.values()) {
       pending.reject(error)
     }
@@ -68,7 +77,11 @@ function getWorker(): Worker {
   return worker
 }
 
-function parseViaWorker(buffer: ArrayBuffer, fileName: string): Promise<ParsedChromiumHistory> {
+function parseViaWorker(
+  buffer: ArrayBuffer,
+  fileName: string,
+  locale: AppLocale
+): Promise<ParsedChromiumHistory> {
   return new Promise((resolve, reject) => {
     const worker = getWorker()
     const requestId = nextRequestId++
@@ -78,17 +91,21 @@ function parseViaWorker(buffer: ArrayBuffer, fileName: string): Promise<ParsedCh
       reject
     })
 
-    const request: ChromiumHistoryDatabaseWorkerRequest = { requestId, buffer, fileName }
+    const request: ChromiumHistoryDatabaseWorkerRequest = { requestId, buffer, fileName, locale }
     worker.postMessage(request, [buffer])
   })
 }
 
-export async function parseChromiumHistoryFile(file: File): Promise<ParsedChromiumHistory> {
+export async function parseChromiumHistoryFile(
+  file: File,
+  locale: AppLocale = 'ja'
+): Promise<ParsedChromiumHistory> {
+  lastLocale = locale
   const buffer = await file.arrayBuffer()
 
   if (supportsDedicatedWorker()) {
-    return parseViaWorker(buffer, file.name)
+    return parseViaWorker(buffer, file.name, locale)
   }
 
-  return parseChromiumHistoryBuffer(buffer, file.name)
+  return parseChromiumHistoryBuffer(buffer, file.name, locale)
 }

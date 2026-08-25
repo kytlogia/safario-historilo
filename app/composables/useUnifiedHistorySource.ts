@@ -1,6 +1,8 @@
 import { computed, onMounted, ref, shallowRef } from 'vue'
 import { FetchError } from 'ofetch'
+import { useI18n } from 'vue-i18n'
 import type { UnifiedHistoryVisit } from '~/types/history'
+import { useAppLocale, type AppLocale } from '~/composables/useAppLocale'
 
 // $fetch's Nitro route-type inference only kicks in for a literal URL string
 // at the call site — `apiBase` here is a runtime value (it varies per
@@ -23,11 +25,12 @@ export interface UnifiedHistorySourceOptions<V, P> {
   apiBase: string
   /** File name to wrap the auto-loaded server blob in before parsing. */
   serverFileName: string
-  parseFile: (file: File) => Promise<{ visits: V[]; fileName: string }>
+  parseFile: (file: File, locale: AppLocale) => Promise<{ visits: V[]; fileName: string }>
   toUnified: (visit: V) => UnifiedHistoryVisit
   initialProfileId?: string
   resolveDefaultProfileId?: (profiles: P[]) => string
-  loadErrorFallback: string
+  /** i18n key (under `error.autoLoadFailed`) resolved via t() at call time. */
+  loadErrorFallbackKey: string
 }
 
 /**
@@ -48,8 +51,11 @@ export function useUnifiedHistorySource<V, P>(options: UnifiedHistorySourceOptio
     toUnified,
     initialProfileId = '',
     resolveDefaultProfileId,
-    loadErrorFallback
+    loadErrorFallbackKey
   } = options
+
+  const { t } = useI18n()
+  const { currentLocale } = useAppLocale()
 
   // shallowRef, not ref: V is a generic type param, so a plain ref<V[]>
   // would force TS to reason about UnwrapRef<V> for an unresolved V (and,
@@ -76,11 +82,11 @@ export function useUnifiedHistorySource<V, P>(options: UnifiedHistorySourceOptio
     isLoading.value = true
     loadError.value = ''
     try {
-      const result = await parseFile(file)
+      const result = await parseFile(file, currentLocale.value)
       rawVisits.value = result.visits
       fileName.value = result.fileName
     } catch (err) {
-      loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
+      loadError.value = err instanceof Error ? err.message : t('error.unknown')
     } finally {
       isLoading.value = false
     }
@@ -106,8 +112,7 @@ export function useUnifiedHistorySource<V, P>(options: UnifiedHistorySourceOptio
       if (requestId !== statusRequestId) return
       serverPermissionHint.value = false
       if (err instanceof FetchError && err.statusCode === 403) {
-        serverStatusWarning.value =
-          err.data?.message ?? 'サーバー側の制限により自動読み込みが利用できません。'
+        serverStatusWarning.value = err.data?.message ?? t('error.serverRestricted')
       }
       serverAutoLoadAvailable.value = false
     }
@@ -139,14 +144,14 @@ export function useUnifiedHistorySource<V, P>(options: UnifiedHistorySourceOptio
       const blob = await $fetch<Blob>(apiBase, {
         query: { profileId: selectedProfileId.value || undefined }
       })
-      const result = await parseFile(new File([blob], serverFileName))
+      const result = await parseFile(new File([blob], serverFileName), currentLocale.value)
       rawVisits.value = result.visits
       fileName.value = result.fileName
     } catch (err) {
       if (err instanceof FetchError) {
-        loadError.value = err.data?.message ?? loadErrorFallback
+        loadError.value = err.data?.message ?? t(loadErrorFallbackKey)
       } else {
-        loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
+        loadError.value = err instanceof Error ? err.message : t('error.unknown')
       }
     } finally {
       isLoading.value = false

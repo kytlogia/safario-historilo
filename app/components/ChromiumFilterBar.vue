@@ -1,7 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { exportChromiumVisitsAsCsv, exportChromiumVisitsAsJson } from '~/utils/export'
 import { formatDateInputValue } from '~/utils/format'
 import type { ChromiumHistoryVisit } from '~/types/history'
+import { useAppLocale } from '~/composables/useAppLocale'
+
+const { t } = useI18n()
+const { intlLocale } = useAppLocale()
 
 const props = defineProps<{
   brand: 'chrome' | 'edge'
@@ -41,7 +46,7 @@ function exportCsv() {
         <v-text-field
           v-model="search"
           data-testid="search-input"
-          label="タイトル・URLで検索"
+          :label="t('components.filterBar.searchLabel')"
           prepend-inner-icon="mdi-magnify"
           variant="outlined"
           density="comfortable"
@@ -55,7 +60,7 @@ function exportCsv() {
           data-testid="domain-filter"
           :items="domainOptions"
           :custom-filter="filterDomainOption"
-          label="ドメインで絞り込み"
+          :label="t('components.filterBar.domainLabel')"
           variant="outlined"
           density="comfortable"
           clearable
@@ -70,10 +75,10 @@ function exportCsv() {
         <v-date-input
           v-model="dateFrom"
           data-testid="date-from-input"
-          label="開始日"
+          :label="t('components.filterBar.dateFromLabel')"
           variant="outlined"
           density="comfortable"
-          :display-format="formatDateInputValue"
+          :display-format="(date: unknown) => formatDateInputValue(date, intlLocale)"
           hide-details
           clearable
         />
@@ -82,10 +87,10 @@ function exportCsv() {
         <v-date-input
           v-model="dateTo"
           data-testid="date-to-input"
-          label="終了日"
+          :label="t('components.filterBar.dateToLabel')"
           variant="outlined"
           density="comfortable"
-          :display-format="formatDateInputValue"
+          :display-format="(date: unknown) => formatDateInputValue(date, intlLocale)"
           hide-details
           clearable
         />
@@ -96,27 +101,32 @@ function exportCsv() {
         <v-checkbox
           v-model="onlyTyped"
           data-testid="only-typed-checkbox"
-          label="URL直接入力のみ"
+          :label="t('components.filterBar.onlyTyped')"
           density="compact"
           hide-details
         />
         <v-checkbox
           v-model="onlyRedirects"
           data-testid="only-redirects-checkbox"
-          label="リダイレクトのみ"
+          :label="t('components.filterBar.onlyRedirects')"
           density="compact"
           hide-details
         />
         <v-checkbox
           v-model="onlyHidden"
           data-testid="only-hidden-checkbox"
-          label="非表示の履歴のみ"
+          :label="t('components.filterBar.onlyHidden')"
           density="compact"
           hide-details
         />
         <v-spacer />
         <span class="text-body-2 text-medium-emphasis" data-testid="visible-count">
-          {{ filteredVisits.length.toLocaleString() }} / {{ totalCount.toLocaleString() }} 件を表示
+          {{
+            t('components.filterBar.visibleCount', {
+              shown: filteredVisits.length.toLocaleString(),
+              total: totalCount.toLocaleString()
+            })
+          }}
         </span>
         <v-btn
           data-testid="export-json-button"
@@ -125,7 +135,7 @@ function exportCsv() {
           prepend-icon="mdi-code-json"
           @click="exportJson"
         >
-          JSON出力
+          {{ t('components.filterBar.exportJson') }}
         </v-btn>
         <v-btn
           data-testid="export-csv-button"
@@ -134,7 +144,7 @@ function exportCsv() {
           prepend-icon="mdi-file-delimited-outline"
           @click="exportCsv"
         >
-          CSV出力
+          {{ t('components.filterBar.exportCsv') }}
         </v-btn>
       </v-col>
     </v-row>
