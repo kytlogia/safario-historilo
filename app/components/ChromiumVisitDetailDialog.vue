@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { formatDateTime, isSafeUrl } from '~/utils/format'
+import { formatDateTime, formatNumber, isSafeUrl } from '~/utils/format'
 import { formatChromiumTransitionType } from '~/utils/chromiumVisitType'
 import type { ChromiumHistoryVisit } from '~/types/history'
 import { useAppLocale } from '~/composables/useAppLocale'
@@ -125,11 +125,11 @@ onUnmounted(() => {
           />
           <v-list-item
             :title="t('components.dialog.fieldVisitCount')"
-            :subtitle="visit.visitCount.toLocaleString()"
+            :subtitle="formatNumber(visit.visitCount, intlLocale)"
           />
           <v-list-item
             :title="t('components.dialog.chromium.fieldTypedCount')"
-            :subtitle="visit.typedCount.toLocaleString()"
+            :subtitle="formatNumber(visit.typedCount, intlLocale)"
           />
           <v-list-item :title="t('components.dialog.chromium.fieldTransition')">
             <template #subtitle>
@@ -158,7 +158,7 @@ onUnmounted(() => {
             :title="t('components.dialog.chromium.fieldVisitDuration')"
             :subtitle="
               t('components.dialog.chromium.visitDurationValue', {
-                value: visit.visitDuration.toLocaleString()
+                value: formatNumber(visit.visitDuration, intlLocale)
               })
             "
           />

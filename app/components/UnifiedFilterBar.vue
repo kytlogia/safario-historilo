@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { exportUnifiedVisitsAsCsv, exportUnifiedVisitsAsJson } from '~/utils/export'
 import type { UnifiedHistorySource, UnifiedHistoryVisit } from '~/types/history'
 import { unifiedSourceMeta, UNIFIED_HISTORY_SOURCES } from '~/utils/unifiedHistory'
-import { formatDateInputValue } from '~/utils/format'
+import { formatDateInputValue, formatNumber } from '~/utils/format'
 import { useAppLocale } from '~/composables/useAppLocale'
 
 const { t } = useI18n()
@@ -107,8 +107,8 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
         <span class="text-body-2 text-medium-emphasis" data-testid="unified-visible-count">
           {{
             t('components.filterBar.visibleCount', {
-              shown: filteredVisits.length.toLocaleString(),
-              total: totalCount.toLocaleString()
+              shown: formatNumber(filteredVisits.length, intlLocale),
+              total: formatNumber(totalCount, intlLocale)
             })
           }}
         </span>

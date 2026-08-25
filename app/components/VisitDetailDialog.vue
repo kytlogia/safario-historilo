@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { formatDateTime, isSafeUrl } from '~/utils/format'
+import { formatDateTime, formatNumber, isSafeUrl } from '~/utils/format'
 import type { HistoryVisit } from '~/types/history'
 import { useAppLocale } from '~/composables/useAppLocale'
 
@@ -128,7 +128,7 @@ onUnmounted(() => {
           />
           <v-list-item
             :title="t('components.dialog.fieldVisitCount')"
-            :subtitle="visit.visitCount.toLocaleString()"
+            :subtitle="formatNumber(visit.visitCount, intlLocale)"
           />
           <v-list-item
             :title="t('components.dialog.safari.fieldStatusCode')"

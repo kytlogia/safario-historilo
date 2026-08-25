@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { formatNumber } from '~/utils/format'
+import { useAppLocale } from '~/composables/useAppLocale'
 
 defineProps<{
   totalVisits: number
@@ -9,6 +11,7 @@ defineProps<{
 }>()
 
 const { t } = useI18n()
+const { intlLocale } = useAppLocale()
 </script>
 
 <template>
@@ -17,7 +20,7 @@ const { t } = useI18n()
       <v-card variant="tonal" color="primary">
         <v-card-text>
           <div class="text-caption">{{ t('components.summaryCards.totalVisits') }}</div>
-          <div class="text-h5 font-weight-bold">{{ totalVisits.toLocaleString() }}</div>
+          <div class="text-h5 font-weight-bold">{{ formatNumber(totalVisits, intlLocale) }}</div>
         </v-card-text>
       </v-card>
     </v-col>
@@ -25,7 +28,7 @@ const { t } = useI18n()
       <v-card variant="tonal">
         <v-card-text>
           <div class="text-caption">{{ t('components.summaryCards.uniqueUrlCount') }}</div>
-          <div class="text-h5 font-weight-bold">{{ uniqueUrlCount.toLocaleString() }}</div>
+          <div class="text-h5 font-weight-bold">{{ formatNumber(uniqueUrlCount, intlLocale) }}</div>
         </v-card-text>
       </v-card>
     </v-col>
@@ -34,7 +37,7 @@ const { t } = useI18n()
         <v-card-text>
           <div class="text-caption">{{ t('components.summaryCards.uniqueDomainCount') }}</div>
           <div class="text-h5 font-weight-bold">
-            {{ uniqueDomainCount.toLocaleString() }}
+            {{ formatNumber(uniqueDomainCount, intlLocale) }}
           </div>
         </v-card-text>
       </v-card>

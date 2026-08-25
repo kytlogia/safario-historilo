@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { formatNumber } from '~/utils/format'
+import { useAppLocale } from '~/composables/useAppLocale'
 
 const { t } = useI18n()
+const { intlLocale } = useAppLocale()
 
 withDefaults(
   defineProps<{
@@ -50,7 +53,7 @@ function onFileInputChange(files: File[] | File | null) {
         <v-chip v-if="hasData" size="small" :color="color" variant="tonal">
           {{
             t('components.unifiedSourceCard.visitCountSuffix', {
-              count: visitCount.toLocaleString()
+              count: formatNumber(visitCount, intlLocale)
             })
           }}
         </v-chip>

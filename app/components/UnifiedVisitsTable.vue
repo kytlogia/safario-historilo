@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { formatDateTime } from '~/utils/format'
+import { formatDateTime, formatNumber } from '~/utils/format'
 import type { UnifiedHistoryVisit } from '~/types/history'
 import { unifiedSourceMeta } from '~/utils/unifiedHistory'
 import { useAppLocale } from '~/composables/useAppLocale'
@@ -74,7 +74,7 @@ const headers = computed(() => [
       {{ formatDateTime(item.visitTime, intlLocale) }}
     </template>
     <template #item.visitCount="{ item }">
-      {{ item.visitCount.toLocaleString() }}
+      {{ formatNumber(item.visitCount, intlLocale) }}
     </template>
   </v-data-table-virtual>
 </template>

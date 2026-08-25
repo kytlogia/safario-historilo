@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { exportFirefoxVisitsAsCsv, exportFirefoxVisitsAsJson } from '~/utils/export'
-import { formatDateInputValue } from '~/utils/format'
+import { formatDateInputValue, formatNumber } from '~/utils/format'
 import type { FirefoxHistoryVisit } from '~/types/history'
 import { useAppLocale } from '~/composables/useAppLocale'
 
@@ -114,8 +114,8 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
         <span class="text-body-2 text-medium-emphasis" data-testid="visible-count">
           {{
             t('components.filterBar.visibleCount', {
-              shown: filteredVisits.length.toLocaleString(),
-              total: totalCount.toLocaleString()
+              shown: formatNumber(filteredVisits.length, intlLocale),
+              total: formatNumber(totalCount, intlLocale)
             })
           }}
         </span>

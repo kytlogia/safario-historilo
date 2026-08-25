@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { exportChromiumVisitsAsCsv, exportChromiumVisitsAsJson } from '~/utils/export'
-import { formatDateInputValue } from '~/utils/format'
+import { formatDateInputValue, formatNumber } from '~/utils/format'
 import type { ChromiumHistoryVisit } from '~/types/history'
 import { useAppLocale } from '~/composables/useAppLocale'
 
@@ -123,8 +123,8 @@ function exportCsv() {
         <span class="text-body-2 text-medium-emphasis" data-testid="visible-count">
           {{
             t('components.filterBar.visibleCount', {
-              shown: filteredVisits.length.toLocaleString(),
-              total: totalCount.toLocaleString()
+              shown: formatNumber(filteredVisits.length, intlLocale),
+              total: formatNumber(totalCount, intlLocale)
             })
           }}
         </span>

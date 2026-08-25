@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { formatDateTime, isSafeUrl } from '~/utils/format'
+import { formatDateTime, formatNumber, isSafeUrl } from '~/utils/format'
 import { formatFirefoxVisitType } from '~/utils/firefoxVisitType'
 import type { FirefoxHistoryVisit } from '~/types/history'
 import { useAppLocale } from '~/composables/useAppLocale'
@@ -125,7 +125,7 @@ onUnmounted(() => {
           />
           <v-list-item
             :title="t('components.dialog.fieldVisitCount')"
-            :subtitle="visit.visitCount.toLocaleString()"
+            :subtitle="formatNumber(visit.visitCount, intlLocale)"
           />
           <v-list-item :title="t('components.dialog.firefox.fieldVisitType')">
             <template #subtitle>
@@ -156,7 +156,7 @@ onUnmounted(() => {
           />
           <v-list-item
             :title="t('components.dialog.firefox.fieldFrecency')"
-            :subtitle="visit.frecency.toLocaleString()"
+            :subtitle="formatNumber(visit.frecency, intlLocale)"
           />
           <v-list-item
             :title="t('components.dialog.firefox.fieldGuid')"

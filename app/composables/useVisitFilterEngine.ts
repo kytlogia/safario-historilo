@@ -1,6 +1,5 @@
 import { computed, type Ref } from 'vue'
 import { formatDate } from '~/utils/format'
-import ja from '../../i18n/locales/ja.json'
 
 export interface FilterableVisit {
   title: string
@@ -35,13 +34,6 @@ export interface VisitFilterEngineI18n {
   intlLocale: () => string
 }
 
-function resolvePath(source: unknown, path: string): unknown {
-  return path.split('.').reduce<unknown>((acc, key) => {
-    if (acc && typeof acc === 'object') return (acc as Record<string, unknown>)[key]
-    return undefined
-  }, source)
-}
-
 function interpolate(template: string, params?: Record<string, unknown>): string {
   if (!params) return template
   return template.replace(/\{(\w+)\}/g, (match, key: string) =>
@@ -49,15 +41,18 @@ function interpolate(template: string, params?: Record<string, unknown>): string
   )
 }
 
+// Only two of i18n/locales/ja.json's ~300 keys are ever needed here
+// (common.dateRange, weekday) — importing the whole JSON just for this
+// default would bundle it into every chunk that reaches this widely-shared
+// composable. These are plain copies of those two ja.json values, not read
+// from it, so keep them in sync by hand if either changes there.
+const DEFAULT_DATE_RANGE_TEMPLATE = '{from} 〜 {to}'
+const DEFAULT_WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土']
+
 const DEFAULT_I18N: VisitFilterEngineI18n = {
-  t: (key, params) => {
-    const template = resolvePath(ja, key)
-    return typeof template === 'string' ? interpolate(template, params) : key
-  },
-  tm: (key) => {
-    const value = resolvePath(ja, key)
-    return Array.isArray(value) ? (value as string[]) : []
-  },
+  t: (key, params) =>
+    key === 'common.dateRange' ? interpolate(DEFAULT_DATE_RANGE_TEMPLATE, params) : key,
+  tm: (key) => (key === 'weekday' ? DEFAULT_WEEKDAY_LABELS : []),
   intlLocale: () => 'ja-JP'
 }
 

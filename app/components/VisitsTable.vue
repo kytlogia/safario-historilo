@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { formatDateTime } from '~/utils/format'
+import { formatDateTime, formatNumber } from '~/utils/format'
 import type { HistoryVisit } from '~/types/history'
 import { useAppLocale } from '~/composables/useAppLocale'
 import TruncatedCell from './TruncatedCell.vue'
@@ -61,7 +61,7 @@ const headers = computed(() => [
       {{ formatDateTime(item.visitTime, intlLocale) }}
     </template>
     <template #item.visitCount="{ item }">
-      {{ item.visitCount.toLocaleString() }}
+      {{ formatNumber(item.visitCount, intlLocale) }}
     </template>
     <template #item.flags="{ item }">
       <v-chip
