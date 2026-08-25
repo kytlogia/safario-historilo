@@ -137,10 +137,16 @@ export function useVisitFilterEngine<T extends FilterableVisit>(
     })
   })
 
+  // Split from weekdayTrend below so the (relatively expensive, 7x t() calls
+  // under the live i18n adapter) label translation only reruns when the
+  // locale actually changes, not on every filteredVisits recompute (i.e.
+  // every search/filter/date-range edit).
+  const weekdayLabels = computed(() => tm('weekday'))
+
   const weekdayTrend = computed(() => {
     const counts = new Array(7).fill(0)
     for (const v of filteredVisits.value) counts[v.visitTime.getDay()]++
-    return toTrendBuckets(counts, tm('weekday'))
+    return toTrendBuckets(counts, weekdayLabels.value)
   })
 
   const hourlyTrend = computed(() => {

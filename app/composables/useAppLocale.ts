@@ -86,11 +86,16 @@ export function useAppLocale() {
     }
   }
 
-  function initLocale() {
+  // Returns a Promise so callers that render nothing (or a placeholder)
+  // until it resolves — see app.vue/error.vue — never paint the default
+  // 'ja' locale first for a returning user whose stored preference is
+  // something else, only to flip languages a moment later once the
+  // lazy-loaded message chunk for that locale arrives.
+  async function initLocale(): Promise<void> {
     if (typeof window !== 'undefined') {
       const stored = readStoredLocale()
       if (stored && stored !== locale.value) {
-        void setLocale(stored)
+        await setLocale(stored)
         return
       }
     }

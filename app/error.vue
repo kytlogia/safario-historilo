@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { NuxtError } from '#app'
 
@@ -9,7 +10,16 @@ const props = defineProps<{ error: NuxtError }>()
 // this, dark-mode/non-Japanese users would always see the light
 // defaultTheme and the wrong <html lang> flash on a fatal error.
 useAppTheme().initTheme()
-useAppLocale().initLocale()
+
+// See the equivalent localeReady gate in app.vue — avoids painting this
+// error card in ja first for a returning non-ja user, only to flip
+// languages once the stored locale's message chunk finishes loading.
+const localeReady = ref(false)
+void useAppLocale()
+  .initLocale()
+  .finally(() => {
+    localeReady.value = true
+  })
 
 const { t } = useI18n()
 
@@ -29,7 +39,7 @@ function handleReload() {
 <template>
   <v-app>
     <v-main>
-      <v-container class="fill-height" fluid>
+      <v-container v-if="localeReady" class="fill-height" fluid>
         <v-row align="center" justify="center">
           <v-col cols="12" sm="8" md="6" lg="4">
             <v-card class="pa-6 text-center">

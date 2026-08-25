@@ -1,51 +1,17 @@
 import type { Database } from 'sql.js'
 import type { HistoryVisit, ParsedHistory } from '~/types/history'
-import type { AppLocale } from '~/composables/useAppLocale'
+import { PARSER_MESSAGES } from './workerLocaleMessages'
 import { getSqlJs } from './sqlJs'
 
 // Safari (Core Data) timestamps are seconds since 2001-01-01T00:00:00Z.
 const CORE_DATA_EPOCH_OFFSET_SECONDS = 978307200
 
 // This module runs inside historyDatabase.worker.ts (a separate execution
-// context with no Vue instance), so its error/placeholder text can't go
-// through vue-i18n's useI18n() the way component-level strings do — these
-// small locale-keyed message maps are this file's own self-contained
-// substitute, threaded in from the caller (which does have i18n context)
-// via the `locale` parameter on parseHistoryBuffer() below.
-const MESSAGES: Record<
-  AppLocale,
-  {
-    openFailed: string
-    wrongSchema: string
-    missingColumns: (table: string, missing: string) => string
-    noTitle: string
-  }
-> = {
-  ja: {
-    openFailed: 'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。',
-    wrongSchema:
-      'このファイルはSafariの履歴データベース(History.db)ではないようです。history_items / history_visits テーブルが見つかりませんでした。',
-    missingColumns: (table, missing) =>
-      `このHistory.dbのスキーマは対応していません。テーブル "${table}" に想定していた列が見つかりませんでした: ${missing}`,
-    noTitle: '(タイトルなし)'
-  },
-  en: {
-    openFailed: 'Could not open the file. Please choose a valid SQLite database file.',
-    wrongSchema:
-      "This file doesn't look like Safari's history database (History.db). The history_items / history_visits tables were not found.",
-    missingColumns: (table, missing) =>
-      `This History.db's schema isn't supported. Table "${table}" is missing expected column(s): ${missing}`,
-    noTitle: '(no title)'
-  },
-  zh: {
-    openFailed: '无法打开文件。请选择一个有效的 SQLite 数据库文件。',
-    wrongSchema:
-      '该文件似乎不是 Safari 的历史记录数据库 (History.db)。未找到 history_items / history_visits 表。',
-    missingColumns: (table, missing) =>
-      `此 History.db 的架构不受支持。表 "${table}" 缺少预期的列：${missing}`,
-    noTitle: '(无标题)'
-  }
-}
+// context with no Vue instance), so its error/placeholder text is threaded
+// in from the caller (which does have i18n context) via the `locale`
+// parameter on parseHistoryBuffer() below, resolved against
+// workerLocaleMessages.ts's shared per-locale message maps.
+const MESSAGES = PARSER_MESSAGES.safari
 
 function extractDomain(url: string): string {
   try {

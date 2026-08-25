@@ -1,5 +1,6 @@
 const dateFormatters = new Map<string, Intl.DateTimeFormat>()
 const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>()
+const numberFormatters = new Map<string, Intl.NumberFormat>()
 
 function getDateFormatter(locale: string) {
   let formatter = dateFormatters.get(locale)
@@ -19,6 +20,15 @@ function getDateTimeFormatter(locale: string) {
   return formatter
 }
 
+function getNumberFormatter(locale: string) {
+  let formatter = numberFormatters.get(locale)
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale)
+    numberFormatters.set(locale, formatter)
+  }
+  return formatter
+}
+
 export function formatDate(date: Date, locale = 'ja-JP') {
   return getDateFormatter(locale).format(date)
 }
@@ -32,7 +42,7 @@ export function formatDateTime(date: Date, locale = 'ja-JP') {
 }
 
 export function formatNumber(value: number, locale = 'ja-JP') {
-  return value.toLocaleString(locale)
+  return getNumberFormatter(locale).format(value)
 }
 
 export function isSafeUrl(url: string) {

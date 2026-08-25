@@ -1,44 +1,12 @@
 import type { Database } from 'sql.js'
 import type { ChromiumHistoryVisit, ParsedChromiumHistory } from '~/types/history'
-import type { AppLocale } from '~/composables/useAppLocale'
+import { PARSER_MESSAGES } from './workerLocaleMessages'
 import { coreTransitionType } from './chromiumVisitType'
 import { extractDomain, getSqlJs, getTableColumns, toBool } from './sqlJs'
 
 // See the equivalent comment in parseHistoryDatabase.ts — this file runs
 // inside chromiumHistoryDatabase.worker.ts, so it can't use vue-i18n either.
-const MESSAGES: Record<
-  AppLocale,
-  {
-    openFailed: string
-    wrongSchema: string
-    missingColumns: (table: string, missing: string) => string
-    noTitle: string
-  }
-> = {
-  ja: {
-    openFailed: 'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。',
-    wrongSchema:
-      'このファイルはChrome/Edgeの履歴データベース(History)ではないようです。urls / visits テーブルが見つかりませんでした。',
-    missingColumns: (table, missing) =>
-      `このHistoryのスキーマは対応していません。テーブル "${table}" に想定していた列が見つかりませんでした: ${missing}`,
-    noTitle: '(タイトルなし)'
-  },
-  en: {
-    openFailed: 'Could not open the file. Please choose a valid SQLite database file.',
-    wrongSchema:
-      "This file doesn't look like Chrome/Edge's history database (History). The urls / visits tables were not found.",
-    missingColumns: (table, missing) =>
-      `This History's schema isn't supported. Table "${table}" is missing expected column(s): ${missing}`,
-    noTitle: '(no title)'
-  },
-  zh: {
-    openFailed: '无法打开文件。请选择一个有效的 SQLite 数据库文件。',
-    wrongSchema: '该文件似乎不是 Chrome/Edge 的历史记录数据库 (History)。未找到 urls / visits 表。',
-    missingColumns: (table, missing) =>
-      `此 History 的架构不受支持。表 "${table}" 缺少预期的列：${missing}`,
-    noTitle: '(无标题)'
-  }
-}
+const MESSAGES = PARSER_MESSAGES.chromium
 
 // Chrome/Edge (WebKit epoch) timestamps in visits.visit_time and
 // urls.last_visit_time are microseconds since 1601-01-01T00:00:00Z — the

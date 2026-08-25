@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
 import { exportUnifiedVisitsAsCsv, exportUnifiedVisitsAsJson } from '~/utils/export'
 import type { UnifiedHistorySource, UnifiedHistoryVisit } from '~/types/history'
 import { unifiedSourceMeta, UNIFIED_HISTORY_SOURCES } from '~/utils/unifiedHistory'
-import { formatDateInputValue, formatNumber } from '~/utils/format'
-import { useAppLocale } from '~/composables/useAppLocale'
+import { useFilterBarFormat } from '~/composables/useFilterBarFormat'
 
-const { t } = useI18n()
-const { intlLocale } = useAppLocale()
+const { t, dateInputFormat, visibleCount } = useFilterBarFormat()
 
 defineProps<{
   domainOptions: { title: string; value: string }[]
@@ -68,7 +65,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           :label="t('components.filterBar.dateFromLabel')"
           variant="outlined"
           density="comfortable"
-          :display-format="(date: unknown) => formatDateInputValue(date, intlLocale)"
+          :display-format="dateInputFormat"
           hide-details
           clearable
         />
@@ -80,7 +77,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           :label="t('components.filterBar.dateToLabel')"
           variant="outlined"
           density="comfortable"
-          :display-format="(date: unknown) => formatDateInputValue(date, intlLocale)"
+          :display-format="dateInputFormat"
           hide-details
           clearable
         />
@@ -105,12 +102,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
         </v-chip-group>
         <v-spacer />
         <span class="text-body-2 text-medium-emphasis" data-testid="unified-visible-count">
-          {{
-            t('components.filterBar.visibleCount', {
-              shown: formatNumber(filteredVisits.length, intlLocale),
-              total: formatNumber(totalCount, intlLocale)
-            })
-          }}
+          {{ visibleCount(filteredVisits.length, totalCount) }}
         </span>
         <v-btn
           data-testid="unified-export-json-button"

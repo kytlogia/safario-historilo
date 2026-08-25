@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
 import { exportVisitsAsCsv, exportVisitsAsJson } from '~/utils/export'
-import { formatDateInputValue, formatNumber } from '~/utils/format'
 import type { HistoryVisit } from '~/types/history'
-import { useAppLocale } from '~/composables/useAppLocale'
+import { useFilterBarFormat } from '~/composables/useFilterBarFormat'
 
-const { t } = useI18n()
-const { intlLocale } = useAppLocale()
+const { t, dateInputFormat, visibleCount } = useFilterBarFormat()
 
 defineProps<{
   domainOptions: { title: string; value: string }[]
@@ -69,7 +66,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           :label="t('components.filterBar.dateFromLabel')"
           variant="outlined"
           density="comfortable"
-          :display-format="(date: unknown) => formatDateInputValue(date, intlLocale)"
+          :display-format="dateInputFormat"
           hide-details
           clearable
         />
@@ -81,7 +78,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           :label="t('components.filterBar.dateToLabel')"
           variant="outlined"
           density="comfortable"
-          :display-format="(date: unknown) => formatDateInputValue(date, intlLocale)"
+          :display-format="dateInputFormat"
           hide-details
           clearable
         />
@@ -112,12 +109,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
         />
         <v-spacer />
         <span class="text-body-2 text-medium-emphasis" data-testid="visible-count">
-          {{
-            t('components.filterBar.visibleCount', {
-              shown: formatNumber(filteredVisits.length, intlLocale),
-              total: formatNumber(totalCount, intlLocale)
-            })
-          }}
+          {{ visibleCount(filteredVisits.length, totalCount) }}
         </span>
         <v-btn
           data-testid="export-json-button"

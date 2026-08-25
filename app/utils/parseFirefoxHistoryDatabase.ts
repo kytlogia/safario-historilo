@@ -1,6 +1,6 @@
 import type { Database } from 'sql.js'
 import type { FirefoxHistoryVisit, ParsedFirefoxHistory } from '~/types/history'
-import type { AppLocale } from '~/composables/useAppLocale'
+import { PARSER_MESSAGES } from './workerLocaleMessages'
 import { extractDomain, getSqlJs, getTableColumns, toBool } from './sqlJs'
 
 // Firefox (Unix epoch) timestamps in moz_historyvisits.visit_date are
@@ -9,40 +9,7 @@ const MICROSECONDS_PER_MILLISECOND = 1000
 
 // See the equivalent comment in parseHistoryDatabase.ts — this file runs
 // inside firefoxHistoryDatabase.worker.ts, so it can't use vue-i18n either.
-const MESSAGES: Record<
-  AppLocale,
-  {
-    openFailed: string
-    wrongSchema: string
-    missingColumns: (table: string, missing: string) => string
-    noTitle: string
-  }
-> = {
-  ja: {
-    openFailed: 'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。',
-    wrongSchema:
-      'このファイルはFirefoxの履歴データベース(places.sqlite)ではないようです。moz_places / moz_historyvisits テーブルが見つかりませんでした。',
-    missingColumns: (table, missing) =>
-      `このplaces.sqliteのスキーマは対応していません。テーブル "${table}" に想定していた列が見つかりませんでした: ${missing}`,
-    noTitle: '(タイトルなし)'
-  },
-  en: {
-    openFailed: 'Could not open the file. Please choose a valid SQLite database file.',
-    wrongSchema:
-      "This file doesn't look like Firefox's history database (places.sqlite). The moz_places / moz_historyvisits tables were not found.",
-    missingColumns: (table, missing) =>
-      `This places.sqlite's schema isn't supported. Table "${table}" is missing expected column(s): ${missing}`,
-    noTitle: '(no title)'
-  },
-  zh: {
-    openFailed: '无法打开文件。请选择一个有效的 SQLite 数据库文件。',
-    wrongSchema:
-      '该文件似乎不是 Firefox 的历史记录数据库 (places.sqlite)。未找到 moz_places / moz_historyvisits 表。',
-    missingColumns: (table, missing) =>
-      `此 places.sqlite 的架构不受支持。表 "${table}" 缺少预期的列：${missing}`,
-    noTitle: '(无标题)'
-  }
-}
+const MESSAGES = PARSER_MESSAGES.firefox
 
 const REQUIRED_COLUMNS: Record<string, string[]> = {
   moz_places: ['id', 'url', 'title', 'visit_count', 'hidden', 'typed', 'frecency', 'guid'],
