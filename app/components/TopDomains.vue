@@ -1,14 +1,17 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import TruncatedCell from './TruncatedCell.vue'
 
 defineProps<{
   topDomains: { domain: string; count: number; ratio: number }[]
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <v-card class="h-100">
-    <v-card-title class="text-subtitle-1">よく訪れたドメイン Top 10</v-card-title>
+    <v-card-title class="text-subtitle-1">{{ t('components.topDomains.title') }}</v-card-title>
     <v-card-text>
       <div v-for="d in topDomains" :key="d.domain" class="domain-row">
         <div class="d-flex justify-space-between text-body-2 domain-row__header">
@@ -23,7 +26,7 @@ defineProps<{
         v-if="topDomains.length === 0"
         icon="mdi-chart-bar"
         size="48"
-        text="該当するデータがありません"
+        :text="t('common.noData')"
       />
     </v-card-text>
   </v-card>

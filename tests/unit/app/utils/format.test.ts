@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDateInputValue, formatDateTime, isSafeUrl } from '~/utils/format'
+import {
+  formatDate,
+  formatDateInputValue,
+  formatDateTime,
+  formatNumber,
+  isSafeUrl
+} from '~/utils/format'
 
 describe('format.ts', () => {
   describe('formatDate', () => {
@@ -31,6 +37,16 @@ describe('format.ts', () => {
       expect(formatDateTime(date)).toBe(
         new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium', timeStyle: 'medium' }).format(date)
       )
+    })
+  })
+
+  describe('formatNumber', () => {
+    it('formats a number using the ja-JP grouping by default', () => {
+      expect(formatNumber(12345)).toBe(new Intl.NumberFormat('ja-JP').format(12345))
+    })
+
+    it('formats a number using the given locale', () => {
+      expect(formatNumber(12345, 'en-US')).toBe(new Intl.NumberFormat('en-US').format(12345))
     })
   })
 

@@ -1,7 +1,11 @@
 import type { Ref } from 'vue'
 import type { ChromiumHistoryVisit } from '~/types/history'
 import { isRedirectTransition } from '~/utils/chromiumVisitType'
-import { useVisitFilterEngine, type BaseVisitFilterState } from './useVisitFilterEngine'
+import {
+  useVisitFilterEngine,
+  type BaseVisitFilterState,
+  type VisitFilterEngineI18n
+} from './useVisitFilterEngine'
 
 export interface ChromiumHistoryFilterState extends BaseVisitFilterState {
   onlyTyped: Ref<boolean>
@@ -13,12 +17,18 @@ export interface ChromiumHistoryFilterState extends BaseVisitFilterState {
 // schema) — mirrors useFirefoxHistoryFilters.ts.
 export function useChromiumHistoryFilters(
   visits: Ref<ChromiumHistoryVisit[]>,
-  filters: ChromiumHistoryFilterState
+  filters: ChromiumHistoryFilterState,
+  i18n?: VisitFilterEngineI18n
 ) {
-  return useVisitFilterEngine(visits, filters, (v) => {
-    if (filters.onlyTyped.value && !v.typed) return false
-    if (filters.onlyRedirects.value && !isRedirectTransition(v.transition)) return false
-    if (filters.onlyHidden.value && !v.hidden) return false
-    return true
-  })
+  return useVisitFilterEngine(
+    visits,
+    filters,
+    (v) => {
+      if (filters.onlyTyped.value && !v.typed) return false
+      if (filters.onlyRedirects.value && !isRedirectTransition(v.transition)) return false
+      if (filters.onlyHidden.value && !v.hidden) return false
+      return true
+    },
+    i18n
+  )
 }

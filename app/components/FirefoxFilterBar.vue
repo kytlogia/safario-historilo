@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { exportFirefoxVisitsAsCsv, exportFirefoxVisitsAsJson } from '~/utils/export'
-import { formatDateInputValue } from '~/utils/format'
 import type { FirefoxHistoryVisit } from '~/types/history'
+import { useFilterBarFormat } from '~/composables/useFilterBarFormat'
+
+const { t, dateInputFormat, visibleCount } = useFilterBarFormat()
 
 defineProps<{
   domainOptions: { title: string; value: string }[]
@@ -32,7 +34,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
         <v-text-field
           v-model="search"
           data-testid="search-input"
-          label="タイトル・URLで検索"
+          :label="t('components.filterBar.searchLabel')"
           prepend-inner-icon="mdi-magnify"
           variant="outlined"
           density="comfortable"
@@ -46,7 +48,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           data-testid="domain-filter"
           :items="domainOptions"
           :custom-filter="filterDomainOption"
-          label="ドメインで絞り込み"
+          :label="t('components.filterBar.domainLabel')"
           variant="outlined"
           density="comfortable"
           clearable
@@ -61,10 +63,10 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
         <v-date-input
           v-model="dateFrom"
           data-testid="date-from-input"
-          label="開始日"
+          :label="t('components.filterBar.dateFromLabel')"
           variant="outlined"
           density="comfortable"
-          :display-format="formatDateInputValue"
+          :display-format="dateInputFormat"
           hide-details
           clearable
         />
@@ -73,10 +75,10 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
         <v-date-input
           v-model="dateTo"
           data-testid="date-to-input"
-          label="終了日"
+          :label="t('components.filterBar.dateToLabel')"
           variant="outlined"
           density="comfortable"
-          :display-format="formatDateInputValue"
+          :display-format="dateInputFormat"
           hide-details
           clearable
         />
@@ -87,27 +89,27 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
         <v-checkbox
           v-model="onlyTyped"
           data-testid="only-typed-checkbox"
-          label="URL直接入力のみ"
+          :label="t('components.filterBar.onlyTyped')"
           density="compact"
           hide-details
         />
         <v-checkbox
           v-model="onlyRedirects"
           data-testid="only-redirects-checkbox"
-          label="リダイレクトのみ"
+          :label="t('components.filterBar.onlyRedirects')"
           density="compact"
           hide-details
         />
         <v-checkbox
           v-model="onlyHidden"
           data-testid="only-hidden-checkbox"
-          label="非表示の履歴のみ"
+          :label="t('components.filterBar.onlyHidden')"
           density="compact"
           hide-details
         />
         <v-spacer />
         <span class="text-body-2 text-medium-emphasis" data-testid="visible-count">
-          {{ filteredVisits.length.toLocaleString() }} / {{ totalCount.toLocaleString() }} 件を表示
+          {{ visibleCount(filteredVisits.length, totalCount) }}
         </span>
         <v-btn
           data-testid="export-json-button"
@@ -116,7 +118,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           prepend-icon="mdi-code-json"
           @click="exportFirefoxVisitsAsJson(filteredVisits)"
         >
-          JSON出力
+          {{ t('components.filterBar.exportJson') }}
         </v-btn>
         <v-btn
           data-testid="export-csv-button"
@@ -125,7 +127,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           prepend-icon="mdi-file-delimited-outline"
           @click="exportFirefoxVisitsAsCsv(filteredVisits)"
         >
-          CSV出力
+          {{ t('components.filterBar.exportCsv') }}
         </v-btn>
       </v-col>
     </v-row>

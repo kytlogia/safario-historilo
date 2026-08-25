@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { FirefoxProfile } from '~/types/history'
+
+const { t } = useI18n()
 
 withDefaults(
   defineProps<{
@@ -63,8 +66,8 @@ function onDragLeave(event: DragEvent) {
           icon="mdi-database-search-outline"
           size="56"
           color="primary"
-          title="Firefoxの places.sqlite をドラッグ&ドロップ"
-          text="またはファイルを選択してください。解析はすべてこのブラウザ内で行われ、データは外部に送信されません。"
+          :title="t('components.uploadPanel.firefox.dragDropTitle')"
+          :text="t('components.uploadPanel.common.subtitle')"
           class="mb-2"
         />
 
@@ -74,7 +77,7 @@ function onDragLeave(event: DragEvent) {
           :items="serverProfiles"
           item-title="name"
           item-value="id"
-          label="読み込むプロファイル"
+          :label="t('components.uploadPanel.common.profileLabel')"
           variant="outlined"
           density="comfortable"
           hide-details
@@ -95,14 +98,16 @@ function onDragLeave(event: DragEvent) {
             :disabled="isLoading"
             @click="emit('load-from-server')"
           >
-            この Mac の places.sqlite を自動で読み込む
+            {{ t('components.uploadPanel.firefox.autoLoadButton') }}
           </v-btn>
           <div class="text-caption text-medium-emphasis drop-zone__local-path">
             {{ serverDbPath }}
           </div>
           <div class="drop-zone__divider">
             <v-divider />
-            <span class="text-caption text-medium-emphasis drop-zone__divider-label">または</span>
+            <span class="text-caption text-medium-emphasis drop-zone__divider-label">{{
+              t('common.or')
+            }}</span>
             <v-divider />
           </div>
         </template>
@@ -115,11 +120,7 @@ function onDragLeave(event: DragEvent) {
           class="drop-zone__alert drop-zone__alert--spaced"
           data-testid="permission-hint-alert"
         >
-          この Mac 上の places.sqlite
-          を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 →
-          プライバシーとセキュリティ →
-          フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に
-          権限を付与すると自動読み込みが利用できます。
+          {{ t('components.uploadPanel.firefox.permissionHint') }}
         </v-alert>
 
         <v-alert
@@ -134,7 +135,7 @@ function onDragLeave(event: DragEvent) {
         </v-alert>
 
         <v-file-input
-          label="places.sqlite を選択"
+          :label="t('components.uploadPanel.firefox.fileInputLabel')"
           prepend-icon="mdi-file-upload-outline"
           variant="outlined"
           density="comfortable"
@@ -158,21 +159,21 @@ function onDragLeave(event: DragEvent) {
         <v-divider class="drop-zone__instructions-divider" />
 
         <div class="text-body-2 drop-zone__instructions">
-          <div class="font-weight-medium mb-2">places.sqlite の場所（macOS / Firefox）</div>
+          <div class="font-weight-medium mb-2">
+            {{ t('components.uploadPanel.firefox.locationHeading') }}
+          </div>
           <ol class="drop-zone__instructions-list">
-            <li>Firefoxを終了する（DBがロックされているため）</li>
-            <li>
-              Finderで「移動」→「フォルダへ移動」を選び、次を入力：<br /><code
-                >~/Library/Application Support/Firefox/Profiles/</code
-              >
-            </li>
-            <li>使用しているプロファイルのフォルダを開く</li>
-            <li><code>places.sqlite</code> を任意の場所にコピーする</li>
-            <li>コピーしたファイルをこの画面にドラッグ&ドロップする</li>
+            <li>{{ t('components.uploadPanel.firefox.stepQuitApp') }}</li>
+            <!-- eslint-disable vue/no-v-html -- static, developer-authored locale
+            strings (i18n/locales/*.json), never user input -->
+            <li v-html="t('components.uploadPanel.firefox.stepFinder')" />
+            <li>{{ t('components.uploadPanel.firefox.stepOpenProfileFolder') }}</li>
+            <li v-html="t('components.uploadPanel.firefox.stepCopy')" />
+            <!-- eslint-enable vue/no-v-html -->
+            <li>{{ t('components.uploadPanel.common.dragDropFinalStep') }}</li>
           </ol>
           <v-alert type="info" variant="tonal" density="compact">
-            このアプリはファイルをサーバーへアップロードしません。すべての解析はブラウザ内のWebAssembly
-            (sql.js) で完結します。
+            {{ t('components.uploadPanel.common.privacyNote') }}
           </v-alert>
         </div>
       </v-card>

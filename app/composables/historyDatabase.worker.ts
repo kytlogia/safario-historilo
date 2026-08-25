@@ -1,6 +1,7 @@
 import { parseHistoryBuffer } from '~/utils/parseHistoryDatabase'
 import { normalizeError } from '~/utils/error-reporting'
 import type { HistoryVisit } from '~/types/history'
+import type { AppLocale } from '~/composables/useAppLocale'
 
 // A single Worker instance is reused across parses (see getWorker() in
 // useSafariHistoryParser.ts) and can therefore receive several requests before
@@ -10,6 +11,7 @@ export interface HistoryDatabaseWorkerRequest {
   requestId: number
   buffer: ArrayBuffer
   fileName: string
+  locale: AppLocale
 }
 
 export type HistoryDatabaseWorkerResponse =
@@ -25,8 +27,8 @@ self.onmessage = async (event: MessageEvent<HistoryDatabaseWorkerRequest>) => {
   const requestId = event.data?.requestId
 
   try {
-    const { buffer, fileName } = event.data
-    const result = await parseHistoryBuffer(buffer, fileName)
+    const { buffer, fileName, locale } = event.data
+    const result = await parseHistoryBuffer(buffer, fileName, locale)
     const response: HistoryDatabaseWorkerResponse = {
       requestId,
       ok: true,

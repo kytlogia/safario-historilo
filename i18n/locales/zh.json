@@ -1,0 +1,230 @@
+{
+  "common": {
+    "switchToLightTheme": "切换到浅色主题",
+    "switchToDarkTheme": "切换到深色主题",
+    "switchLanguage": "切换语言",
+    "loadAnotherFile": "加载其他文件",
+    "copy": "复制",
+    "close": "关闭",
+    "yes": "是",
+    "no": "否",
+    "none": "(无)",
+    "noTitle": "(无标题)",
+    "or": "或",
+    "noData": "没有符合条件的数据",
+    "dateRange": "{from} 至 {to}",
+    "locale": {
+      "ja": "日本語",
+      "en": "English",
+      "zh": "中文"
+    }
+  },
+  "nav": {
+    "viewSafari": "查看 Safari 历史记录",
+    "viewFirefox": "查看 Firefox 历史记录",
+    "viewChrome": "查看 Chrome 历史记录",
+    "viewEdge": "查看 Edge 历史记录",
+    "crossSearch": "跨浏览器搜索",
+    "clearAll": "全部清除"
+  },
+  "error": {
+    "notFoundTitle": "找不到页面",
+    "unexpectedTitle": "发生了意外错误",
+    "notFoundMessage": "您要查找的页面不存在，或可能已被移动。",
+    "unexpectedMessage": "处理过程中出现问题。请重新加载后再试一次。",
+    "backToTop": "返回首页",
+    "reload": "重新加载",
+    "unknown": "发生了未知错误。",
+    "serverRestricted": "由于服务器端限制，无法使用自动加载功能。",
+    "autoLoadFailed": {
+      "safari": "自动加载 History.db 失败。",
+      "firefox": "自动加载 places.sqlite 失败。",
+      "chromium": "自动加载 History 失败。"
+    }
+  },
+  "visitType": {
+    "unknown": "未知 ({code})",
+    "chromium": {
+      "0": "链接",
+      "1": "直接输入",
+      "2": "书签/自动补全",
+      "3": "自动子框架",
+      "4": "手动子框架",
+      "5": "生成（如搜索建议）",
+      "6": "起始页",
+      "7": "表单提交",
+      "8": "重新加载",
+      "9": "关键字搜索",
+      "10": "关键字搜索（生成）"
+    },
+    "firefox": {
+      "1": "链接",
+      "2": "直接输入",
+      "3": "书签",
+      "4": "嵌入",
+      "5": "重定向（永久）",
+      "6": "重定向（临时）",
+      "7": "下载",
+      "8": "框架内链接",
+      "9": "重新加载"
+    }
+  },
+  "weekday": ["周日", "周一", "周二", "周三", "周四", "周五", "周六"],
+  "components": {
+    "dialog": {
+      "title": "访问详情",
+      "titleWithSource": "访问详情（{source}）",
+      "fieldSource": "来源",
+      "fieldTitle": "标题",
+      "fieldUrl": "URL",
+      "fieldDomain": "域名",
+      "fieldVisitTime": "访问时间",
+      "fieldVisitCount": "该 URL 的总访问次数",
+      "fieldVisitCountUnified": "累计访问次数",
+      "safari": {
+        "fieldDomainExpansion": "域名展开信息",
+        "fieldInternalTimestamp": "内部时间戳 (Core Data)",
+        "internalTimestampValue": "{seconds} 秒（自 2001-01-01 UTC 起） / ISO: {iso}",
+        "fieldStatusCode": "HTTP 状态码",
+        "fieldLoadSuccessful": "加载成功",
+        "loadSuccess": "成功",
+        "loadFailure": "失败",
+        "fieldHttpMethod": "HTTP 方法",
+        "httpMethodNonGet": "非 GET",
+        "fieldSynthesized": "自动生成的历史记录 (synthesized)",
+        "fieldRedirectSource": "重定向来源 visit ID",
+        "fieldRedirectDestination": "重定向目标 visit ID",
+        "fieldOrigin": "origin（内部代码）",
+        "fieldGenerationAttributesScore": "generation / attributes / score",
+        "fieldVisitItemId": "visit ID / item ID"
+      },
+      "firefox": {
+        "fieldInternalTimestamp": "内部时间戳 (Unix 纪元)",
+        "internalTimestampValue": "{microseconds} 微秒（自 1970-01-01 UTC 起） / ISO: {iso}",
+        "fieldVisitType": "类型 (visit_type)",
+        "fieldHidden": "隐藏 (hidden)",
+        "fieldTyped": "直接输入的 URL (typed)",
+        "fieldFromVisit": "来源 visit ID (from_visit)",
+        "fieldSession": "会话 (session)",
+        "fieldFrecency": "frecency",
+        "fieldGuid": "GUID",
+        "fieldVisitPlaceId": "visit ID / place ID"
+      },
+      "chromium": {
+        "fieldInternalTimestamp": "内部时间戳 (WebKit 纪元)",
+        "internalTimestampValue": "{microseconds} 微秒（自 1601-01-01 UTC 起） / ISO: {iso}",
+        "fieldTypedCount": "该 URL 的直接输入次数 (typed_count)",
+        "fieldTransition": "类型 (transition)",
+        "fieldHidden": "隐藏 (hidden)",
+        "fieldTyped": "直接输入的 URL (typed)",
+        "fieldFromVisit": "来源 visit ID (from_visit)",
+        "fieldVisitDuration": "停留时间 (visit_duration)",
+        "visitDurationValue": "{value} 微秒",
+        "fieldVisitUrlId": "visit ID / URL ID"
+      }
+    },
+    "filterBar": {
+      "searchLabel": "按标题・URL 搜索",
+      "domainLabel": "按域名筛选",
+      "dateFromLabel": "开始日期",
+      "dateToLabel": "结束日期",
+      "onlyFailed": "仅显示加载失败",
+      "onlyRedirects": "仅显示重定向",
+      "onlySynthesized": "仅显示自动生成的记录",
+      "onlyTyped": "仅显示直接输入的 URL",
+      "onlyHidden": "仅显示隐藏的记录",
+      "visibleCount": "显示 {shown} / {total} 条",
+      "exportJson": "导出 JSON",
+      "exportCsv": "导出 CSV"
+    },
+    "visitsTable": {
+      "headerTitle": "标题",
+      "headerUrl": "URL",
+      "headerDomain": "域名",
+      "headerVisitTime": "访问时间",
+      "headerVisitCount": "URL 累计访问次数",
+      "headerVisitCountUnified": "累计访问次数",
+      "headerStatus": "状态",
+      "headerType": "类型",
+      "headerSource": "来源",
+      "headerActions": "操作",
+      "detailAriaLabel": "查看详情",
+      "flagFailed": "失败",
+      "flagRedirect": "重定向",
+      "flagSynthesized": "自动",
+      "flagHidden": "隐藏"
+    },
+    "summaryCards": {
+      "totalVisits": "总访问数",
+      "uniqueUrlCount": "唯一 URL 数",
+      "uniqueDomainCount": "域名数",
+      "dateRange": "时间范围"
+    },
+    "topDomains": {
+      "title": "访问最多的域名 Top 10"
+    },
+    "visitTrends": {
+      "title": "按星期・时段的访问趋势",
+      "byWeekday": "按星期",
+      "byHour": "按时段",
+      "weekdayChartLabel": "按星期的访问数",
+      "hourChartLabel": "按时段的访问数",
+      "weekdayBarLabel": "{label}：{count} 条",
+      "hourBarLabel": "{label} 点：{count} 条"
+    },
+    "unifiedSourceCard": {
+      "visitCountSuffix": "{count} 条",
+      "reload": "重新加载",
+      "profileLabel": "配置文件",
+      "autoLoad": "自动加载",
+      "permissionHint": "没有读取权限，请授予完全磁盘访问权限。",
+      "fileInputLabel": "选择文件"
+    },
+    "uploadPanel": {
+      "common": {
+        "subtitle": "或选择文件。所有解析都在此浏览器内完成，数据不会发送到外部。",
+        "profileLabel": "要加载的配置文件",
+        "dragDropFinalStep": "将复制的文件拖放到此屏幕",
+        "privacyNote": "此应用不会将文件上传到服务器。所有解析都在浏览器内通过 WebAssembly (sql.js) 完成。"
+      },
+      "safari": {
+        "dragDropTitle": "拖放 Safari 的 History.db",
+        "autoLoadButton": "自动加载此 Mac 上的 History.db",
+        "permissionHint": "检测到此 Mac 上的 History.db，但没有读取权限。在 macOS 上，请在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中，为运行此应用的终端（或 Node）授予权限，即可使用自动加载。",
+        "fileInputLabel": "选择 History.db",
+        "locationHeading": "History.db 的位置（macOS / Safari）",
+        "stepQuitApp": "退出 Safari（因为数据库会被锁定）",
+        "stepFinder": "在 Finder 中选择「前往」→「前往文件夹」，输入：<br /><code>~/Library/Safari/</code>",
+        "stepCopy": "将 <code>History.db</code> 复制到任意位置"
+      },
+      "firefox": {
+        "dragDropTitle": "拖放 Firefox 的 places.sqlite",
+        "autoLoadButton": "自动加载此 Mac 上的 places.sqlite",
+        "permissionHint": "检测到此 Mac 上的 places.sqlite，但没有读取权限。在 macOS 上，请在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中，为运行此应用的终端（或 Node）授予权限，即可使用自动加载。",
+        "fileInputLabel": "选择 places.sqlite",
+        "locationHeading": "places.sqlite 的位置（macOS / Firefox）",
+        "stepQuitApp": "退出 Firefox（因为数据库会被锁定）",
+        "stepFinder": "在 Finder 中选择「前往」→「前往文件夹」，输入：<br /><code>~/Library/Application Support/Firefox/Profiles/</code>",
+        "stepOpenProfileFolder": "打开正在使用的配置文件夹",
+        "stepCopy": "将 <code>places.sqlite</code> 复制到任意位置"
+      },
+      "chromium": {
+        "dragDropTitle": "拖放 {app} 的 History",
+        "autoLoadButton": "自动加载此 Mac 上的 History",
+        "permissionHint": "检测到此 Mac 上的 History，但没有读取权限。在 macOS 上，请在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中，为运行此应用的终端（或 Node）授予权限，即可使用自动加载。",
+        "fileInputLabel": "选择 History",
+        "locationHeading": "History 的位置（macOS / {app}）",
+        "stepQuitApp": "退出 {app}（因为数据库会被锁定）",
+        "stepFinder": "在 Finder 中选择「前往」→「前往文件夹」，输入：<br /><code>{path}</code>",
+        "stepOpenProfileFolder": "打开正在使用的配置文件夹（例如 <code>Default</code> 或 <code>Profile 1</code>）",
+        "stepCopy": "将 <code>History</code> 复制到任意位置"
+      }
+    }
+  },
+  "pages": {
+    "all": {
+      "emptyTitle": "尚未加载任何数据",
+      "emptyText": "请从上方卡片加载一个或多个浏览器的历史记录文件，即可进行跨浏览器搜索。"
+    }
+  }
+}

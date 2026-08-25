@@ -1,9 +1,17 @@
 import type { Database } from 'sql.js'
 import type { HistoryVisit, ParsedHistory } from '~/types/history'
+import { PARSER_MESSAGES } from './workerLocaleMessages'
 import { getSqlJs } from './sqlJs'
 
 // Safari (Core Data) timestamps are seconds since 2001-01-01T00:00:00Z.
 const CORE_DATA_EPOCH_OFFSET_SECONDS = 978307200
+
+// This module runs inside historyDatabase.worker.ts (a separate execution
+// context with no Vue instance), so its error/placeholder text is threaded
+// in from the caller (which does have i18n context) via the `locale`
+// parameter on parseHistoryBuffer() below, resolved against
+// workerLocaleMessages.ts's shared per-locale message maps.
+const MESSAGES = PARSER_MESSAGES.safari
 
 function extractDomain(url: string): string {
   try {
@@ -41,7 +49,8 @@ function getTableColumns(db: Database, table: string): Set<string> {
   return new Set((result[0]?.values ?? []).map((row) => String(row[1])))
 }
 
-function assertHistorySchema(db: Database) {
+function assertHistorySchema(db: Database, locale: AppLocale) {
+  const messages = MESSAGES[locale]
   // sql.js's `SQL.Database` constructor accepts arbitrary bytes and doesn't
   // validate the SQLite file header — it only fails lazily on the first query
   // that actually touches the page structure, which is this one. Map that
@@ -54,24 +63,18 @@ function assertHistorySchema(db: Database) {
       "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('history_items', 'history_visits')"
     )
   } catch {
-    throw new Error(
-      'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。'
-    )
+    throw new Error(messages.openFailed)
   }
   const found = new Set((tables[0]?.values ?? []).map((row) => String(row[0])))
   if (!found.has('history_items') || !found.has('history_visits')) {
-    throw new Error(
-      'このファイルはSafariの履歴データベース(History.db)ではないようです。history_items / history_visits テーブルが見つかりませんでした。'
-    )
+    throw new Error(messages.wrongSchema)
   }
 
   for (const [table, columns] of Object.entries(REQUIRED_COLUMNS)) {
     const existing = getTableColumns(db, table)
     const missing = columns.filter((column) => !existing.has(column))
     if (missing.length > 0) {
-      throw new Error(
-        `このHistory.dbのスキーマは対応していません。テーブル "${table}" に想定していた列が見つかりませんでした: ${missing.join(', ')}`
-      )
+      throw new Error(messages.missingColumns(table, missing.join(', ')))
     }
   }
 }
@@ -79,10 +82,14 @@ function assertHistorySchema(db: Database) {
 // The actual sql.js parsing work (init, DB open, SQL execution, row mapping).
 // Runs either directly on the main thread (Node/test environments without
 // Worker support) or inside historyDatabase.worker.ts — kept independent of
-// both so the same logic and error messages apply either way.
+// both so the same logic and error messages apply either way. `locale`
+// selects which of MESSAGES' error strings a caught failure surfaces (see
+// useSafariHistoryParser.ts, which threads through the app's currently
+// selected locale at call time).
 export async function parseHistoryBuffer(
   buffer: ArrayBuffer,
-  fileName: string
+  fileName: string,
+  locale: AppLocale = 'ja'
 ): Promise<ParsedHistory> {
   const SQL = await getSqlJs()
 
@@ -90,13 +97,11 @@ export async function parseHistoryBuffer(
   try {
     db = new SQL.Database(new Uint8Array(buffer))
   } catch {
-    throw new Error(
-      'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。'
-    )
+    throw new Error(MESSAGES[locale].openFailed)
   }
 
   try {
-    assertHistorySchema(db)
+    assertHistorySchema(db, locale)
 
     const result = db.exec(`
       SELECT
@@ -152,7 +157,7 @@ export async function parseHistoryBuffer(
         itemId: Number(itemId),
         url: urlStr,
         domain: extractDomain(urlStr),
-        title: title ? String(title) : '(タイトルなし)',
+        title: title ? String(title) : MESSAGES[locale].noTitle,
         visitTime: new Date((rawSeconds + CORE_DATA_EPOCH_OFFSET_SECONDS) * 1000),
         visitTimeRaw: rawSeconds,
         visitCount: Number(visitCount ?? 0),

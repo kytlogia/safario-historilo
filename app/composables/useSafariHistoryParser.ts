@@ -1,9 +1,13 @@
 import type { HistoryVisit, ParsedHistory } from '~/types/history'
 import { parseHistoryBuffer } from '~/utils/parseHistoryDatabase'
+import { WORKER_CRASH_MESSAGES as ALL_WORKER_CRASH_MESSAGES } from '~/utils/workerLocaleMessages'
+import type { AppLocale } from '~/composables/useAppLocale'
 import type {
   HistoryDatabaseWorkerRequest,
   HistoryDatabaseWorkerResponse
 } from './historyDatabase.worker'
+
+const WORKER_CRASH_MESSAGES = ALL_WORKER_CRASH_MESSAGES.safari
 
 // jsdom (used for unit/integration tests) doesn't implement Worker at all, and
 // the real parsing logic runs directly under Node for some tests (see
@@ -17,6 +21,12 @@ function supportsDedicatedWorker(): boolean {
 interface PendingRequest {
   resolve: (visits: HistoryVisit[]) => void
   reject: (error: Error) => void
+  // The locale this specific request was made under — a worker crash
+  // (onerror, below) is registered once per worker, not per request, but
+  // still needs to reject each pending request in the language it was
+  // actually issued under (not just whichever locale happened to be
+  // current when the worker last crashed).
+  locale: AppLocale
 }
 
 // A single Worker is created lazily and reused for every parse in the session,
@@ -56,11 +66,11 @@ function getWorker(): Worker {
     sharedWorker = null
     worker.terminate()
 
-    const error =
-      event.error instanceof Error
-        ? event.error
-        : new Error(event.message || 'History.dbの解析中にエラーが発生しました。')
     for (const pending of pendingRequests.values()) {
+      const error =
+        event.error instanceof Error
+          ? event.error
+          : new Error(event.message || WORKER_CRASH_MESSAGES[pending.locale])
       pending.reject(error)
     }
     pendingRequests.clear()
@@ -70,27 +80,35 @@ function getWorker(): Worker {
   return worker
 }
 
-function parseViaWorker(buffer: ArrayBuffer, fileName: string): Promise<ParsedHistory> {
+function parseViaWorker(
+  buffer: ArrayBuffer,
+  fileName: string,
+  locale: AppLocale
+): Promise<ParsedHistory> {
   return new Promise((resolve, reject) => {
     const worker = getWorker()
     const requestId = nextRequestId++
 
     pendingRequests.set(requestId, {
       resolve: (visits) => resolve({ visits, fileName }),
-      reject
+      reject,
+      locale
     })
 
-    const request: HistoryDatabaseWorkerRequest = { requestId, buffer, fileName }
+    const request: HistoryDatabaseWorkerRequest = { requestId, buffer, fileName, locale }
     worker.postMessage(request, [buffer])
   })
 }
 
-export async function parseSafariHistoryFile(file: File): Promise<ParsedHistory> {
+export async function parseSafariHistoryFile(
+  file: File,
+  locale: AppLocale = 'ja'
+): Promise<ParsedHistory> {
   const buffer = await file.arrayBuffer()
 
   if (supportsDedicatedWorker()) {
-    return parseViaWorker(buffer, file.name)
+    return parseViaWorker(buffer, file.name, locale)
   }
 
-  return parseHistoryBuffer(buffer, file.name)
+  return parseHistoryBuffer(buffer, file.name, locale)
 }

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 const {
   visits,
   fileName,
@@ -48,26 +51,29 @@ const { isDark, toggleTheme } = useAppTheme()
       <template #append>
         <template v-if="hasData">
           <span class="text-body-2 text-medium-emphasis mr-4">{{ fileName }}</span>
-          <v-btn variant="tonal" prepend-icon="mdi-refresh" class="mr-2" @click="resetAll"
-            >別のファイルを読み込む</v-btn
-          >
+          <v-btn variant="tonal" prepend-icon="mdi-refresh" class="mr-2" @click="resetAll">{{
+            t('common.loadAnotherFile')
+          }}</v-btn>
         </template>
-        <v-btn variant="text" to="/" prepend-icon="mdi-compass-outline" class="mr-2"
-          >Safariの履歴を見る</v-btn
-        >
-        <v-btn variant="text" to="/firefox" prepend-icon="mdi-fire" class="mr-2"
-          >Firefoxの履歴を見る</v-btn
-        >
-        <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2"
-          >Edgeの履歴を見る</v-btn
-        >
-        <v-btn variant="text" to="/all" prepend-icon="mdi-magnify" class="mr-2">横断検索</v-btn>
+        <v-btn variant="text" to="/" prepend-icon="mdi-compass-outline" class="mr-2">{{
+          t('nav.viewSafari')
+        }}</v-btn>
+        <v-btn variant="text" to="/firefox" prepend-icon="mdi-fire" class="mr-2">{{
+          t('nav.viewFirefox')
+        }}</v-btn>
+        <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2">{{
+          t('nav.viewEdge')
+        }}</v-btn>
+        <v-btn variant="text" to="/all" prepend-icon="mdi-magnify" class="mr-2">{{
+          t('nav.crossSearch')
+        }}</v-btn>
         <v-btn
           :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-          :aria-label="isDark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え'"
+          :aria-label="isDark ? t('common.switchToLightTheme') : t('common.switchToDarkTheme')"
           variant="text"
           @click="toggleTheme"
         />
+        <LocaleSwitcher />
       </template>
     </v-app-bar>
 

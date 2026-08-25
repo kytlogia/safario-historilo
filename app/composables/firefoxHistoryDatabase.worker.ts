@@ -1,6 +1,7 @@
 import { parseFirefoxHistoryBuffer } from '~/utils/parseFirefoxHistoryDatabase'
 import { normalizeError } from '~/utils/error-reporting'
 import type { FirefoxHistoryVisit } from '~/types/history'
+import type { AppLocale } from '~/composables/useAppLocale'
 
 // A single Worker instance is reused across parses (see getWorker() in
 // useFirefoxHistoryParser.ts) and can therefore receive several requests before
@@ -10,6 +11,7 @@ export interface FirefoxHistoryDatabaseWorkerRequest {
   requestId: number
   buffer: ArrayBuffer
   fileName: string
+  locale: AppLocale
 }
 
 export type FirefoxHistoryDatabaseWorkerResponse =
@@ -25,8 +27,8 @@ self.onmessage = async (event: MessageEvent<FirefoxHistoryDatabaseWorkerRequest>
   const requestId = event.data?.requestId
 
   try {
-    const { buffer, fileName } = event.data
-    const result = await parseFirefoxHistoryBuffer(buffer, fileName)
+    const { buffer, fileName, locale } = event.data
+    const result = await parseFirefoxHistoryBuffer(buffer, fileName, locale)
     const response: FirefoxHistoryDatabaseWorkerResponse = {
       requestId,
       ok: true,

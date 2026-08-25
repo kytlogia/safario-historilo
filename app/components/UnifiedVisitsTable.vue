@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatDateTime } from '~/utils/format'
+import { useI18n } from 'vue-i18n'
+import { formatDateTime, formatNumber } from '~/utils/format'
 import type { UnifiedHistoryVisit } from '~/types/history'
 import { unifiedSourceMeta } from '~/utils/unifiedHistory'
+import { useAppLocale } from '~/composables/useAppLocale'
 import TruncatedCell from './TruncatedCell.vue'
 
 const props = defineProps<{
@@ -13,6 +15,9 @@ const emit = defineEmits<{
   'row-click': [visit: UnifiedHistoryVisit]
 }>()
 
+const { t } = useI18n()
+const { intlLocale } = useAppLocale()
+
 // UnifiedHistoryVisit has no stable id of its own (it's a merged projection
 // of four different visit types), and a composite key like
 // `source:url:visitTime` can still collide — e.g. the same URL visited twice
@@ -22,14 +27,19 @@ const emit = defineEmits<{
 // needs (it isn't persisted across items array changes, e.g. re-filtering).
 const indexedItems = computed(() => props.items.map((item, rowIndex) => ({ ...item, rowIndex })))
 
-const headers = [
-  { title: 'ソース', key: 'source', width: 120 },
-  { title: 'タイトル', key: 'title', width: '26%' },
-  { title: 'URL', key: 'url', width: '26%' },
-  { title: 'ドメイン', key: 'domain', width: 160 },
-  { title: '訪問日時', key: 'visitTime', width: 190 },
-  { title: '累計訪問回数', key: 'visitCount', width: 110, align: 'end' as const }
-]
+const headers = computed(() => [
+  { title: t('components.visitsTable.headerSource'), key: 'source', width: 120 },
+  { title: t('components.visitsTable.headerTitle'), key: 'title', width: '26%' },
+  { title: t('components.visitsTable.headerUrl'), key: 'url', width: '26%' },
+  { title: t('components.visitsTable.headerDomain'), key: 'domain', width: 160 },
+  { title: t('components.visitsTable.headerVisitTime'), key: 'visitTime', width: 190 },
+  {
+    title: t('components.visitsTable.headerVisitCountUnified'),
+    key: 'visitCount',
+    width: 110,
+    align: 'end' as const
+  }
+])
 </script>
 
 <template>
@@ -61,10 +71,10 @@ const headers = [
       <TruncatedCell :text="item.domain" />
     </template>
     <template #item.visitTime="{ item }">
-      {{ formatDateTime(item.visitTime) }}
+      {{ formatDateTime(item.visitTime, intlLocale) }}
     </template>
     <template #item.visitCount="{ item }">
-      {{ item.visitCount.toLocaleString() }}
+      {{ formatNumber(item.visitCount, intlLocale) }}
     </template>
   </v-data-table-virtual>
 </template>

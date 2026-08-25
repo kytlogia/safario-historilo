@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { formatDateTime } from '~/utils/format'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { formatDateTime, formatNumber } from '~/utils/format'
 import { formatFirefoxVisitType } from '~/utils/firefoxVisitType'
 import type { FirefoxHistoryVisit } from '~/types/history'
+import { useAppLocale } from '~/composables/useAppLocale'
 import TruncatedCell from './TruncatedCell.vue'
 
 defineProps<{
@@ -12,15 +15,29 @@ const emit = defineEmits<{
   'row-click': [visit: FirefoxHistoryVisit]
 }>()
 
-const headers = [
-  { title: 'タイトル', key: 'title', width: '28%' },
-  { title: 'URL', key: 'url', width: '28%' },
-  { title: 'ドメイン', key: 'domain', width: 170 },
-  { title: '訪問日時', key: 'visitTime', width: 190 },
-  { title: 'URL累計訪問回数', key: 'visitCount', width: 130, align: 'end' as const },
-  { title: '種別', key: 'flags', width: 170, sortable: false },
-  { title: '操作', key: 'actions', width: 56, sortable: false, align: 'center' as const }
-]
+const { t } = useI18n()
+const { intlLocale } = useAppLocale()
+
+const headers = computed(() => [
+  { title: t('components.visitsTable.headerTitle'), key: 'title', width: '28%' },
+  { title: t('components.visitsTable.headerUrl'), key: 'url', width: '28%' },
+  { title: t('components.visitsTable.headerDomain'), key: 'domain', width: 170 },
+  { title: t('components.visitsTable.headerVisitTime'), key: 'visitTime', width: 190 },
+  {
+    title: t('components.visitsTable.headerVisitCount'),
+    key: 'visitCount',
+    width: 130,
+    align: 'end' as const
+  },
+  { title: t('components.visitsTable.headerType'), key: 'flags', width: 170, sortable: false },
+  {
+    title: t('components.visitsTable.headerActions'),
+    key: 'actions',
+    width: 56,
+    sortable: false,
+    align: 'center' as const
+  }
+])
 </script>
 
 <template>
@@ -42,23 +59,25 @@ const headers = [
       <TruncatedCell :text="item.domain" />
     </template>
     <template #item.visitTime="{ item }">
-      {{ formatDateTime(item.visitTime) }}
+      {{ formatDateTime(item.visitTime, intlLocale) }}
     </template>
     <template #item.visitCount="{ item }">
-      {{ item.visitCount.toLocaleString() }}
+      {{ formatNumber(item.visitCount, intlLocale) }}
     </template>
     <template #item.flags="{ item }">
       <v-chip size="x-small" variant="flat" class="mr-1">{{
-        formatFirefoxVisitType(item.visitType)
+        formatFirefoxVisitType(item.visitType, t)
       }}</v-chip>
-      <v-chip v-if="item.hidden" size="x-small" color="secondary" variant="flat">非表示</v-chip>
+      <v-chip v-if="item.hidden" size="x-small" color="secondary" variant="flat">{{
+        t('components.visitsTable.flagHidden')
+      }}</v-chip>
     </template>
     <template #item.actions="{ item }">
       <v-btn
         icon="mdi-information-outline"
         variant="text"
         size="small"
-        aria-label="詳細を見る"
+        :aria-label="t('components.visitsTable.detailAriaLabel')"
         data-testid="row-detail-button"
         @click.stop="emit('row-click', item)"
       />

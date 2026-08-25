@@ -1,0 +1,230 @@
+{
+  "common": {
+    "switchToLightTheme": "ライトテーマに切り替え",
+    "switchToDarkTheme": "ダークテーマに切り替え",
+    "switchLanguage": "言語を切り替え",
+    "loadAnotherFile": "別のファイルを読み込む",
+    "copy": "コピー",
+    "close": "閉じる",
+    "yes": "はい",
+    "no": "いいえ",
+    "none": "(なし)",
+    "noTitle": "(タイトルなし)",
+    "or": "または",
+    "noData": "該当するデータがありません",
+    "dateRange": "{from} 〜 {to}",
+    "locale": {
+      "ja": "日本語",
+      "en": "English",
+      "zh": "中文"
+    }
+  },
+  "nav": {
+    "viewSafari": "Safariの履歴を見る",
+    "viewFirefox": "Firefoxの履歴を見る",
+    "viewChrome": "Chromeの履歴を見る",
+    "viewEdge": "Edgeの履歴を見る",
+    "crossSearch": "横断検索",
+    "clearAll": "すべてクリア"
+  },
+  "error": {
+    "notFoundTitle": "ページが見つかりません",
+    "unexpectedTitle": "予期しないエラーが発生しました",
+    "notFoundMessage": "お探しのページは存在しないか、移動した可能性があります。",
+    "unexpectedMessage": "アプリの処理中に問題が発生しました。お手数ですが、再読み込みしてやり直してください。",
+    "backToTop": "トップに戻る",
+    "reload": "再読み込み",
+    "unknown": "不明なエラーが発生しました。",
+    "serverRestricted": "サーバー側の制限により自動読み込みが利用できません。",
+    "autoLoadFailed": {
+      "safari": "History.db の自動読み込みに失敗しました。",
+      "firefox": "places.sqlite の自動読み込みに失敗しました。",
+      "chromium": "History の自動読み込みに失敗しました。"
+    }
+  },
+  "visitType": {
+    "unknown": "不明 ({code})",
+    "chromium": {
+      "0": "リンク",
+      "1": "直接入力",
+      "2": "ブックマーク/自動補完",
+      "3": "自動サブフレーム",
+      "4": "手動サブフレーム",
+      "5": "生成（検索候補など）",
+      "6": "開始ページ",
+      "7": "フォーム送信",
+      "8": "再読み込み",
+      "9": "キーワード検索",
+      "10": "キーワード検索（生成）"
+    },
+    "firefox": {
+      "1": "リンク",
+      "2": "直接入力",
+      "3": "ブックマーク",
+      "4": "埋め込み",
+      "5": "リダイレクト（恒久的）",
+      "6": "リダイレクト（一時的）",
+      "7": "ダウンロード",
+      "8": "フレーム内リンク",
+      "9": "再読み込み"
+    }
+  },
+  "weekday": ["日", "月", "火", "水", "木", "金", "土"],
+  "components": {
+    "dialog": {
+      "title": "履歴の詳細",
+      "titleWithSource": "履歴の詳細（{source}）",
+      "fieldSource": "ソース",
+      "fieldTitle": "タイトル",
+      "fieldUrl": "URL",
+      "fieldDomain": "ドメイン",
+      "fieldVisitTime": "訪問日時",
+      "fieldVisitCount": "このURLの総訪問回数",
+      "fieldVisitCountUnified": "累計訪問回数",
+      "safari": {
+        "fieldDomainExpansion": "ドメイン展開情報",
+        "fieldInternalTimestamp": "内部タイムスタンプ (Core Data)",
+        "internalTimestampValue": "{seconds} 秒（2001-01-01 UTCから） / ISO: {iso}",
+        "fieldStatusCode": "HTTPステータスコード",
+        "fieldLoadSuccessful": "読み込み成功",
+        "loadSuccess": "成功",
+        "loadFailure": "失敗",
+        "fieldHttpMethod": "HTTPメソッド",
+        "httpMethodNonGet": "GET以外",
+        "fieldSynthesized": "自動生成された履歴 (synthesized)",
+        "fieldRedirectSource": "リダイレクト元 visit ID",
+        "fieldRedirectDestination": "リダイレクト先 visit ID",
+        "fieldOrigin": "origin (内部コード)",
+        "fieldGenerationAttributesScore": "generation / attributes / score",
+        "fieldVisitItemId": "visit ID / item ID"
+      },
+      "firefox": {
+        "fieldInternalTimestamp": "内部タイムスタンプ (Unixエポック)",
+        "internalTimestampValue": "{microseconds} マイクロ秒（1970-01-01 UTCから） / ISO: {iso}",
+        "fieldVisitType": "種別 (visit_type)",
+        "fieldHidden": "非表示 (hidden)",
+        "fieldTyped": "URLを直接入力 (typed)",
+        "fieldFromVisit": "リンク元 visit ID (from_visit)",
+        "fieldSession": "セッション (session)",
+        "fieldFrecency": "frecency",
+        "fieldGuid": "GUID",
+        "fieldVisitPlaceId": "visit ID / place ID"
+      },
+      "chromium": {
+        "fieldInternalTimestamp": "内部タイムスタンプ (WebKitエポック)",
+        "internalTimestampValue": "{microseconds} マイクロ秒（1601-01-01 UTCから） / ISO: {iso}",
+        "fieldTypedCount": "このURLの直接入力回数 (typed_count)",
+        "fieldTransition": "種別 (transition)",
+        "fieldHidden": "非表示 (hidden)",
+        "fieldTyped": "URLを直接入力 (typed)",
+        "fieldFromVisit": "リンク元 visit ID (from_visit)",
+        "fieldVisitDuration": "滞在時間 (visit_duration)",
+        "visitDurationValue": "{value} マイクロ秒",
+        "fieldVisitUrlId": "visit ID / URL ID"
+      }
+    },
+    "filterBar": {
+      "searchLabel": "タイトル・URLで検索",
+      "domainLabel": "ドメインで絞り込み",
+      "dateFromLabel": "開始日",
+      "dateToLabel": "終了日",
+      "onlyFailed": "読み込み失敗のみ",
+      "onlyRedirects": "リダイレクトのみ",
+      "onlySynthesized": "自動生成された履歴のみ",
+      "onlyTyped": "URL直接入力のみ",
+      "onlyHidden": "非表示の履歴のみ",
+      "visibleCount": "{shown} / {total} 件を表示",
+      "exportJson": "JSON出力",
+      "exportCsv": "CSV出力"
+    },
+    "visitsTable": {
+      "headerTitle": "タイトル",
+      "headerUrl": "URL",
+      "headerDomain": "ドメイン",
+      "headerVisitTime": "訪問日時",
+      "headerVisitCount": "URL累計訪問回数",
+      "headerVisitCountUnified": "累計訪問回数",
+      "headerStatus": "状態",
+      "headerType": "種別",
+      "headerSource": "ソース",
+      "headerActions": "操作",
+      "detailAriaLabel": "詳細を見る",
+      "flagFailed": "失敗",
+      "flagRedirect": "リダイレクト",
+      "flagSynthesized": "自動",
+      "flagHidden": "非表示"
+    },
+    "summaryCards": {
+      "totalVisits": "総訪問数",
+      "uniqueUrlCount": "ユニークURL数",
+      "uniqueDomainCount": "ドメイン数",
+      "dateRange": "期間"
+    },
+    "topDomains": {
+      "title": "よく訪れたドメイン Top 10"
+    },
+    "visitTrends": {
+      "title": "曜日・時間帯別の訪問傾向",
+      "byWeekday": "曜日別",
+      "byHour": "時間帯別",
+      "weekdayChartLabel": "曜日別の訪問数",
+      "hourChartLabel": "時間帯別の訪問数",
+      "weekdayBarLabel": "{label}: {count}件",
+      "hourBarLabel": "{label}時: {count}件"
+    },
+    "unifiedSourceCard": {
+      "visitCountSuffix": "{count} 件",
+      "reload": "読み込み直す",
+      "profileLabel": "プロファイル",
+      "autoLoad": "自動で読み込む",
+      "permissionHint": "読み取り権限がありません。フルディスクアクセスを許可してください。",
+      "fileInputLabel": "ファイルを選択"
+    },
+    "uploadPanel": {
+      "common": {
+        "subtitle": "またはファイルを選択してください。解析はすべてこのブラウザ内で行われ、データは外部に送信されません。",
+        "profileLabel": "読み込むプロファイル",
+        "dragDropFinalStep": "コピーしたファイルをこの画面にドラッグ&ドロップする",
+        "privacyNote": "このアプリはファイルをサーバーへアップロードしません。すべての解析はブラウザ内のWebAssembly (sql.js) で完結します。"
+      },
+      "safari": {
+        "dragDropTitle": "Safariの History.db をドラッグ&ドロップ",
+        "autoLoadButton": "この Mac の History.db を自動で読み込む",
+        "permissionHint": "この Mac 上の History.db を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。",
+        "fileInputLabel": "History.db を選択",
+        "locationHeading": "History.db の場所（macOS / Safari）",
+        "stepQuitApp": "Safariを終了する（DBがロックされているため）",
+        "stepFinder": "Finderで「移動」→「フォルダへ移動」を選び、次を入力：<br /><code>~/Library/Safari/</code>",
+        "stepCopy": "<code>History.db</code> を任意の場所にコピーする"
+      },
+      "firefox": {
+        "dragDropTitle": "Firefoxの places.sqlite をドラッグ&ドロップ",
+        "autoLoadButton": "この Mac の places.sqlite を自動で読み込む",
+        "permissionHint": "この Mac 上の places.sqlite を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。",
+        "fileInputLabel": "places.sqlite を選択",
+        "locationHeading": "places.sqlite の場所（macOS / Firefox）",
+        "stepQuitApp": "Firefoxを終了する（DBがロックされているため）",
+        "stepFinder": "Finderで「移動」→「フォルダへ移動」を選び、次を入力：<br /><code>~/Library/Application Support/Firefox/Profiles/</code>",
+        "stepOpenProfileFolder": "使用しているプロファイルのフォルダを開く",
+        "stepCopy": "<code>places.sqlite</code> を任意の場所にコピーする"
+      },
+      "chromium": {
+        "dragDropTitle": "{app} の History をドラッグ&ドロップ",
+        "autoLoadButton": "この Mac の History を自動で読み込む",
+        "permissionHint": "この Mac 上の History を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。",
+        "fileInputLabel": "History を選択",
+        "locationHeading": "History の場所（macOS / {app}）",
+        "stepQuitApp": "{app} を終了する（DBがロックされているため）",
+        "stepFinder": "Finderで「移動」→「フォルダへ移動」を選び、次を入力：<br /><code>{path}</code>",
+        "stepOpenProfileFolder": "使用しているプロファイルのフォルダ（<code>Default</code> や <code>Profile 1</code> など）を開く",
+        "stepCopy": "<code>History</code> を任意の場所にコピーする"
+      }
+    }
+  },
+  "pages": {
+    "all": {
+      "emptyTitle": "読み込み済みのデータがありません",
+      "emptyText": "上のカードから、横断検索したいブラウザの履歴ファイルを1つ以上読み込んでください。"
+    }
+  }
+}

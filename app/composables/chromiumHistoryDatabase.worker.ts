@@ -1,6 +1,7 @@
 import { parseChromiumHistoryBuffer } from '~/utils/parseChromiumHistoryDatabase'
 import { normalizeError } from '~/utils/error-reporting'
 import type { ChromiumHistoryVisit } from '~/types/history'
+import type { AppLocale } from '~/composables/useAppLocale'
 
 // A single Worker instance is reused across parses (see getWorker() in
 // useChromiumHistoryParser.ts) and can therefore receive several requests
@@ -10,6 +11,7 @@ export interface ChromiumHistoryDatabaseWorkerRequest {
   requestId: number
   buffer: ArrayBuffer
   fileName: string
+  locale: AppLocale
 }
 
 export type ChromiumHistoryDatabaseWorkerResponse =
@@ -25,8 +27,8 @@ self.onmessage = async (event: MessageEvent<ChromiumHistoryDatabaseWorkerRequest
   const requestId = event.data?.requestId
 
   try {
-    const { buffer, fileName } = event.data
-    const result = await parseChromiumHistoryBuffer(buffer, fileName)
+    const { buffer, fileName, locale } = event.data
+    const result = await parseChromiumHistoryBuffer(buffer, fileName, locale)
     const response: ChromiumHistoryDatabaseWorkerResponse = {
       requestId,
       ok: true,

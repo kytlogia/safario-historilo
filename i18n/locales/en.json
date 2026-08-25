@@ -1,0 +1,230 @@
+{
+  "common": {
+    "switchToLightTheme": "Switch to light theme",
+    "switchToDarkTheme": "Switch to dark theme",
+    "switchLanguage": "Switch language",
+    "loadAnotherFile": "Load another file",
+    "copy": "Copy",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "none": "(none)",
+    "noTitle": "(no title)",
+    "or": "or",
+    "noData": "No matching data",
+    "dateRange": "{from} – {to}",
+    "locale": {
+      "ja": "日本語",
+      "en": "English",
+      "zh": "中文"
+    }
+  },
+  "nav": {
+    "viewSafari": "View Safari history",
+    "viewFirefox": "View Firefox history",
+    "viewChrome": "View Chrome history",
+    "viewEdge": "View Edge history",
+    "crossSearch": "Cross-browser search",
+    "clearAll": "Clear all"
+  },
+  "error": {
+    "notFoundTitle": "Page not found",
+    "unexpectedTitle": "An unexpected error occurred",
+    "notFoundMessage": "The page you're looking for doesn't exist or may have been moved.",
+    "unexpectedMessage": "Something went wrong while processing your request. Please reload and try again.",
+    "backToTop": "Back to top",
+    "reload": "Reload",
+    "unknown": "An unknown error occurred.",
+    "serverRestricted": "Automatic loading is unavailable due to server-side restrictions.",
+    "autoLoadFailed": {
+      "safari": "Failed to automatically load History.db.",
+      "firefox": "Failed to automatically load places.sqlite.",
+      "chromium": "Failed to automatically load History."
+    }
+  },
+  "visitType": {
+    "unknown": "Unknown ({code})",
+    "chromium": {
+      "0": "Link",
+      "1": "Typed",
+      "2": "Bookmark / auto-complete",
+      "3": "Auto subframe",
+      "4": "Manual subframe",
+      "5": "Generated (e.g. search suggestion)",
+      "6": "Start page",
+      "7": "Form submit",
+      "8": "Reload",
+      "9": "Keyword search",
+      "10": "Keyword search (generated)"
+    },
+    "firefox": {
+      "1": "Link",
+      "2": "Typed",
+      "3": "Bookmark",
+      "4": "Embed",
+      "5": "Redirect (permanent)",
+      "6": "Redirect (temporary)",
+      "7": "Download",
+      "8": "Framed link",
+      "9": "Reload"
+    }
+  },
+  "weekday": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  "components": {
+    "dialog": {
+      "title": "Visit details",
+      "titleWithSource": "Visit details ({source})",
+      "fieldSource": "Source",
+      "fieldTitle": "Title",
+      "fieldUrl": "URL",
+      "fieldDomain": "Domain",
+      "fieldVisitTime": "Visit time",
+      "fieldVisitCount": "Total visits to this URL",
+      "fieldVisitCountUnified": "Total visits",
+      "safari": {
+        "fieldDomainExpansion": "Domain expansion",
+        "fieldInternalTimestamp": "Internal timestamp (Core Data)",
+        "internalTimestampValue": "{seconds} seconds (since 2001-01-01 UTC) / ISO: {iso}",
+        "fieldStatusCode": "HTTP status code",
+        "fieldLoadSuccessful": "Load successful",
+        "loadSuccess": "Success",
+        "loadFailure": "Failure",
+        "fieldHttpMethod": "HTTP method",
+        "httpMethodNonGet": "Non-GET",
+        "fieldSynthesized": "Synthesized history",
+        "fieldRedirectSource": "Redirect source visit ID",
+        "fieldRedirectDestination": "Redirect destination visit ID",
+        "fieldOrigin": "Origin (internal code)",
+        "fieldGenerationAttributesScore": "generation / attributes / score",
+        "fieldVisitItemId": "visit ID / item ID"
+      },
+      "firefox": {
+        "fieldInternalTimestamp": "Internal timestamp (Unix epoch)",
+        "internalTimestampValue": "{microseconds} microseconds (since 1970-01-01 UTC) / ISO: {iso}",
+        "fieldVisitType": "Type (visit_type)",
+        "fieldHidden": "Hidden",
+        "fieldTyped": "Typed URL",
+        "fieldFromVisit": "Referring visit ID (from_visit)",
+        "fieldSession": "Session",
+        "fieldFrecency": "frecency",
+        "fieldGuid": "GUID",
+        "fieldVisitPlaceId": "visit ID / place ID"
+      },
+      "chromium": {
+        "fieldInternalTimestamp": "Internal timestamp (WebKit epoch)",
+        "internalTimestampValue": "{microseconds} microseconds (since 1601-01-01 UTC) / ISO: {iso}",
+        "fieldTypedCount": "Typed count for this URL (typed_count)",
+        "fieldTransition": "Type (transition)",
+        "fieldHidden": "Hidden",
+        "fieldTyped": "Typed URL",
+        "fieldFromVisit": "Referring visit ID (from_visit)",
+        "fieldVisitDuration": "Visit duration (visit_duration)",
+        "visitDurationValue": "{value} microseconds",
+        "fieldVisitUrlId": "visit ID / URL ID"
+      }
+    },
+    "filterBar": {
+      "searchLabel": "Search by title or URL",
+      "domainLabel": "Filter by domain",
+      "dateFromLabel": "From date",
+      "dateToLabel": "To date",
+      "onlyFailed": "Failed loads only",
+      "onlyRedirects": "Redirects only",
+      "onlySynthesized": "Synthesized history only",
+      "onlyTyped": "Typed URLs only",
+      "onlyHidden": "Hidden history only",
+      "visibleCount": "Showing {shown} / {total}",
+      "exportJson": "Export JSON",
+      "exportCsv": "Export CSV"
+    },
+    "visitsTable": {
+      "headerTitle": "Title",
+      "headerUrl": "URL",
+      "headerDomain": "Domain",
+      "headerVisitTime": "Visit time",
+      "headerVisitCount": "Total URL visits",
+      "headerVisitCountUnified": "Total visits",
+      "headerStatus": "Status",
+      "headerType": "Type",
+      "headerSource": "Source",
+      "headerActions": "Actions",
+      "detailAriaLabel": "View details",
+      "flagFailed": "Failed",
+      "flagRedirect": "Redirect",
+      "flagSynthesized": "Synthesized",
+      "flagHidden": "Hidden"
+    },
+    "summaryCards": {
+      "totalVisits": "Total visits",
+      "uniqueUrlCount": "Unique URLs",
+      "uniqueDomainCount": "Domains",
+      "dateRange": "Date range"
+    },
+    "topDomains": {
+      "title": "Top 10 domains"
+    },
+    "visitTrends": {
+      "title": "Visit trends by weekday & hour",
+      "byWeekday": "By weekday",
+      "byHour": "By hour",
+      "weekdayChartLabel": "Visits by weekday",
+      "hourChartLabel": "Visits by hour",
+      "weekdayBarLabel": "{label}: {count}",
+      "hourBarLabel": "{label}:00: {count}"
+    },
+    "unifiedSourceCard": {
+      "visitCountSuffix": "{count}",
+      "reload": "Reload",
+      "profileLabel": "Profile",
+      "autoLoad": "Load automatically",
+      "permissionHint": "No read permission. Please grant Full Disk Access.",
+      "fileInputLabel": "Choose a file"
+    },
+    "uploadPanel": {
+      "common": {
+        "subtitle": "Or choose a file. All parsing happens in this browser and no data is sent externally.",
+        "profileLabel": "Profile to load",
+        "dragDropFinalStep": "Drag and drop the copied file onto this screen",
+        "privacyNote": "This app never uploads files to a server. All parsing runs entirely inside the browser via WebAssembly (sql.js)."
+      },
+      "safari": {
+        "dragDropTitle": "Drag and drop Safari's History.db",
+        "autoLoadButton": "Automatically load History.db from this Mac",
+        "permissionHint": "History.db was found on this Mac, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading.",
+        "fileInputLabel": "Choose History.db",
+        "locationHeading": "Where to find History.db (macOS / Safari)",
+        "stepQuitApp": "Quit Safari (the database is locked while it's running)",
+        "stepFinder": "In Finder, choose Go → Go to Folder and enter:<br /><code>~/Library/Safari/</code>",
+        "stepCopy": "Copy <code>History.db</code> to a location of your choice"
+      },
+      "firefox": {
+        "dragDropTitle": "Drag and drop Firefox's places.sqlite",
+        "autoLoadButton": "Automatically load places.sqlite from this Mac",
+        "permissionHint": "places.sqlite was found on this Mac, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading.",
+        "fileInputLabel": "Choose places.sqlite",
+        "locationHeading": "Where to find places.sqlite (macOS / Firefox)",
+        "stepQuitApp": "Quit Firefox (the database is locked while it's running)",
+        "stepFinder": "In Finder, choose Go → Go to Folder and enter:<br /><code>~/Library/Application Support/Firefox/Profiles/</code>",
+        "stepOpenProfileFolder": "Open the folder for the profile you use",
+        "stepCopy": "Copy <code>places.sqlite</code> to a location of your choice"
+      },
+      "chromium": {
+        "dragDropTitle": "Drag and drop {app}'s History",
+        "autoLoadButton": "Automatically load History from this Mac",
+        "permissionHint": "History was found on this Mac, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading.",
+        "fileInputLabel": "Choose History",
+        "locationHeading": "Where to find History (macOS / {app})",
+        "stepQuitApp": "Quit {app} (the database is locked while it's running)",
+        "stepFinder": "In Finder, choose Go → Go to Folder and enter:<br /><code>{path}</code>",
+        "stepOpenProfileFolder": "Open the folder for the profile you use (e.g. <code>Default</code> or <code>Profile 1</code>)",
+        "stepCopy": "Copy <code>History</code> to a location of your choice"
+      }
+    }
+  },
+  "pages": {
+    "all": {
+      "emptyTitle": "No data loaded yet",
+      "emptyText": "Load one or more browser history files from the cards above to search across them."
+    }
+  }
+}

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { FetchError } from 'ofetch'
+import { useI18n } from 'vue-i18n'
 import type { HistoryVisit, SafariProfile } from '~/types/history'
 import {
   booleanCodec,
@@ -8,7 +9,11 @@ import {
   nullableStringCodec,
   stringCodec
 } from '~/composables/useFilterPersistence'
+import { useAppLocale, useVisitFilterI18n } from '~/composables/useAppLocale'
 import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
+
+const { t } = useI18n()
+const { currentLocale } = useAppLocale()
 
 const visits = ref<HistoryVisit[]>([])
 const fileName = ref('')
@@ -49,15 +54,19 @@ const detailDialog = ref(false)
 const hasData = computed(() => visits.value.length > 0)
 
 const { domainOptions, filteredVisits, topDomains, dateRangeLabel, weekdayTrend, hourlyTrend } =
-  useHistoryFilters(visits, {
-    search: debouncedSearch,
-    domainFilter,
-    dateFrom,
-    dateTo,
-    onlyFailed,
-    onlyRedirects,
-    onlySynthesized
-  })
+  useHistoryFilters(
+    visits,
+    {
+      search: debouncedSearch,
+      domainFilter,
+      dateFrom,
+      dateTo,
+      onlyFailed,
+      onlyRedirects,
+      onlySynthesized
+    },
+    useVisitFilterI18n()
+  )
 
 const uniqueUrlCount = computed(() => new Set(visits.value.map((v) => v.url)).size)
 const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domain)).size)
@@ -67,11 +76,11 @@ async function loadFile(file: File | null | undefined) {
   isLoading.value = true
   loadError.value = ''
   try {
-    const result = await parseSafariHistoryFile(file)
+    const result = await parseSafariHistoryFile(file, currentLocale.value)
     visits.value = result.visits
     fileName.value = result.fileName
   } catch (err) {
-    loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
+    loadError.value = err instanceof Error ? err.message : t('error.unknown')
   } finally {
     isLoading.value = false
   }
@@ -102,8 +111,7 @@ async function checkServerAutoLoadAvailability() {
     // falling back to drag & drop, which otherwise looks identical to
     // "feature not available" and hides the real cause.
     if (err instanceof FetchError && err.statusCode === 403) {
-      serverStatusWarning.value =
-        err.data?.message ?? 'サーバー側の制限により自動読み込みが利用できません。'
+      serverStatusWarning.value = err.data?.message ?? t('error.serverRestricted')
     }
     // No Nitro server backing this deployment (e.g. static hosting) — stay with drag & drop only.
     serverAutoLoadAvailable.value = false
@@ -135,14 +143,14 @@ async function loadFromServer() {
     const blob = await $fetch<Blob>('/api/local-history', {
       query: { profileId: selectedProfileId.value }
     })
-    const result = await parseSafariHistoryFile(new File([blob], 'History.db'))
+    const result = await parseSafariHistoryFile(new File([blob], 'History.db'), currentLocale.value)
     visits.value = result.visits
     fileName.value = result.fileName
   } catch (err) {
     if (err instanceof FetchError) {
-      loadError.value = err.data?.message ?? 'History.db の自動読み込みに失敗しました。'
+      loadError.value = err.data?.message ?? t('error.autoLoadFailed.safari')
     } else {
-      loadError.value = err instanceof Error ? err.message : '不明なエラーが発生しました。'
+      loadError.value = err instanceof Error ? err.message : t('error.unknown')
     }
   } finally {
     isLoading.value = false
@@ -184,26 +192,29 @@ function resetAll() {
       <template #append>
         <template v-if="hasData">
           <span class="text-body-2 text-medium-emphasis mr-4">{{ fileName }}</span>
-          <v-btn variant="tonal" prepend-icon="mdi-refresh" class="mr-2" @click="resetAll"
-            >別のファイルを読み込む</v-btn
-          >
+          <v-btn variant="tonal" prepend-icon="mdi-refresh" class="mr-2" @click="resetAll">{{
+            t('common.loadAnotherFile')
+          }}</v-btn>
         </template>
-        <v-btn variant="text" to="/firefox" prepend-icon="mdi-fire" class="mr-2"
-          >Firefoxの履歴を見る</v-btn
-        >
-        <v-btn variant="text" to="/chrome" prepend-icon="mdi-google-chrome" class="mr-2"
-          >Chromeの履歴を見る</v-btn
-        >
-        <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2"
-          >Edgeの履歴を見る</v-btn
-        >
-        <v-btn variant="text" to="/all" prepend-icon="mdi-magnify" class="mr-2">横断検索</v-btn>
+        <v-btn variant="text" to="/firefox" prepend-icon="mdi-fire" class="mr-2">{{
+          t('nav.viewFirefox')
+        }}</v-btn>
+        <v-btn variant="text" to="/chrome" prepend-icon="mdi-google-chrome" class="mr-2">{{
+          t('nav.viewChrome')
+        }}</v-btn>
+        <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2">{{
+          t('nav.viewEdge')
+        }}</v-btn>
+        <v-btn variant="text" to="/all" prepend-icon="mdi-magnify" class="mr-2">{{
+          t('nav.crossSearch')
+        }}</v-btn>
         <v-btn
           :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-          :aria-label="isDark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え'"
+          :aria-label="isDark ? t('common.switchToLightTheme') : t('common.switchToDarkTheme')"
           variant="text"
           @click="toggleTheme"
         />
+        <LocaleSwitcher />
       </template>
     </v-app-bar>
 

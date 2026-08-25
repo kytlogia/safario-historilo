@@ -1,17 +1,23 @@
 import type { Database } from 'sql.js'
 import type { FirefoxHistoryVisit, ParsedFirefoxHistory } from '~/types/history'
+import { PARSER_MESSAGES } from './workerLocaleMessages'
 import { extractDomain, getSqlJs, getTableColumns, toBool } from './sqlJs'
 
 // Firefox (Unix epoch) timestamps in moz_historyvisits.visit_date are
 // microseconds since 1970-01-01T00:00:00Z.
 const MICROSECONDS_PER_MILLISECOND = 1000
 
+// See the equivalent comment in parseHistoryDatabase.ts — this file runs
+// inside firefoxHistoryDatabase.worker.ts, so it can't use vue-i18n either.
+const MESSAGES = PARSER_MESSAGES.firefox
+
 const REQUIRED_COLUMNS: Record<string, string[]> = {
   moz_places: ['id', 'url', 'title', 'visit_count', 'hidden', 'typed', 'frecency', 'guid'],
   moz_historyvisits: ['id', 'from_visit', 'place_id', 'visit_date', 'visit_type', 'session']
 }
 
-function assertPlacesSchema(db: Database) {
+function assertPlacesSchema(db: Database, locale: AppLocale) {
+  const messages = MESSAGES[locale]
   // sql.js's `SQL.Database` constructor accepts arbitrary bytes and doesn't
   // validate the SQLite file header — it only fails lazily on the first query
   // that actually touches the page structure, which is this one. Map that
@@ -23,24 +29,18 @@ function assertPlacesSchema(db: Database) {
       "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('moz_places', 'moz_historyvisits')"
     )
   } catch {
-    throw new Error(
-      'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。'
-    )
+    throw new Error(messages.openFailed)
   }
   const found = new Set((tables[0]?.values ?? []).map((row) => String(row[0])))
   if (!found.has('moz_places') || !found.has('moz_historyvisits')) {
-    throw new Error(
-      'このファイルはFirefoxの履歴データベース(places.sqlite)ではないようです。moz_places / moz_historyvisits テーブルが見つかりませんでした。'
-    )
+    throw new Error(messages.wrongSchema)
   }
 
   for (const [table, columns] of Object.entries(REQUIRED_COLUMNS)) {
     const existing = getTableColumns(db, table)
     const missing = columns.filter((column) => !existing.has(column))
     if (missing.length > 0) {
-      throw new Error(
-        `このplaces.sqliteのスキーマは対応していません。テーブル "${table}" に想定していた列が見つかりませんでした: ${missing.join(', ')}`
-      )
+      throw new Error(messages.missingColumns(table, missing.join(', ')))
     }
   }
 }
@@ -51,7 +51,8 @@ function assertPlacesSchema(db: Database) {
 // Worker support) or inside firefoxHistoryDatabase.worker.ts.
 export async function parseFirefoxHistoryBuffer(
   buffer: ArrayBuffer,
-  fileName: string
+  fileName: string,
+  locale: AppLocale = 'ja'
 ): Promise<ParsedFirefoxHistory> {
   const SQL = await getSqlJs()
 
@@ -59,13 +60,11 @@ export async function parseFirefoxHistoryBuffer(
   try {
     db = new SQL.Database(new Uint8Array(buffer))
   } catch {
-    throw new Error(
-      'ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。'
-    )
+    throw new Error(MESSAGES[locale].openFailed)
   }
 
   try {
-    assertPlacesSchema(db)
+    assertPlacesSchema(db, locale)
 
     const result = db.exec(`
       SELECT
@@ -113,7 +112,7 @@ export async function parseFirefoxHistoryBuffer(
         placeId: Number(placeId),
         url: urlStr,
         domain: extractDomain(urlStr),
-        title: title ? String(title) : '(タイトルなし)',
+        title: title ? String(title) : MESSAGES[locale].noTitle,
         visitTime: new Date(rawMicroseconds / MICROSECONDS_PER_MILLISECOND),
         visitTimeRaw: rawMicroseconds,
         visitCount: Number(visitCount ?? 0),

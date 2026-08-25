@@ -1,11 +1,26 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 useAppTheme().initTheme()
+
+// Gates <NuxtPage> until the locale is actually settled: initLocale() is
+// synchronous for the common case (no stored preference, or it already
+// matches the default), but for a returning user who previously switched
+// away from ja it awaits that locale's lazy-loaded message chunk — without
+// this gate, the page would render once in ja, then flash to the stored
+// locale a moment later once that chunk arrives.
+const localeReady = ref(false)
+void useAppLocale()
+  .initLocale()
+  .finally(() => {
+    localeReady.value = true
+  })
 </script>
 
 <template>
   <v-app>
     <NuxtRouteAnnouncer />
-    <NuxtPage />
+    <NuxtPage v-if="localeReady" />
   </v-app>
 </template>
 

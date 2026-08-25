@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue'
-import { formatDateTime, isSafeUrl } from '~/utils/format'
+import { useI18n } from 'vue-i18n'
+import { formatDateTime, formatNumber, isSafeUrl } from '~/utils/format'
 import { formatChromiumTransitionType } from '~/utils/chromiumVisitType'
 import type { ChromiumHistoryVisit } from '~/types/history'
+import { useAppLocale } from '~/composables/useAppLocale'
 
 defineProps<{
   visit: ChromiumHistoryVisit | null
 }>()
 
 const open = defineModel<boolean>({ required: true })
+
+const { t } = useI18n()
+const { intlLocale } = useAppLocale()
 
 const copiedField = ref<string | null>(null)
 let copiedTimer: ReturnType<typeof setTimeout> | undefined
@@ -46,13 +51,13 @@ onUnmounted(() => {
     <v-card v-if="visit" class="detail-dialog">
       <v-card-title class="d-flex align-center">
         <v-icon icon="mdi-web" class="mr-2" />
-        <span class="text-truncate">履歴の詳細</span>
+        <span class="text-truncate">{{ t('components.dialog.title') }}</span>
         <v-spacer />
         <v-btn
           icon="mdi-close"
           variant="text"
           size="small"
-          aria-label="閉じる"
+          :aria-label="t('common.close')"
           data-testid="detail-close-button"
           @click="open = false"
         />
@@ -60,7 +65,7 @@ onUnmounted(() => {
       <v-divider />
       <v-card-text>
         <v-list density="compact">
-          <v-list-item title="タイトル">
+          <v-list-item :title="t('components.dialog.fieldTitle')">
             <template #subtitle>
               <span class="detail-dialog__subtitle">{{ visit.title }}</span>
             </template>
@@ -69,14 +74,14 @@ onUnmounted(() => {
                 :icon="copiedField === 'title' ? 'mdi-check' : 'mdi-content-copy'"
                 variant="text"
                 size="small"
-                title="コピー"
-                aria-label="コピー"
+                :title="t('common.copy')"
+                :aria-label="t('common.copy')"
                 data-testid="copy-title-button"
                 @click="copyToClipboard(visit.title, 'title')"
               />
             </template>
           </v-list-item>
-          <v-list-item title="URL">
+          <v-list-item :title="t('components.dialog.fieldUrl')">
             <template #subtitle>
               <a
                 v-if="isSafeUrl(visit.url)"
@@ -97,52 +102,70 @@ onUnmounted(() => {
                 :icon="copiedField === 'url' ? 'mdi-check' : 'mdi-content-copy'"
                 variant="text"
                 size="small"
-                title="コピー"
-                aria-label="コピー"
+                :title="t('common.copy')"
+                :aria-label="t('common.copy')"
                 data-testid="copy-url-button"
                 @click="copyToClipboard(visit.url, 'url')"
               />
             </template>
           </v-list-item>
-          <v-list-item title="ドメイン" :subtitle="visit.domain" />
-          <v-list-item title="訪問日時" :subtitle="formatDateTime(visit.visitTime)" />
+          <v-list-item :title="t('components.dialog.fieldDomain')" :subtitle="visit.domain" />
           <v-list-item
-            title="内部タイムスタンプ (WebKitエポック)"
-            :subtitle="`${visit.visitTimeRaw} マイクロ秒（1601-01-01 UTCから） / ISO: ${visit.visitTime.toISOString()}`"
+            :title="t('components.dialog.fieldVisitTime')"
+            :subtitle="formatDateTime(visit.visitTime, intlLocale)"
           />
-          <v-list-item title="このURLの総訪問回数" :subtitle="visit.visitCount.toLocaleString()" />
           <v-list-item
-            title="このURLの直接入力回数 (typed_count)"
-            :subtitle="visit.typedCount.toLocaleString()"
+            :title="t('components.dialog.chromium.fieldInternalTimestamp')"
+            :subtitle="
+              t('components.dialog.chromium.internalTimestampValue', {
+                microseconds: visit.visitTimeRaw,
+                iso: visit.visitTime.toISOString()
+              })
+            "
           />
-          <v-list-item title="種別 (transition)">
+          <v-list-item
+            :title="t('components.dialog.fieldVisitCount')"
+            :subtitle="formatNumber(visit.visitCount, intlLocale)"
+          />
+          <v-list-item
+            :title="t('components.dialog.chromium.fieldTypedCount')"
+            :subtitle="formatNumber(visit.typedCount, intlLocale)"
+          />
+          <v-list-item :title="t('components.dialog.chromium.fieldTransition')">
             <template #subtitle>
-              {{ formatChromiumTransitionType(visit.transition) }} ({{ visit.transition }})
+              {{ formatChromiumTransitionType(visit.transition, t) }} ({{ visit.transition }})
             </template>
           </v-list-item>
-          <v-list-item title="非表示 (hidden)">
+          <v-list-item :title="t('components.dialog.chromium.fieldHidden')">
             <template #subtitle>
               <v-chip size="small" :color="visit.hidden ? 'secondary' : 'default'" variant="flat">
-                {{ visit.hidden ? 'はい' : 'いいえ' }}
+                {{ visit.hidden ? t('common.yes') : t('common.no') }}
               </v-chip>
             </template>
           </v-list-item>
-          <v-list-item title="URLを直接入力 (typed)">
+          <v-list-item :title="t('components.dialog.chromium.fieldTyped')">
             <template #subtitle>
               <v-chip size="small" :color="visit.typed ? 'success' : 'default'" variant="flat">
-                {{ visit.typed ? 'はい' : 'いいえ' }}
+                {{ visit.typed ? t('common.yes') : t('common.no') }}
               </v-chip>
             </template>
           </v-list-item>
           <v-list-item
-            title="リンク元 visit ID (from_visit)"
-            :subtitle="visit.fromVisit !== null ? String(visit.fromVisit) : '(なし)'"
+            :title="t('components.dialog.chromium.fieldFromVisit')"
+            :subtitle="visit.fromVisit !== null ? String(visit.fromVisit) : t('common.none')"
           />
           <v-list-item
-            title="滞在時間 (visit_duration)"
-            :subtitle="`${visit.visitDuration.toLocaleString()} マイクロ秒`"
+            :title="t('components.dialog.chromium.fieldVisitDuration')"
+            :subtitle="
+              t('components.dialog.chromium.visitDurationValue', {
+                value: formatNumber(visit.visitDuration, intlLocale)
+              })
+            "
           />
-          <v-list-item title="visit ID / URL ID" :subtitle="`${visit.visitId} / ${visit.urlId}`" />
+          <v-list-item
+            :title="t('components.dialog.chromium.fieldVisitUrlId')"
+            :subtitle="`${visit.visitId} / ${visit.urlId}`"
+          />
         </v-list>
       </v-card-text>
     </v-card>
