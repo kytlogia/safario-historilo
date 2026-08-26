@@ -10,7 +10,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <v-card class="flex-grow-1">
+  <v-card class="h-100">
     <v-card-title class="text-subtitle-1">{{ t('components.topDomains.title') }}</v-card-title>
     <v-card-text>
       <div v-for="d in topDomains" :key="d.domain" class="domain-row">
@@ -33,6 +33,14 @@ const { t } = useI18n()
 </template>
 
 <style scoped lang="scss">
+// index.vue で親のv-colがflex縦積みになった場合に、このカードを
+// flex-grow-1で残り高さまで縮められるようにする。v-cardは
+// overflow:hiddenなので中身は溢れず、他ページ(flexコンテナでない
+// v-col)では単に無害(#126)。
+.v-card-text {
+  min-height: 0;
+}
+
 .domain-row {
   margin-bottom: 12px; // mb-3
 

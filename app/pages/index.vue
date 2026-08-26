@@ -218,7 +218,7 @@ function resetAll() {
       </template>
     </v-app-bar>
 
-    <v-main scrollable>
+    <v-main scrollable class="history-main">
       <v-container fluid class="py-6 d-flex flex-column flex-grow-1 min-h-0">
         <UploadPanel
           v-if="!hasData"
@@ -266,8 +266,18 @@ function resetAll() {
             </v-col>
 
             <v-col cols="12" md="3" class="d-flex flex-column min-h-0">
-              <TopDomains :top-domains="topDomains" />
-              <VisitTrends :weekday-trend="weekdayTrend" :hourly-trend="hourlyTrend" class="mt-4" />
+              <TopDomains :top-domains="topDomains" class="flex-grow-1 min-h-0" />
+              <!-- VisitTrends自身の h-100 (他ページでも使う共有コンポーネントの元々の指定) は
+                   このv-colがflex縦積みコンテナになったことで「高さ100%」をflex-basisとして
+                   要求してしまい、TopDomainsのflex-grow-1と場所を取り合って両方とも崩れる。
+                   インラインstyleはクラスより優先されるので、ここだけ本来のコンテンツ高さに
+                   固定して押し合いを止める(#126)。 -->
+              <VisitTrends
+                :weekday-trend="weekdayTrend"
+                :hourly-trend="hourlyTrend"
+                class="mt-4"
+                style="flex: 0 0 auto; height: auto"
+              />
             </v-col>
           </v-row>
         </template>
@@ -288,8 +298,12 @@ function resetAll() {
 
 /* v-main の scrollable 化で生成される内部スクローラーは display:flex では
    ないため、直下の v-container が flex-grow で高さいっぱいに広がれない。
-   Vuetify が生成する要素のため :deep() で直接調整する(#126)。 */
-:deep(.v-main__scroller) {
+   Vuetify が生成する要素のため :deep() で直接調整する必要があるが、
+   `.v-main__scroller` はVuetify全体で使われる汎用クラスなので、素の
+   :deep(.v-main__scroller) だとスコープ属性の付け先がなく実質グローバル
+   ルールになってしまう。v-main に付けたこのページ専用クラスを起点にして
+   影響範囲をこのページ内に閉じる(#126)。 */
+.history-main :deep(.v-main__scroller) {
   display: flex;
   flex-direction: column;
   min-height: 0;
