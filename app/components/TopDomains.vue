@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { formatNumber } from '~/utils/format'
+import { useAppLocale } from '~/composables/useAppLocale'
 import TruncatedCell from './TruncatedCell.vue'
 
 defineProps<{
@@ -7,6 +9,7 @@ defineProps<{
 }>()
 
 const { t } = useI18n()
+const { intlLocale } = useAppLocale()
 </script>
 
 <template>
@@ -18,7 +21,7 @@ const { t } = useI18n()
           <div class="domain-row__name">
             <TruncatedCell :text="d.domain" />
           </div>
-          <span class="text-medium-emphasis">{{ d.count }}</span>
+          <span class="text-medium-emphasis">{{ formatNumber(d.count, intlLocale) }}</span>
         </div>
         <v-progress-linear :model-value="d.ratio" color="primary" height="6" rounded />
       </div>
