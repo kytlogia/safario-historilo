@@ -1,8 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import FilterBar from '~/components/FilterBar.vue'
 import type { HistoryVisit } from '~/types/history'
 import { exportVisitsAsCsv, exportVisitsAsJson } from '~/utils/export'
-import { useAppSnackbar } from '~/composables/useAppSnackbar'
 import { mountWithVuetify } from '../../support/mountWithVuetify'
 
 vi.mock('~/utils/export', () => ({
@@ -54,14 +53,6 @@ function mountFilterBar(overrides: Partial<Record<string, unknown>> = {}) {
 }
 
 describe('FilterBar', () => {
-  afterEach(() => {
-    // useAppSnackbar's visible/message refs are module-level singletons
-    // (shared with the real app.vue's snackbar), so reset them between
-    // tests to avoid the failure-path test below leaking into others.
-    const { visible } = useAppSnackbar()
-    visible.value = false
-  })
-
   it('emits update:search as the search field is typed into', async () => {
     const wrapper = mountFilterBar()
 
@@ -100,20 +91,6 @@ describe('FilterBar', () => {
 
     expect(exportVisitsAsJson).toHaveBeenCalledWith(filteredVisits)
     expect(exportVisitsAsCsv).toHaveBeenCalledWith(filteredVisits)
-  })
-
-  it('shows an error snackbar instead of failing silently when an export throws (#113)', async () => {
-    vi.mocked(exportVisitsAsJson).mockImplementationOnce(() => {
-      throw new Error('Blob construction failed')
-    })
-    vi.spyOn(console, 'error').mockImplementation(() => {})
-    const wrapper = mountFilterBar()
-
-    await wrapper.find('[data-testid="export-json-button"]').trigger('click')
-
-    const { visible, message } = useAppSnackbar()
-    expect(visible.value).toBe(true)
-    expect(message.value).toBe('エクスポートに失敗しました。もう一度お試しください。')
   })
 
   it('clears domainFilter via the clear button once a domain is selected', async () => {

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   ChromiumHistoryVisit,
@@ -16,6 +17,7 @@ import {
   exportVisitsAsCsv,
   exportVisitsAsJson
 } from '~/utils/export'
+import { useAppSnackbar } from '~/composables/useAppSnackbar'
 
 function makeVisit(overrides: Partial<HistoryVisit> = {}): HistoryVisit {
   return {
@@ -150,6 +152,12 @@ describe('export.ts', () => {
     vi.restoreAllMocks()
     URL.createObjectURL = originalCreateObjectURL
     URL.revokeObjectURL = originalRevokeObjectURL
+    // useAppSnackbar's visible/messageKey refs are module-level singletons
+    // (shared with the real app.vue snackbar) — reset both between tests so
+    // the error-handling tests below don't leak into unrelated ones.
+    const { visible, messageKey } = useAppSnackbar()
+    visible.value = false
+    messageKey.value = ''
   })
 
   describe('exportVisitsAsJson', () => {
@@ -408,6 +416,36 @@ describe('export.ts', () => {
       const text = await blobText(blob)
       const cells = text.slice(1).split('\n')[1].split(',')
       expect(cells[0]).toBe('firefox')
+    })
+  })
+
+  // #113: downloadBlob() previously had no try/catch at all, so a thrown
+  // error (e.g. Blob/createObjectURL blocked by a browser or extension)
+  // made the export button look like it silently did nothing.
+  describe('error handling (#113)', () => {
+    it('shows an error snackbar instead of throwing when Blob/createObjectURL fails', async () => {
+      createObjectURL.mockImplementationOnce(() => {
+        throw new Error('Blob URLs are blocked')
+      })
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      expect(() => exportVisitsAsJson([makeVisit()])).not.toThrow()
+      await nextTick()
+
+      const { visible, messageKey } = useAppSnackbar()
+      expect(visible.value).toBe(true)
+      expect(messageKey.value).toBe('error.exportFailed')
+    })
+
+    it('clears a previously shown error snackbar once a later export succeeds', async () => {
+      const { visible, showError } = useAppSnackbar()
+      showError('error.exportFailed')
+      await nextTick()
+      expect(visible.value).toBe(true)
+
+      exportVisitsAsJson([makeVisit()])
+
+      expect(visible.value).toBe(false)
     })
   })
 })

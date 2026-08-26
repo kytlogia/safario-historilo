@@ -4,17 +4,36 @@ import type {
   HistoryVisit,
   UnifiedHistoryVisit
 } from '~/types/history'
+import { useAppSnackbar } from '~/composables/useAppSnackbar'
 
+// Every export* function below funnels through here, so guarding it once is
+// enough for all of them (mirrors useAppTheme.ts/useAppLocale.ts, which
+// guard localStorage access inside the function that actually touches it
+// rather than at each call site) — a future caller of exportVisitsAsJson()
+// etc. gets this for free instead of having to remember to wrap its own
+// call (#113: new Blob/createObjectURL/DOM manipulation had no error
+// handling at all, so a thrown error — memory exhaustion on a large export,
+// or a browser/extension blocking Blob URLs — made the export button look
+// like it silently did nothing).
 function downloadBlob(content: BlobPart, mimeType: string, fileName: string) {
-  const blob = new Blob([content], { type: mimeType })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = fileName
-  document.body.appendChild(anchor)
-  anchor.click()
-  anchor.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  try {
+    const blob = new Blob([content], { type: mimeType })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = fileName
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    // Clears any still-visible error from a previous failed export so a
+    // successful retry doesn't leave a stale "エクスポートに失敗しました"
+    // toast on screen for the rest of its auto-hide timeout.
+    useAppSnackbar().hide()
+  } catch (error) {
+    console.error(error)
+    useAppSnackbar().showError('error.exportFailed')
+  }
 }
 
 // Shared by every *AsCsv exporter below (Safari/Firefox/Chromium): quotes a

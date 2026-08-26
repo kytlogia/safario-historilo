@@ -3,7 +3,7 @@ import { exportChromiumVisitsAsCsv, exportChromiumVisitsAsJson } from '~/utils/e
 import type { ChromiumHistoryVisit } from '~/types/history'
 import { useFilterBarFormat } from '~/composables/useFilterBarFormat'
 
-const { t, dateInputFormat, visibleCount, exportSafely } = useFilterBarFormat()
+const { t, dateInputFormat, visibleCount } = useFilterBarFormat()
 
 const props = defineProps<{
   brand: 'chrome' | 'edge'
@@ -28,13 +28,11 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
 }
 
 function exportJson() {
-  exportSafely(() =>
-    exportChromiumVisitsAsJson(props.filteredVisits, `${props.brand}-history.json`)
-  )
+  exportChromiumVisitsAsJson(props.filteredVisits, `${props.brand}-history.json`)
 }
 
 function exportCsv() {
-  exportSafely(() => exportChromiumVisitsAsCsv(props.filteredVisits, `${props.brand}-history.csv`))
+  exportChromiumVisitsAsCsv(props.filteredVisits, `${props.brand}-history.csv`)
 }
 </script>
 

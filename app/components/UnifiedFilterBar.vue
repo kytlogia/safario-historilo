@@ -4,7 +4,7 @@ import type { UnifiedHistorySource, UnifiedHistoryVisit } from '~/types/history'
 import { unifiedSourceMeta, UNIFIED_HISTORY_SOURCES } from '~/utils/unifiedHistory'
 import { useFilterBarFormat } from '~/composables/useFilterBarFormat'
 
-const { t, dateInputFormat, visibleCount, exportSafely } = useFilterBarFormat()
+const { t, dateInputFormat, visibleCount } = useFilterBarFormat()
 
 defineProps<{
   domainOptions: { title: string; value: string }[]
@@ -109,7 +109,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           variant="text"
           size="small"
           prepend-icon="mdi-code-json"
-          @click="exportSafely(() => exportUnifiedVisitsAsJson(filteredVisits))"
+          @click="exportUnifiedVisitsAsJson(filteredVisits)"
         >
           {{ t('components.filterBar.exportJson') }}
         </v-btn>
@@ -118,7 +118,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           variant="text"
           size="small"
           prepend-icon="mdi-file-delimited-outline"
-          @click="exportSafely(() => exportUnifiedVisitsAsCsv(filteredVisits))"
+          @click="exportUnifiedVisitsAsCsv(filteredVisits)"
         >
           {{ t('components.filterBar.exportCsv') }}
         </v-btn>

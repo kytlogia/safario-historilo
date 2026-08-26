@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAppSnackbar } from '~/composables/useAppSnackbar'
 
 useAppTheme().initTheme()
 
-const { visible: snackbarVisible, message: snackbarMessage } = useAppSnackbar()
+const { t } = useI18n()
+const { visible: snackbarVisible, messageKey: snackbarMessageKey } = useAppSnackbar()
 
 // Gates <NuxtPage> until the locale is actually settled: initLocale() is
 // synchronous for the common case (no stored preference, or it already
@@ -30,7 +32,7 @@ void useAppLocale()
       color="error"
       location="bottom"
     >
-      {{ snackbarMessage }}
+      {{ snackbarMessageKey ? t(snackbarMessageKey) : '' }}
     </v-snackbar>
   </v-app>
 </template>
