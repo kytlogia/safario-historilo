@@ -7,6 +7,7 @@ import {
   SAMPLE_PLACES_DATA,
   createFirefoxHistoryDatabase
 } from '../../../fixtures/build-firefox-history-db'
+import { corruptDataPages } from '../../../fixtures/corrupt-sqlite-db'
 
 // This test environment has no `Worker` global, so parseFirefoxHistoryFile
 // runs parseFirefoxHistoryBuffer() directly on the calling thread instead of
@@ -165,13 +166,12 @@ describe('parseFirefoxHistoryFile', () => {
     db.close()
 
     // Simulate an openable-but-internally-corrupt file (bad pages, corrupt
-    // index, etc.) rather than a missing/renamed table — see the equivalent
-    // comment in useSafariHistoryParser.test.ts for why scribbling over page 2
-    // (leaving the page-1 schema alone) reproduces this without touching
-    // assertPlacesSchema()'s own metadata-only checks.
-    const pageSize = 4096
-    const corrupted = new Uint8Array(bytes)
-    for (let i = pageSize + 8; i < pageSize * 2; i++) corrupted[i] = 0xaa
+    // index, etc.) rather than a missing/renamed table — see
+    // corrupt-sqlite-db.ts for why this is safe regardless of the DB's actual
+    // page size/page count: assertPlacesSchema()'s own checks only read
+    // page 1's metadata, so they still pass; only the JOIN query that
+    // actually walks the corrupted table's b-tree fails.
+    const corrupted = corruptDataPages(bytes)
     const file = new File([corrupted], 'corrupt-content.sqlite')
 
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})

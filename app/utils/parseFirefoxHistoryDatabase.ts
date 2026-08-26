@@ -1,7 +1,14 @@
 import type { Database } from 'sql.js'
 import type { FirefoxHistoryVisit, ParsedFirefoxHistory } from '~/types/history'
 import { PARSER_MESSAGES, WORKER_CRASH_MESSAGES } from './workerLocaleMessages'
-import { extractDomain, getSqlJs, getTableColumns, LocalizedParseError, toBool } from './sqlJs'
+import {
+  extractDomain,
+  getSqlJs,
+  getTableColumns,
+  LocalizedParseError,
+  runParse,
+  toBool
+} from './sqlJs'
 
 // Firefox (Unix epoch) timestamps in moz_historyvisits.visit_date are
 // microseconds since 1970-01-01T00:00:00Z.
@@ -64,9 +71,10 @@ export async function parseFirefoxHistoryBuffer(
   }
 
   try {
-    assertPlacesSchema(db, locale)
+    return runParse(() => {
+      assertPlacesSchema(db, locale)
 
-    const result = db.exec(`
+      const result = db.exec(`
       SELECT
         hv.id            AS visit_id,
         p.id             AS place_id,
@@ -85,63 +93,56 @@ export async function parseFirefoxHistoryBuffer(
       ORDER BY hv.visit_date DESC
     `)
 
-    const rows = result[0]?.values ?? []
-    const visits: FirefoxHistoryVisit[] = rows.map((row) => {
-      const [
-        visitId,
-        placeId,
-        url,
-        title,
-        visitDateRaw,
-        visitCount,
-        visitType,
-        fromVisit,
-        session,
-        hidden,
-        frecency,
-        guid
-      ] = row
+      const rows = result[0]?.values ?? []
+      const visits: FirefoxHistoryVisit[] = rows.map((row) => {
+        const [
+          visitId,
+          placeId,
+          url,
+          title,
+          visitDateRaw,
+          visitCount,
+          visitType,
+          fromVisit,
+          session,
+          hidden,
+          frecency,
+          guid
+        ] = row
 
-      const rawMicroseconds = Number(visitDateRaw ?? 0)
-      const urlStr = String(url ?? '')
-      const fromVisitNum = Number(fromVisit ?? 0)
-      const visitTypeNum = Number(visitType ?? 0)
+        const rawMicroseconds = Number(visitDateRaw ?? 0)
+        const urlStr = String(url ?? '')
+        const fromVisitNum = Number(fromVisit ?? 0)
+        const visitTypeNum = Number(visitType ?? 0)
 
-      return {
-        visitId: Number(visitId),
-        placeId: Number(placeId),
-        url: urlStr,
-        domain: extractDomain(urlStr),
-        title: title ? String(title) : MESSAGES[locale].noTitle,
-        visitTime: new Date(rawMicroseconds / MICROSECONDS_PER_MILLISECOND),
-        visitTimeRaw: rawMicroseconds,
-        visitCount: Number(visitCount ?? 0),
-        visitType: visitTypeNum,
-        fromVisit: fromVisitNum === 0 ? null : fromVisitNum,
-        session: Number(session ?? 0),
-        hidden: toBool(hidden),
-        // moz_places.typed is a URL-level flag ("has this URL ever been typed"),
-        // not a per-visit one — using it directly here would misreport every
-        // visit to a URL (e.g. a plain link click) as "typed" the moment that
-        // URL was ever typed once, on any visit. visit_type === 2 is Firefox's
-        // own per-visit signal for "this specific visit was a typed
-        // navigation", which is what a detail view or export for one visit
-        // should reflect.
-        typed: visitTypeNum === 2,
-        frecency: Number(frecency ?? 0),
-        guid: guid ? String(guid) : ''
-      }
-    })
+        return {
+          visitId: Number(visitId),
+          placeId: Number(placeId),
+          url: urlStr,
+          domain: extractDomain(urlStr),
+          title: title ? String(title) : MESSAGES[locale].noTitle,
+          visitTime: new Date(rawMicroseconds / MICROSECONDS_PER_MILLISECOND),
+          visitTimeRaw: rawMicroseconds,
+          visitCount: Number(visitCount ?? 0),
+          visitType: visitTypeNum,
+          fromVisit: fromVisitNum === 0 ? null : fromVisitNum,
+          session: Number(session ?? 0),
+          hidden: toBool(hidden),
+          // moz_places.typed is a URL-level flag ("has this URL ever been typed"),
+          // not a per-visit one — using it directly here would misreport every
+          // visit to a URL (e.g. a plain link click) as "typed" the moment that
+          // URL was ever typed once, on any visit. visit_type === 2 is Firefox's
+          // own per-visit signal for "this specific visit was a typed
+          // navigation", which is what a detail view or export for one visit
+          // should reflect.
+          typed: visitTypeNum === 2,
+          frecency: Number(frecency ?? 0),
+          guid: guid ? String(guid) : ''
+        }
+      })
 
-    return { visits, fileName }
-  } catch (err) {
-    // See the equivalent comment in parseHistoryDatabase.ts — assertPlacesSchema()'s
-    // known failure branches already throw a friendly, localized
-    // LocalizedParseError; anything else here is a raw sql.js/SQLite internal
-    // error from an openable-but-internally-corrupt file.
-    if (err instanceof LocalizedParseError) throw err
-    console.error(err)
-    throw new Error(WORKER_CRASH_MESSAGES.firefox[locale], { cause: err })
+      return { visits, fileName }
+    }, WORKER_CRASH_MESSAGES.firefox[locale])
   } finally {
     db.close()
   }

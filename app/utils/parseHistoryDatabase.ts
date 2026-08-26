@@ -1,7 +1,7 @@
 import type { Database } from 'sql.js'
 import type { HistoryVisit, ParsedHistory } from '~/types/history'
 import { PARSER_MESSAGES, WORKER_CRASH_MESSAGES } from './workerLocaleMessages'
-import { getSqlJs, LocalizedParseError } from './sqlJs'
+import { getSqlJs, LocalizedParseError, runParse } from './sqlJs'
 
 // Safari (Core Data) timestamps are seconds since 2001-01-01T00:00:00Z.
 const CORE_DATA_EPOCH_OFFSET_SECONDS = 978307200
@@ -101,9 +101,10 @@ export async function parseHistoryBuffer(
   }
 
   try {
-    assertHistorySchema(db, locale)
+    return runParse(() => {
+      assertHistorySchema(db, locale)
 
-    const result = db.exec(`
+      const result = db.exec(`
       SELECT
         hv.id            AS visit_id,
         hi.id            AS item_id,
@@ -127,64 +128,56 @@ export async function parseHistoryBuffer(
       ORDER BY hv.visit_time DESC
     `)
 
-    const rows = result[0]?.values ?? []
-    const visits: HistoryVisit[] = rows.map((row) => {
-      const [
-        visitId,
-        itemId,
-        url,
-        title,
-        visitTimeRaw,
-        visitCount,
-        domainExpansion,
-        statusCode,
-        loadSuccessful,
-        httpNonGet,
-        synthesized,
-        redirectSource,
-        redirectDestination,
-        origin,
-        generation,
-        attributes,
-        score
-      ] = row
+      const rows = result[0]?.values ?? []
+      const visits: HistoryVisit[] = rows.map((row) => {
+        const [
+          visitId,
+          itemId,
+          url,
+          title,
+          visitTimeRaw,
+          visitCount,
+          domainExpansion,
+          statusCode,
+          loadSuccessful,
+          httpNonGet,
+          synthesized,
+          redirectSource,
+          redirectDestination,
+          origin,
+          generation,
+          attributes,
+          score
+        ] = row
 
-      const rawSeconds = Number(visitTimeRaw ?? 0)
-      const urlStr = String(url ?? '')
+        const rawSeconds = Number(visitTimeRaw ?? 0)
+        const urlStr = String(url ?? '')
 
-      return {
-        visitId: Number(visitId),
-        itemId: Number(itemId),
-        url: urlStr,
-        domain: extractDomain(urlStr),
-        title: title ? String(title) : MESSAGES[locale].noTitle,
-        visitTime: new Date((rawSeconds + CORE_DATA_EPOCH_OFFSET_SECONDS) * 1000),
-        visitTimeRaw: rawSeconds,
-        visitCount: Number(visitCount ?? 0),
-        domainExpansion: domainExpansion ? String(domainExpansion) : null,
-        statusCode: Number(statusCode ?? 0),
-        loadSuccessful: toBool(loadSuccessful),
-        httpNonGet: toBool(httpNonGet),
-        synthesized: toBool(synthesized),
-        redirectSource: redirectSource === null ? null : Number(redirectSource),
-        redirectDestination: redirectDestination === null ? null : Number(redirectDestination),
-        origin: Number(origin ?? 0),
-        generation: Number(generation ?? 0),
-        attributes: Number(attributes ?? 0),
-        score: Number(score ?? 0)
-      }
-    })
+        return {
+          visitId: Number(visitId),
+          itemId: Number(itemId),
+          url: urlStr,
+          domain: extractDomain(urlStr),
+          title: title ? String(title) : MESSAGES[locale].noTitle,
+          visitTime: new Date((rawSeconds + CORE_DATA_EPOCH_OFFSET_SECONDS) * 1000),
+          visitTimeRaw: rawSeconds,
+          visitCount: Number(visitCount ?? 0),
+          domainExpansion: domainExpansion ? String(domainExpansion) : null,
+          statusCode: Number(statusCode ?? 0),
+          loadSuccessful: toBool(loadSuccessful),
+          httpNonGet: toBool(httpNonGet),
+          synthesized: toBool(synthesized),
+          redirectSource: redirectSource === null ? null : Number(redirectSource),
+          redirectDestination: redirectDestination === null ? null : Number(redirectDestination),
+          origin: Number(origin ?? 0),
+          generation: Number(generation ?? 0),
+          attributes: Number(attributes ?? 0),
+          score: Number(score ?? 0)
+        }
+      })
 
-    return { visits, fileName }
-  } catch (err) {
-    // assertHistorySchema()'s own known failure branches already throw a
-    // friendly, localized LocalizedParseError — safe to surface as-is.
-    // Anything else here is a raw sql.js/SQLite internal error from an
-    // openable-but-internally-corrupt file (bad pages, a corrupt index,
-    // etc.), which must not reach the UI as unlocalized English text.
-    if (err instanceof LocalizedParseError) throw err
-    console.error(err)
-    throw new Error(WORKER_CRASH_MESSAGES.safari[locale], { cause: err })
+      return { visits, fileName }
+    }, WORKER_CRASH_MESSAGES.safari[locale])
   } finally {
     db.close()
   }

@@ -71,6 +71,27 @@ export function getTableColumns(db: Database, table: string): Set<string> {
 // failure branches) — safe to surface to the user as-is. Anything else thrown
 // while querying an openable-but-internally-corrupt database (bad pages, a
 // corrupt index, etc.) is a raw sql.js/SQLite internal error and must not
-// reach the UI unwrapped; see parseHistoryDatabase.ts and its Firefox/Chromium
-// counterparts for where this distinction is used.
+// reach the UI unwrapped.
 export class LocalizedParseError extends Error {}
+
+// Shared by parseHistoryDatabase.ts (Safari), parseFirefoxHistoryDatabase.ts
+// (Firefox), and parseChromiumHistoryDatabase.ts (Chrome/Edge): runs the
+// schema assertion + row-mapping query for a single parse. A LocalizedParseError
+// (assertXSchema()'s own known failure branches) passes straight through, since
+// its message is already safe to show the user as-is. Anything else is an
+// unexpected sql.js/SQLite internal error — e.g. from an openable-but-
+// internally-corrupt file (bad pages, a corrupt index, etc.) — which must not
+// reach the UI as raw, unlocalized text: it's logged for developers via
+// console.error and rewrapped as `crashMessage` (each caller's
+// WORKER_CRASH_MESSAGES[browser][locale]) instead. Centralized here, rather
+// than duplicated per parser, so this "don't leak raw errors" invariant can't
+// drift or get missed if a caller forgets to copy it.
+export function runParse<T>(fn: () => T, crashMessage: string): T {
+  try {
+    return fn()
+  } catch (err) {
+    if (err instanceof LocalizedParseError) throw err
+    console.error(err)
+    throw new Error(crashMessage, { cause: err })
+  }
+}

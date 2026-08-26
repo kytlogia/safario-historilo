@@ -11,6 +11,7 @@ import {
   SAMPLE_HISTORY_DATA,
   createHistoryDatabase
 } from '../../../fixtures/build-history-db'
+import { corruptDataPages } from '../../../fixtures/corrupt-sqlite-db'
 
 // parseHistoryDatabase's getSqlJs() detects the Node test environment (no
 // `window`) and points sql.js at the real wasm binary in node_modules on its own,
@@ -152,16 +153,14 @@ describe('parseSafariHistoryFile', () => {
     db.close()
 
     // Simulate an openable-but-internally-corrupt file (bad pages, corrupt
-    // index, etc.) rather than a missing/renamed table: scribble over most of
-    // a data page (skipping its 8-byte page header) past the schema page
-    // (page 1, at the default 4096-byte page size). assertHistorySchema()'s
-    // own checks only read sqlite_master/PRAGMA table_info — both stored on
-    // page 1 — so they still pass; only the JOIN query that actually walks
-    // the corrupted table's b-tree fails, with a raw sql.js/SQLite error
-    // ("database disk image is malformed") that must not reach the UI as-is.
-    const pageSize = 4096
-    const corrupted = new Uint8Array(bytes)
-    for (let i = pageSize + 8; i < pageSize * 2; i++) corrupted[i] = 0xaa
+    // index, etc.) rather than a missing/renamed table — see
+    // corrupt-sqlite-db.ts for why this is safe regardless of the DB's actual
+    // page size/page count: assertHistorySchema()'s own checks only read
+    // sqlite_master/PRAGMA table_info (page 1), so they still pass; only the
+    // JOIN query that actually walks the corrupted table's b-tree fails, with
+    // a raw sql.js/SQLite error ("database disk image is malformed") that
+    // must not reach the UI as-is.
+    const corrupted = corruptDataPages(bytes)
     const file = new File([corrupted], 'corrupt-content.db')
 
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
