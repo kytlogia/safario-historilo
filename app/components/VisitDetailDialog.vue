@@ -25,6 +25,16 @@ function resetCopiedState() {
   copyFailedField.value = null
 }
 
+function copyIcon(field: string) {
+  if (copiedField.value === field) return 'mdi-check'
+  if (copyFailedField.value === field) return 'mdi-alert'
+  return 'mdi-content-copy'
+}
+
+function copyColor(field: string) {
+  return copyFailedField.value === field ? 'error' : undefined
+}
+
 async function copyToClipboard(text: string, field: string) {
   clearTimeout(copiedTimer)
   copiedField.value = null
@@ -37,7 +47,6 @@ async function copyToClipboard(text: string, field: string) {
     }, 1500)
   } catch {
     // クリップボードAPIが使用不可（権限拒否など）の場合はアイコンを一時的にエラー表示にしてユーザーに知らせる
-    copiedField.value = null
     copyFailedField.value = field
     copiedTimer = setTimeout(() => {
       copyFailedField.value = null
@@ -79,14 +88,8 @@ onUnmounted(() => {
             </template>
             <template #append>
               <v-btn
-                :icon="
-                  copiedField === 'title'
-                    ? 'mdi-check'
-                    : copyFailedField === 'title'
-                      ? 'mdi-alert'
-                      : 'mdi-content-copy'
-                "
-                :color="copyFailedField === 'title' ? 'error' : undefined"
+                :icon="copyIcon('title')"
+                :color="copyColor('title')"
                 variant="text"
                 size="small"
                 :title="t('common.copy')"
@@ -114,14 +117,8 @@ onUnmounted(() => {
             </template>
             <template #append>
               <v-btn
-                :icon="
-                  copiedField === 'url'
-                    ? 'mdi-check'
-                    : copyFailedField === 'url'
-                      ? 'mdi-alert'
-                      : 'mdi-content-copy'
-                "
-                :color="copyFailedField === 'url' ? 'error' : undefined"
+                :icon="copyIcon('url')"
+                :color="copyColor('url')"
                 variant="text"
                 size="small"
                 :title="t('common.copy')"

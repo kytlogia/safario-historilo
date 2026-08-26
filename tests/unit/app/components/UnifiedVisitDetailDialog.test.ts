@@ -1,5 +1,5 @@
 import { DOMWrapper } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UnifiedVisitDetailDialog from '~/components/UnifiedVisitDetailDialog.vue'
 import type { UnifiedHistoryVisit } from '~/types/history'
 import { formatDateTime } from '~/utils/format'
@@ -81,5 +81,88 @@ describe('UnifiedVisitDetailDialog', () => {
     await body.find('[data-testid="unified-detail-close-button"]').trigger('click')
 
     expect(wrapper.emitted('update:modelValue')).toEqual([[false]])
+  })
+
+  describe('copy to clipboard', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+      Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } })
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+      vi.restoreAllMocks()
+    })
+
+    it('copies the title and briefly swaps the copy icon for a check icon', async () => {
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="unified-copy-title-button"]').trigger('click')
+      await vi.waitFor(() =>
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Example Domain')
+      )
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="unified-copy-title-button"] .mdi-check').exists()).toBe(true)
+
+      vi.advanceTimersByTime(1500)
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="unified-copy-title-button"] .mdi-check').exists()).toBe(false)
+    })
+
+    it('briefly shows an error icon when the clipboard write fails', async () => {
+      Object.assign(navigator, {
+        clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) }
+      })
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="unified-copy-title-button"]').trigger('click')
+      await vi.waitFor(() =>
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Example Domain')
+      )
+      await wrapper.vm.$nextTick()
+
+      const button = body.find('[data-testid="unified-copy-title-button"]')
+      expect(button.find('.mdi-alert').exists()).toBe(true)
+      expect(button.find('.mdi-check').exists()).toBe(false)
+
+      vi.advanceTimersByTime(1500)
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="unified-copy-title-button"] .mdi-alert').exists()).toBe(false)
+    })
+
+    it('clears a stale success icon as soon as a new copy attempt starts', async () => {
+      const writeText = vi.fn().mockResolvedValueOnce(undefined)
+      Object.assign(navigator, { clipboard: { writeText } })
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="unified-copy-title-button"]').trigger('click')
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+      await wrapper.vm.$nextTick()
+      expect(body.find('[data-testid="unified-copy-title-button"] .mdi-check').exists()).toBe(true)
+
+      // Start a second attempt well before the first one's 1.5s timer would
+      // fire. Cancelling that timer must not leave the stale check icon
+      // visible until a new result (or timer) arrives.
+      let resolveSecond: () => void = () => {}
+      writeText.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveSecond = resolve
+          })
+      )
+      await body.find('[data-testid="unified-copy-title-button"]').trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="unified-copy-title-button"] .mdi-check').exists()).toBe(false)
+      expect(
+        body.find('[data-testid="unified-copy-title-button"] .mdi-content-copy').exists()
+      ).toBe(true)
+
+      resolveSecond()
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(2))
+    })
   })
 })

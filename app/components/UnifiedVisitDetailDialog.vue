@@ -16,24 +16,42 @@ const { t } = useI18n()
 const { intlLocale } = useAppLocale()
 
 const copiedField = ref<string | null>(null)
+const copyFailedField = ref<string | null>(null)
 let copiedTimer: ReturnType<typeof setTimeout> | undefined
 
 function resetCopiedState() {
   clearTimeout(copiedTimer)
   copiedTimer = undefined
   copiedField.value = null
+  copyFailedField.value = null
+}
+
+function copyIcon(field: string) {
+  if (copiedField.value === field) return 'mdi-check'
+  if (copyFailedField.value === field) return 'mdi-alert'
+  return 'mdi-content-copy'
+}
+
+function copyColor(field: string) {
+  return copyFailedField.value === field ? 'error' : undefined
 }
 
 async function copyToClipboard(text: string, field: string) {
+  clearTimeout(copiedTimer)
+  copiedField.value = null
+  copyFailedField.value = null
   try {
     await navigator.clipboard.writeText(text)
     copiedField.value = field
-    clearTimeout(copiedTimer)
     copiedTimer = setTimeout(() => {
       copiedField.value = null
     }, 1500)
   } catch {
-    // クリップボードAPIが使用不可(権限拒否など)の場合は何もしない
+    // クリップボードAPIが使用不可（権限拒否など）の場合はアイコンを一時的にエラー表示にしてユーザーに知らせる
+    copyFailedField.value = field
+    copiedTimer = setTimeout(() => {
+      copyFailedField.value = null
+    }, 1500)
   }
 }
 
@@ -85,7 +103,8 @@ onUnmounted(() => {
             </template>
             <template #append>
               <v-btn
-                :icon="copiedField === 'title' ? 'mdi-check' : 'mdi-content-copy'"
+                :icon="copyIcon('title')"
+                :color="copyColor('title')"
                 variant="text"
                 size="small"
                 :title="t('common.copy')"
@@ -113,7 +132,8 @@ onUnmounted(() => {
             </template>
             <template #append>
               <v-btn
-                :icon="copiedField === 'url' ? 'mdi-check' : 'mdi-content-copy'"
+                :icon="copyIcon('url')"
+                :color="copyColor('url')"
                 variant="text"
                 size="small"
                 :title="t('common.copy')"
