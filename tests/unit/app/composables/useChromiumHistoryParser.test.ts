@@ -2,12 +2,13 @@
 // Node environment (import.meta.url / fileURLToPath resolution for the wasm
 // loader in app/utils/sqlJs.ts).
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   SAMPLE_CHROMIUM_DATA,
   SAMPLE_WEBKIT_BASE_TIME,
   createChromiumHistoryDatabase
 } from '../../../fixtures/build-chromium-history-db'
+import { corruptDataPages } from '../../../fixtures/corrupt-sqlite-db'
 
 // This test environment has no `Worker` global, so parseChromiumHistoryFile
 // runs parseChromiumHistoryBuffer() directly on the calling thread instead of
@@ -179,6 +180,35 @@ describe('parseChromiumHistoryFile', () => {
     await expect(parseChromiumHistoryFile(file)).rejects.toThrow(
       /ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。/
     )
+  })
+
+  it('normalizes an unexpected sql.js error during query execution into a generic Japanese message (issue #111)', async () => {
+    const { parseChromiumHistoryFile } = await import('~/composables/useChromiumHistoryParser')
+    const db = await createChromiumHistoryDatabase({
+      urls: [{ id: 1, url: 'https://example.com/' }],
+      visits: [{ id: 1, urlId: 1, visitTime: 0 }]
+    })
+    const bytes = db.export()
+    db.close()
+
+    // Simulate an openable-but-internally-corrupt file (bad pages, corrupt
+    // index, etc.) rather than a missing/renamed table — see
+    // corrupt-sqlite-db.ts for why this is safe regardless of the DB's actual
+    // page size/page count: assertHistorySchema()'s own checks only read
+    // page 1's metadata, so they still pass; only the JOIN query that
+    // actually walks the corrupted table's b-tree fails.
+    const corrupted = corruptDataPages(bytes)
+    const file = new File([corrupted], 'corrupt-content')
+
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      await expect(parseChromiumHistoryFile(file)).rejects.toThrow(
+        /Historyの解析中にエラーが発生しました。/
+      )
+      expect(consoleErrorSpy).toHaveBeenCalled()
+    } finally {
+      consoleErrorSpy.mockRestore()
+    }
   })
 })
 

@@ -2,11 +2,12 @@
 // Node environment (import.meta.url / fileURLToPath resolution for the wasm
 // loader in app/utils/sqlJs.ts).
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   SAMPLE_PLACES_DATA,
   createFirefoxHistoryDatabase
 } from '../../../fixtures/build-firefox-history-db'
+import { corruptDataPages } from '../../../fixtures/corrupt-sqlite-db'
 
 // This test environment has no `Worker` global, so parseFirefoxHistoryFile
 // runs parseFirefoxHistoryBuffer() directly on the calling thread instead of
@@ -153,6 +154,35 @@ describe('parseFirefoxHistoryFile', () => {
     await expect(parseFirefoxHistoryFile(file)).rejects.toThrow(
       /ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。/
     )
+  })
+
+  it('normalizes an unexpected sql.js error during query execution into a generic Japanese message (issue #111)', async () => {
+    const { parseFirefoxHistoryFile } = await import('~/composables/useFirefoxHistoryParser')
+    const db = await createFirefoxHistoryDatabase({
+      places: [{ id: 1, url: 'https://example.com/' }],
+      visits: [{ id: 1, placeId: 1, visitDate: 0 }]
+    })
+    const bytes = db.export()
+    db.close()
+
+    // Simulate an openable-but-internally-corrupt file (bad pages, corrupt
+    // index, etc.) rather than a missing/renamed table — see
+    // corrupt-sqlite-db.ts for why this is safe regardless of the DB's actual
+    // page size/page count: assertPlacesSchema()'s own checks only read
+    // page 1's metadata, so they still pass; only the JOIN query that
+    // actually walks the corrupted table's b-tree fails.
+    const corrupted = corruptDataPages(bytes)
+    const file = new File([corrupted], 'corrupt-content.sqlite')
+
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      await expect(parseFirefoxHistoryFile(file)).rejects.toThrow(
+        /places\.sqliteの解析中にエラーが発生しました。/
+      )
+      expect(consoleErrorSpy).toHaveBeenCalled()
+    } finally {
+      consoleErrorSpy.mockRestore()
+    }
   })
 })
 

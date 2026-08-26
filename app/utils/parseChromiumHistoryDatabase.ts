@@ -1,8 +1,15 @@
 import type { Database } from 'sql.js'
 import type { ChromiumHistoryVisit, ParsedChromiumHistory } from '~/types/history'
-import { PARSER_MESSAGES } from './workerLocaleMessages'
+import { PARSER_MESSAGES, WORKER_CRASH_MESSAGES } from './workerLocaleMessages'
 import { coreTransitionType } from './chromiumVisitType'
-import { extractDomain, getSqlJs, getTableColumns, toBool } from './sqlJs'
+import {
+  extractDomain,
+  getSqlJs,
+  getTableColumns,
+  LocalizedParseError,
+  runParse,
+  toBool
+} from './sqlJs'
 
 // See the equivalent comment in parseHistoryDatabase.ts — this file runs
 // inside chromiumHistoryDatabase.worker.ts, so it can't use vue-i18n either.
@@ -42,18 +49,18 @@ function assertHistorySchema(db: Database, locale: AppLocale) {
       "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('urls', 'visits')"
     )
   } catch {
-    throw new Error(messages.openFailed)
+    throw new LocalizedParseError(messages.openFailed)
   }
   const found = new Set((tables[0]?.values ?? []).map((row) => String(row[0])))
   if (!found.has('urls') || !found.has('visits')) {
-    throw new Error(messages.wrongSchema)
+    throw new LocalizedParseError(messages.wrongSchema)
   }
 
   for (const [table, columns] of Object.entries(REQUIRED_COLUMNS)) {
     const existing = getTableColumns(db, table)
     const missing = columns.filter((column) => !existing.has(column))
     if (missing.length > 0) {
-      throw new Error(messages.missingColumns(table, missing.join(', ')))
+      throw new LocalizedParseError(messages.missingColumns(table, missing.join(', ')))
     }
   }
 }
@@ -79,9 +86,10 @@ export async function parseChromiumHistoryBuffer(
   }
 
   try {
-    assertHistorySchema(db, locale)
+    return runParse(() => {
+      assertHistorySchema(db, locale)
 
-    const result = db.exec(`
+      const result = db.exec(`
       SELECT
         v.id                          AS visit_id,
         u.id                          AS url_id,
@@ -99,79 +107,80 @@ export async function parseChromiumHistoryBuffer(
       ORDER BY v.visit_time DESC
     `)
 
-    // The urls/visits JOIN repeats each distinct URL once per visit to it
-    // (a typical History has several visits per URL), so extractDomain()
-    // (URL parsing + a try/catch) is cached per url_id instead of re-run for
-    // every row that shares the same URL.
-    const domainByUrlId = new Map<number, string>()
-    function domainForUrl(urlId: number, url: string): string {
-      let domain = domainByUrlId.get(urlId)
-      if (domain === undefined) {
-        domain = extractDomain(url)
-        domainByUrlId.set(urlId, domain)
+      // The urls/visits JOIN repeats each distinct URL once per visit to it
+      // (a typical History has several visits per URL), so extractDomain()
+      // (URL parsing + a try/catch) is cached per url_id instead of re-run for
+      // every row that shares the same URL.
+      const domainByUrlId = new Map<number, string>()
+      function domainForUrl(urlId: number, url: string): string {
+        let domain = domainByUrlId.get(urlId)
+        if (domain === undefined) {
+          domain = extractDomain(url)
+          domainByUrlId.set(urlId, domain)
+        }
+        return domain
       }
-      return domain
-    }
 
-    const rows = result[0]?.values ?? []
-    const visits: ChromiumHistoryVisit[] = rows.map((row) => {
-      const [
-        visitId,
-        urlId,
-        url,
-        title,
-        visitTimeRaw,
-        visitCount,
-        typedCount,
-        transition,
-        fromVisit,
-        visitDuration,
-        hidden
-      ] = row
+      const rows = result[0]?.values ?? []
+      const visits: ChromiumHistoryVisit[] = rows.map((row) => {
+        const [
+          visitId,
+          urlId,
+          url,
+          title,
+          visitTimeRaw,
+          visitCount,
+          typedCount,
+          transition,
+          fromVisit,
+          visitDuration,
+          hidden
+        ] = row
 
-      // visit_time comes through as an exact decimal string (see the CAST in
-      // the query above), so BigInt() parses it without ever routing the
-      // 64-bit value through a JS Number first.
-      const visitTimeRawStr = String(visitTimeRaw ?? '0')
-      const rawMicroseconds = BigInt(visitTimeRawStr)
-      const urlIdNum = Number(urlId)
-      const urlStr = String(url ?? '')
-      const fromVisitNum = Number(fromVisit ?? 0)
-      const transitionNum = Number(transition ?? 0)
+        // visit_time comes through as an exact decimal string (see the CAST in
+        // the query above), so BigInt() parses it without ever routing the
+        // 64-bit value through a JS Number first.
+        const visitTimeRawStr = String(visitTimeRaw ?? '0')
+        const rawMicroseconds = BigInt(visitTimeRawStr)
+        const urlIdNum = Number(urlId)
+        const urlStr = String(url ?? '')
+        const fromVisitNum = Number(fromVisit ?? 0)
+        const transitionNum = Number(transition ?? 0)
 
-      return {
-        visitId: Number(visitId),
-        urlId: urlIdNum,
-        url: urlStr,
-        domain: domainForUrl(urlIdNum, urlStr),
-        title: title ? String(title) : MESSAGES[locale].noTitle,
-        // The millisecond count Date() needs is always far below
-        // Number.MAX_SAFE_INTEGER even for the BigInt division result, so
-        // converting only at this last step loses no precision.
-        visitTime: new Date(
-          Number(
-            (rawMicroseconds - WEBKIT_EPOCH_OFFSET_MICROSECONDS) / MICROSECONDS_PER_MILLISECOND
-          )
-        ),
-        visitTimeRaw: visitTimeRawStr,
-        visitCount: Number(visitCount ?? 0),
-        typedCount: Number(typedCount ?? 0),
-        transition: transitionNum,
-        fromVisit: fromVisitNum === 0 ? null : fromVisitNum,
-        visitDuration: Number(visitDuration ?? 0),
-        hidden: toBool(hidden),
-        // urls.typed_count is a URL-level aggregate ("how many times has this
-        // URL ever been typed"), not a per-visit flag — using it directly
-        // here would misreport every visit to a URL as "typed" once that URL
-        // was ever typed on any visit. The transition's own core type is
-        // Chromium's per-visit signal for "this specific visit was a typed
-        // navigation" (see chromiumVisitType.ts), which is what a detail
-        // view or export for one visit should reflect.
-        typed: coreTransitionType(transitionNum) === CORE_TRANSITION_TYPED
-      }
-    })
+        return {
+          visitId: Number(visitId),
+          urlId: urlIdNum,
+          url: urlStr,
+          domain: domainForUrl(urlIdNum, urlStr),
+          title: title ? String(title) : MESSAGES[locale].noTitle,
+          // The millisecond count Date() needs is always far below
+          // Number.MAX_SAFE_INTEGER even for the BigInt division result, so
+          // converting only at this last step loses no precision.
+          visitTime: new Date(
+            Number(
+              (rawMicroseconds - WEBKIT_EPOCH_OFFSET_MICROSECONDS) / MICROSECONDS_PER_MILLISECOND
+            )
+          ),
+          visitTimeRaw: visitTimeRawStr,
+          visitCount: Number(visitCount ?? 0),
+          typedCount: Number(typedCount ?? 0),
+          transition: transitionNum,
+          fromVisit: fromVisitNum === 0 ? null : fromVisitNum,
+          visitDuration: Number(visitDuration ?? 0),
+          hidden: toBool(hidden),
+          // urls.typed_count is a URL-level aggregate ("how many times has this
+          // URL ever been typed"), not a per-visit flag — using it directly
+          // here would misreport every visit to a URL as "typed" once that URL
+          // was ever typed on any visit. The transition's own core type is
+          // Chromium's per-visit signal for "this specific visit was a typed
+          // navigation" (see chromiumVisitType.ts), which is what a detail
+          // view or export for one visit should reflect.
+          typed: coreTransitionType(transitionNum) === CORE_TRANSITION_TYPED
+        }
+      })
 
-    return { visits, fileName }
+      return { visits, fileName }
+    }, WORKER_CRASH_MESSAGES.chromium[locale])
   } finally {
     db.close()
   }
