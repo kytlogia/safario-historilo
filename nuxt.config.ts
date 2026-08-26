@@ -92,5 +92,17 @@ export default defineNuxtConfig({
     historyDbAllowRemote: false,
     // NUXT_HISTORY_DB_TRUST_DEV_PROXY
     historyDbTrustDevProxy: false
+  },
+  nitro: {
+    rollupConfig: {
+      // `node:sqlite` (server/utils/history-store.ts) is a newer Node
+      // builtin (22.5+) that Rollup's builtin-module list doesn't know
+      // about yet, so it misclassifies the dynamic `import('node:sqlite')`
+      // as an unresolved external and logs a WARN on every build — even
+      // though the surrounding try/catch already handles it being absent
+      // at runtime. Declaring it external explicitly silences that
+      // specific false-positive without touching any other warning.
+      external: ['node:sqlite']
+    }
   }
 })
