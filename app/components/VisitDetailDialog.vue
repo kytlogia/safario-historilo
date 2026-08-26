@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatDateTime, formatNumber, isSafeUrl } from '~/utils/format'
 import type { HistoryVisit } from '~/types/history'
 import { useAppLocale } from '~/composables/useAppLocale'
+import { useCopyFeedback } from '~/composables/useCopyFeedback'
 
 defineProps<{
   visit: HistoryVisit | null
@@ -13,44 +13,7 @@ const open = defineModel<boolean>({ required: true })
 
 const { t } = useI18n()
 const { intlLocale } = useAppLocale()
-
-const copiedField = ref<string | null>(null)
-let copiedTimer: ReturnType<typeof setTimeout> | undefined
-// ダイアログが閉じるたびに増やす世代カウンタ。writeText完了時にこの値が
-// 呼び出し時から変わっていれば、閉じて再度開いた後の古い結果とみなして無視する
-let copySession = 0
-
-function resetCopiedState() {
-  clearTimeout(copiedTimer)
-  copiedTimer = undefined
-  copiedField.value = null
-}
-
-async function copyToClipboard(text: string, field: string) {
-  const session = copySession
-  try {
-    await navigator.clipboard.writeText(text)
-    if (session !== copySession) return
-    copiedField.value = field
-    clearTimeout(copiedTimer)
-    copiedTimer = setTimeout(() => {
-      copiedField.value = null
-    }, 1500)
-  } catch {
-    // クリップボードAPIが使用不可（権限拒否など）の場合は何もしない
-  }
-}
-
-watch(open, (isOpen) => {
-  if (!isOpen) {
-    copySession++
-    resetCopiedState()
-  }
-})
-
-onUnmounted(() => {
-  clearTimeout(copiedTimer)
-})
+const { copiedField, copyToClipboard } = useCopyFeedback(open)
 </script>
 
 <template>

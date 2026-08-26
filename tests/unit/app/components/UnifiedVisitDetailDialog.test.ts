@@ -1,5 +1,5 @@
 import { DOMWrapper } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UnifiedVisitDetailDialog from '~/components/UnifiedVisitDetailDialog.vue'
 import type { UnifiedHistoryVisit } from '~/types/history'
 import { formatDateTime } from '~/utils/format'
@@ -81,5 +81,71 @@ describe('UnifiedVisitDetailDialog', () => {
     await body.find('[data-testid="unified-detail-close-button"]').trigger('click')
 
     expect(wrapper.emitted('update:modelValue')).toEqual([[false]])
+  })
+
+  describe('copy to clipboard', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+      Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } })
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+      vi.restoreAllMocks()
+    })
+
+    it('copies the title and briefly swaps the copy icon for a check icon', async () => {
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="unified-copy-title-button"]').trigger('click')
+      await vi.waitFor(() =>
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Example Domain')
+      )
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="unified-copy-title-button"] .mdi-check').exists()).toBe(
+        true
+      )
+
+      vi.advanceTimersByTime(1500)
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="unified-copy-title-button"] .mdi-check').exists()).toBe(
+        false
+      )
+    })
+
+    it('does not show the check icon after closing before writeText resolves and reopening', async () => {
+      let resolveWriteText: () => void = () => {}
+      const writeText = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveWriteText = resolve
+          })
+      )
+      Object.assign(navigator, { clipboard: { writeText } })
+
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="unified-copy-title-button"]').trigger('click')
+      expect(writeText).toHaveBeenCalledWith('Example Domain')
+
+      await wrapper.setProps({ modelValue: false })
+      await wrapper.vm.$nextTick()
+
+      await wrapper.setProps({ modelValue: true })
+      await wrapper.vm.$nextTick()
+
+      resolveWriteText()
+      await vi.advanceTimersByTimeAsync(0)
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="unified-copy-title-button"] .mdi-check').exists()).toBe(
+        false
+      )
+      expect(
+        body.find('[data-testid="unified-copy-title-button"] .mdi-content-copy').exists()
+      ).toBe(true)
+    })
   })
 })

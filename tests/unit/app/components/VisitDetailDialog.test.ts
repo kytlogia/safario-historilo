@@ -162,6 +162,7 @@ describe('VisitDetailDialog', () => {
       await wrapper.vm.$nextTick()
 
       expect(body.find('[data-testid="copy-title-button"] .mdi-check').exists()).toBe(false)
+      expect(body.find('[data-testid="copy-title-button"] .mdi-content-copy').exists()).toBe(true)
     })
   })
 })
