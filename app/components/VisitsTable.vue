@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useDisplay } from 'vuetify'
 import { formatDateTime, formatNumber } from '~/utils/format'
 import type { HistoryVisit } from '~/types/history'
 import { useAppLocale } from '~/composables/useAppLocale'
@@ -16,6 +17,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { intlLocale } = useAppLocale()
+
+// md未満はカラムが縦積みになりv-rowの高さストレッチが効かない(親要素が
+// 実際の高さを持たない)ため、100%指定では高さが確定できない。その幅では
+// 従来通り固定pxに戻す(#126)。
+const { mdAndUp } = useDisplay()
+const tableHeight = computed(() => (mdAndUp.value ? '100%' : 600))
 
 const headers = computed(() => [
   { title: t('components.visitsTable.headerTitle'), key: 'title', width: '28%' },
@@ -44,7 +51,8 @@ const headers = computed(() => [
     :headers="headers"
     :items="items"
     item-value="visitId"
-    height="600"
+    :height="tableHeight"
+    class="flex-grow-1"
     fixed-header
     @click:row="(_e: Event, row: { item: HistoryVisit }) => emit('row-click', row.item)"
   >
@@ -105,5 +113,12 @@ const headers = computed(() => [
 }
 :deep(table) {
   table-layout: fixed;
+}
+/* 親がflexで残り高さを配ってきても、デフォルトのmin-height:autoは
+   全行分(仮想スクロールの上下パディングを含む)の実コンテンツ高さを
+   最小値にしてしまい縮小できない(#126)。0にリセットしてflex-growに
+   応じた高さで収まるようにする。 */
+.v-table {
+  min-height: 0;
 }
 </style>
