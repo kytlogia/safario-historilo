@@ -3,7 +3,7 @@ import { exportFirefoxVisitsAsCsv, exportFirefoxVisitsAsJson } from '~/utils/exp
 import type { FirefoxHistoryVisit } from '~/types/history'
 import { useFilterBarFormat } from '~/composables/useFilterBarFormat'
 
-const { t, dateInputFormat, visibleCount } = useFilterBarFormat()
+const { t, dateInputFormat, visibleCount, exportSafely } = useFilterBarFormat()
 
 defineProps<{
   domainOptions: { title: string; value: string }[]
@@ -116,7 +116,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           variant="text"
           size="small"
           prepend-icon="mdi-code-json"
-          @click="exportFirefoxVisitsAsJson(filteredVisits)"
+          @click="exportSafely(() => exportFirefoxVisitsAsJson(filteredVisits))"
         >
           {{ t('components.filterBar.exportJson') }}
         </v-btn>
@@ -125,7 +125,7 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           variant="text"
           size="small"
           prepend-icon="mdi-file-delimited-outline"
-          @click="exportFirefoxVisitsAsCsv(filteredVisits)"
+          @click="exportSafely(() => exportFirefoxVisitsAsCsv(filteredVisits))"
         >
           {{ t('components.filterBar.exportCsv') }}
         </v-btn>
