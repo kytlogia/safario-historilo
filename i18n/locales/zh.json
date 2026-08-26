@@ -36,6 +36,7 @@
     "reload": "重新加载",
     "unknown": "发生了未知错误。",
     "serverRestricted": "由于服务器端限制，无法使用自动加载功能。",
+    "exportFailed": "导出失败，请重试。",
     "autoLoadFailed": {
       "safari": "自动加载 History.db 失败。",
       "firefox": "自动加载 places.sqlite 失败。",

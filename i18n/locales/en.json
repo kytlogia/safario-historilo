@@ -36,6 +36,7 @@
     "reload": "Reload",
     "unknown": "An unknown error occurred.",
     "serverRestricted": "Automatic loading is unavailable due to server-side restrictions.",
+    "exportFailed": "Export failed. Please try again.",
     "autoLoadFailed": {
       "safari": "Failed to automatically load History.db.",
       "firefox": "Failed to automatically load places.sqlite.",
