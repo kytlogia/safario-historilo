@@ -16,6 +16,9 @@ const { intlLocale } = useAppLocale()
 
 const copiedField = ref<string | null>(null)
 let copiedTimer: ReturnType<typeof setTimeout> | undefined
+// ダイアログが閉じるたびに増やす世代カウンタ。writeText完了時にこの値が
+// 呼び出し時から変わっていれば、閉じて再度開いた後の古い結果とみなして無視する
+let copySession = 0
 
 function resetCopiedState() {
   clearTimeout(copiedTimer)
@@ -24,8 +27,10 @@ function resetCopiedState() {
 }
 
 async function copyToClipboard(text: string, field: string) {
+  const session = copySession
   try {
     await navigator.clipboard.writeText(text)
+    if (session !== copySession) return
     copiedField.value = field
     clearTimeout(copiedTimer)
     copiedTimer = setTimeout(() => {
@@ -37,7 +42,10 @@ async function copyToClipboard(text: string, field: string) {
 }
 
 watch(open, (isOpen) => {
-  if (!isOpen) resetCopiedState()
+  if (!isOpen) {
+    copySession++
+    resetCopiedState()
+  }
 })
 
 onUnmounted(() => {
