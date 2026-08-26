@@ -218,8 +218,8 @@ function resetAll() {
       </template>
     </v-app-bar>
 
-    <v-main>
-      <v-container fluid class="py-6">
+    <v-main scrollable>
+      <v-container fluid class="py-6 d-flex flex-column flex-grow-1 min-h-0">
         <UploadPanel
           v-if="!hasData"
           :is-loading="isLoading"
@@ -243,9 +243,9 @@ function resetAll() {
             :date-range-label="dateRangeLabel"
           />
 
-          <v-row class="mt-2">
-            <v-col cols="12" md="9">
-              <v-card>
+          <v-row class="mt-2 flex-grow-1 min-h-0">
+            <v-col cols="12" md="9" class="d-flex flex-column min-h-0">
+              <v-card class="d-flex flex-column flex-grow-1 min-h-0">
                 <FilterBar
                   v-model:search="search"
                   v-model:domain-filter="domainFilter"
@@ -265,7 +265,7 @@ function resetAll() {
               </v-card>
             </v-col>
 
-            <v-col cols="12" md="3">
+            <v-col cols="12" md="3" class="d-flex flex-column min-h-0">
               <TopDomains :top-domains="topDomains" />
               <VisitTrends :weekday-trend="weekdayTrend" :hourly-trend="hourlyTrend" class="mt-4" />
             </v-col>
@@ -277,3 +277,33 @@ function resetAll() {
     <VisitDetailDialog v-model="detailDialog" :visit="selectedVisit" />
   </div>
 </template>
+
+<style scoped>
+/* flexでビューポート高まで伸ばす際、子要素のデフォルトmin-height:autoが
+   コンテンツ本来の高さ(仮想テーブルの全行分など)を最小値にしてしまい、
+   親のflex-growが効かなくなる(#126)。0にリセットして縮小を許可する。 */
+.min-h-0 {
+  min-height: 0;
+}
+
+/* v-main の scrollable 化で生成される内部スクローラーは display:flex では
+   ないため、直下の v-container が flex-grow で高さいっぱいに広がれない。
+   Vuetify が生成する要素のため :deep() で直接調整する(#126)。 */
+:deep(.v-main__scroller) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* v-row はデフォルト flex-wrap:wrap のため、内容が高いと(仮想テーブルの
+   全行分など)行の交差軸サイズが内容基準で計算され、v-col が
+   align-items:stretch で親の実高さまで縮まらない(#126)。md以上では
+   9/3 の2カラムが常に1行に収まる(合計12カラム)ため、その範囲でだけ
+   nowrap にして「1行なら行の交差サイズ=コンテナの実高さ」というルールを
+   効かせる。mdより狭い(1カラムずつ縦積みになる)範囲は従来通りwrapのまま。 */
+@media (min-width: 840px) {
+  .v-row.flex-grow-1.min-h-0 {
+    flex-wrap: nowrap;
+  }
+}
+</style>
