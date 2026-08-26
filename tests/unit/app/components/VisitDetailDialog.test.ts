@@ -153,5 +153,35 @@ describe('VisitDetailDialog', () => {
 
       expect(body.find('[data-testid="copy-title-button"] .mdi-alert').exists()).toBe(false)
     })
+
+    it('clears a stale success icon as soon as a new copy attempt starts', async () => {
+      const writeText = vi.fn().mockResolvedValueOnce(undefined)
+      Object.assign(navigator, { clipboard: { writeText } })
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="copy-title-button"]').trigger('click')
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+      await wrapper.vm.$nextTick()
+      expect(body.find('[data-testid="copy-title-button"] .mdi-check').exists()).toBe(true)
+
+      // Start a second attempt well before the first one's 1.5s timer would
+      // fire. Cancelling that timer must not leave the stale check icon
+      // visible until a new result (or timer) arrives.
+      let resolveSecond: () => void = () => {}
+      writeText.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveSecond = resolve
+          })
+      )
+      await body.find('[data-testid="copy-title-button"]').trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="copy-title-button"] .mdi-check').exists()).toBe(false)
+      expect(body.find('[data-testid="copy-title-button"] .mdi-content-copy').exists()).toBe(true)
+
+      resolveSecond()
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(2))
+    })
   })
 })

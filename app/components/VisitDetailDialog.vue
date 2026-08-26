@@ -27,9 +27,10 @@ function resetCopiedState() {
 
 async function copyToClipboard(text: string, field: string) {
   clearTimeout(copiedTimer)
+  copiedField.value = null
+  copyFailedField.value = null
   try {
     await navigator.clipboard.writeText(text)
-    copyFailedField.value = null
     copiedField.value = field
     copiedTimer = setTimeout(() => {
       copiedField.value = null
