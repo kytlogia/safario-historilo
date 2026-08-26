@@ -2,7 +2,7 @@
 // Node environment (import.meta.url / fileURLToPath resolution for the wasm
 // loader in app/utils/sqlJs.ts).
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   SAMPLE_PLACES_DATA,
   createFirefoxHistoryDatabase
@@ -153,6 +153,36 @@ describe('parseFirefoxHistoryFile', () => {
     await expect(parseFirefoxHistoryFile(file)).rejects.toThrow(
       /ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。/
     )
+  })
+
+  it('normalizes an unexpected sql.js error during query execution into a generic Japanese message (issue #111)', async () => {
+    const { parseFirefoxHistoryFile } = await import('~/composables/useFirefoxHistoryParser')
+    const db = await createFirefoxHistoryDatabase({
+      places: [{ id: 1, url: 'https://example.com/' }],
+      visits: [{ id: 1, placeId: 1, visitDate: 0 }]
+    })
+    const bytes = db.export()
+    db.close()
+
+    // Simulate an openable-but-internally-corrupt file (bad pages, corrupt
+    // index, etc.) rather than a missing/renamed table — see the equivalent
+    // comment in useSafariHistoryParser.test.ts for why scribbling over page 2
+    // (leaving the page-1 schema alone) reproduces this without touching
+    // assertPlacesSchema()'s own metadata-only checks.
+    const pageSize = 4096
+    const corrupted = new Uint8Array(bytes)
+    for (let i = pageSize + 8; i < pageSize * 2; i++) corrupted[i] = 0xaa
+    const file = new File([corrupted], 'corrupt-content.sqlite')
+
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      await expect(parseFirefoxHistoryFile(file)).rejects.toThrow(
+        /places\.sqliteの解析中にエラーが発生しました。/
+      )
+      expect(consoleErrorSpy).toHaveBeenCalled()
+    } finally {
+      consoleErrorSpy.mockRestore()
+    }
   })
 })
 

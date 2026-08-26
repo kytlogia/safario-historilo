@@ -1,7 +1,7 @@
 import type { Database } from 'sql.js'
 import type { HistoryVisit, ParsedHistory } from '~/types/history'
-import { PARSER_MESSAGES } from './workerLocaleMessages'
-import { getSqlJs } from './sqlJs'
+import { PARSER_MESSAGES, WORKER_CRASH_MESSAGES } from './workerLocaleMessages'
+import { getSqlJs, LocalizedParseError } from './sqlJs'
 
 // Safari (Core Data) timestamps are seconds since 2001-01-01T00:00:00Z.
 const CORE_DATA_EPOCH_OFFSET_SECONDS = 978307200
@@ -63,18 +63,18 @@ function assertHistorySchema(db: Database, locale: AppLocale) {
       "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('history_items', 'history_visits')"
     )
   } catch {
-    throw new Error(messages.openFailed)
+    throw new LocalizedParseError(messages.openFailed)
   }
   const found = new Set((tables[0]?.values ?? []).map((row) => String(row[0])))
   if (!found.has('history_items') || !found.has('history_visits')) {
-    throw new Error(messages.wrongSchema)
+    throw new LocalizedParseError(messages.wrongSchema)
   }
 
   for (const [table, columns] of Object.entries(REQUIRED_COLUMNS)) {
     const existing = getTableColumns(db, table)
     const missing = columns.filter((column) => !existing.has(column))
     if (missing.length > 0) {
-      throw new Error(messages.missingColumns(table, missing.join(', ')))
+      throw new LocalizedParseError(messages.missingColumns(table, missing.join(', ')))
     }
   }
 }
@@ -176,6 +176,15 @@ export async function parseHistoryBuffer(
     })
 
     return { visits, fileName }
+  } catch (err) {
+    // assertHistorySchema()'s own known failure branches already throw a
+    // friendly, localized LocalizedParseError — safe to surface as-is.
+    // Anything else here is a raw sql.js/SQLite internal error from an
+    // openable-but-internally-corrupt file (bad pages, a corrupt index,
+    // etc.), which must not reach the UI as unlocalized English text.
+    if (err instanceof LocalizedParseError) throw err
+    console.error(err)
+    throw new Error(WORKER_CRASH_MESSAGES.safari[locale], { cause: err })
   } finally {
     db.close()
   }

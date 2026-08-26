@@ -5,7 +5,7 @@
 // test has no DOM dependency itself, so force `node` to keep that a real
 // file:// URL.
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   CORE_DATA_EPOCH_OFFSET_SECONDS,
   SAMPLE_HISTORY_DATA,
@@ -140,6 +140,40 @@ describe('parseSafariHistoryFile', () => {
     await expect(parseSafariHistoryFile(file)).rejects.toThrow(
       /ファイルを開けませんでした。有効なSQLiteデータベースファイルを選択してください。/
     )
+  })
+
+  it('normalizes an unexpected sql.js error during query execution into a generic Japanese message (issue #111)', async () => {
+    const { parseSafariHistoryFile } = await import('~/composables/useSafariHistoryParser')
+    const db = await createHistoryDatabase({
+      items: [{ id: 1, url: 'https://www.example.com/' }],
+      visits: [{ id: 1, historyItem: 1, visitTime: 0 }]
+    })
+    const bytes = db.export()
+    db.close()
+
+    // Simulate an openable-but-internally-corrupt file (bad pages, corrupt
+    // index, etc.) rather than a missing/renamed table: scribble over most of
+    // a data page (skipping its 8-byte page header) past the schema page
+    // (page 1, at the default 4096-byte page size). assertHistorySchema()'s
+    // own checks only read sqlite_master/PRAGMA table_info — both stored on
+    // page 1 — so they still pass; only the JOIN query that actually walks
+    // the corrupted table's b-tree fails, with a raw sql.js/SQLite error
+    // ("database disk image is malformed") that must not reach the UI as-is.
+    const pageSize = 4096
+    const corrupted = new Uint8Array(bytes)
+    for (let i = pageSize + 8; i < pageSize * 2; i++) corrupted[i] = 0xaa
+    const file = new File([corrupted], 'corrupt-content.db')
+
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      await expect(parseSafariHistoryFile(file)).rejects.toThrow(
+        /History\.dbの解析中にエラーが発生しました。/
+      )
+      // The original raw sql.js error is still logged for developers.
+      expect(consoleErrorSpy).toHaveBeenCalled()
+    } finally {
+      consoleErrorSpy.mockRestore()
+    }
   })
 })
 

@@ -65,3 +65,12 @@ export function getTableColumns(db: Database, table: string): Set<string> {
   const result = db.exec(`PRAGMA table_info(${table})`)
   return new Set((result[0]?.values ?? []).map((row) => String(row[1])))
 }
+
+// Marks an error whose message is already one of the friendly, localized
+// strings from workerLocaleMessages.ts (thrown by an assertXSchema()'s known
+// failure branches) — safe to surface to the user as-is. Anything else thrown
+// while querying an openable-but-internally-corrupt database (bad pages, a
+// corrupt index, etc.) is a raw sql.js/SQLite internal error and must not
+// reach the UI unwrapped; see parseHistoryDatabase.ts and its Firefox/Chromium
+// counterparts for where this distinction is used.
+export class LocalizedParseError extends Error {}

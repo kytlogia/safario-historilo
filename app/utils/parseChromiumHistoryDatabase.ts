@@ -1,8 +1,8 @@
 import type { Database } from 'sql.js'
 import type { ChromiumHistoryVisit, ParsedChromiumHistory } from '~/types/history'
-import { PARSER_MESSAGES } from './workerLocaleMessages'
+import { PARSER_MESSAGES, WORKER_CRASH_MESSAGES } from './workerLocaleMessages'
 import { coreTransitionType } from './chromiumVisitType'
-import { extractDomain, getSqlJs, getTableColumns, toBool } from './sqlJs'
+import { extractDomain, getSqlJs, getTableColumns, LocalizedParseError, toBool } from './sqlJs'
 
 // See the equivalent comment in parseHistoryDatabase.ts — this file runs
 // inside chromiumHistoryDatabase.worker.ts, so it can't use vue-i18n either.
@@ -42,18 +42,18 @@ function assertHistorySchema(db: Database, locale: AppLocale) {
       "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('urls', 'visits')"
     )
   } catch {
-    throw new Error(messages.openFailed)
+    throw new LocalizedParseError(messages.openFailed)
   }
   const found = new Set((tables[0]?.values ?? []).map((row) => String(row[0])))
   if (!found.has('urls') || !found.has('visits')) {
-    throw new Error(messages.wrongSchema)
+    throw new LocalizedParseError(messages.wrongSchema)
   }
 
   for (const [table, columns] of Object.entries(REQUIRED_COLUMNS)) {
     const existing = getTableColumns(db, table)
     const missing = columns.filter((column) => !existing.has(column))
     if (missing.length > 0) {
-      throw new Error(messages.missingColumns(table, missing.join(', ')))
+      throw new LocalizedParseError(messages.missingColumns(table, missing.join(', ')))
     }
   }
 }
@@ -172,6 +172,14 @@ export async function parseChromiumHistoryBuffer(
     })
 
     return { visits, fileName }
+  } catch (err) {
+    // See the equivalent comment in parseHistoryDatabase.ts — assertHistorySchema()'s
+    // known failure branches already throw a friendly, localized
+    // LocalizedParseError; anything else here is a raw sql.js/SQLite internal
+    // error from an openable-but-internally-corrupt file.
+    if (err instanceof LocalizedParseError) throw err
+    console.error(err)
+    throw new Error(WORKER_CRASH_MESSAGES.chromium[locale], { cause: err })
   } finally {
     db.close()
   }
