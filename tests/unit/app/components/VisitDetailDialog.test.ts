@@ -131,5 +131,90 @@ describe('VisitDetailDialog', () => {
         expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com/path')
       )
     })
+
+    it('briefly shows an error icon when the clipboard write fails', async () => {
+      Object.assign(navigator, {
+        clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) }
+      })
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="copy-title-button"]').trigger('click')
+      await vi.waitFor(() =>
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Example Domain')
+      )
+      await wrapper.vm.$nextTick()
+
+      const button = body.find('[data-testid="copy-title-button"]')
+      expect(button.find('.mdi-alert').exists()).toBe(true)
+      expect(button.find('.mdi-check').exists()).toBe(false)
+
+      vi.advanceTimersByTime(1500)
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="copy-title-button"] .mdi-alert').exists()).toBe(false)
+    })
+
+    it('clears a stale success icon as soon as a new copy attempt starts', async () => {
+      const writeText = vi.fn().mockResolvedValueOnce(undefined)
+      Object.assign(navigator, { clipboard: { writeText } })
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="copy-title-button"]').trigger('click')
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+      await wrapper.vm.$nextTick()
+      expect(body.find('[data-testid="copy-title-button"] .mdi-check').exists()).toBe(true)
+
+      // Start a second attempt well before the first one's 1.5s timer would
+      // fire. Cancelling that timer must not leave the stale check icon
+      // visible until a new result (or timer) arrives.
+      let resolveSecond: () => void = () => {}
+      writeText.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveSecond = resolve
+          })
+      )
+      await body.find('[data-testid="copy-title-button"]').trigger('click')
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="copy-title-button"] .mdi-check').exists()).toBe(false)
+      expect(body.find('[data-testid="copy-title-button"] .mdi-content-copy').exists()).toBe(true)
+
+      resolveSecond()
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(2))
+    })
+
+    it('does not show the check icon after closing before writeText resolves and reopening', async () => {
+      // writeText の解決を手動で制御できるようにする
+      let resolveWriteText: () => void = () => {}
+      const writeText = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveWriteText = resolve
+          })
+      )
+      Object.assign(navigator, { clipboard: { writeText } })
+
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="copy-title-button"]').trigger('click')
+      expect(writeText).toHaveBeenCalledWith('Example Domain')
+
+      // writeText が解決する前にダイアログを閉じる
+      await wrapper.setProps({ modelValue: false })
+      await wrapper.vm.$nextTick()
+
+      // 1500ms以内に再度開く
+      await wrapper.setProps({ modelValue: true })
+      await wrapper.vm.$nextTick()
+
+      // 閉じた後にようやく writeText が解決する
+      resolveWriteText()
+      await vi.advanceTimersByTimeAsync(0)
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="copy-title-button"] .mdi-check').exists()).toBe(false)
+      expect(body.find('[data-testid="copy-title-button"] .mdi-content-copy').exists()).toBe(true)
+    })
   })
 })
