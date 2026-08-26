@@ -78,6 +78,19 @@ describe('useHistoryFilters', () => {
 
       expect(domainOptions.value.map((o) => o.value)).toEqual(['a.com', 'b.com'])
     })
+
+    it("formats the count with the given locale's thousands separator", () => {
+      const visits = ref<HistoryVisit[]>(
+        Array.from({ length: 1234 }, () => makeVisit({ domain: 'example.com' }))
+      )
+      const { domainOptions } = useHistoryFilters(visits, makeFilters(), {
+        t: (key) => key,
+        tm: () => [],
+        intlLocale: () => 'en-US'
+      })
+
+      expect(domainOptions.value).toEqual([{ title: 'example.com (1,234)', value: 'example.com' }])
+    })
   })
 
   describe('filteredVisits', () => {
