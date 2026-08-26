@@ -1,5 +1,5 @@
 import { computed, type Ref } from 'vue'
-import { formatDate } from '~/utils/format'
+import { formatDate, formatNumber } from '~/utils/format'
 
 export interface FilterableVisit {
   title: string
@@ -97,7 +97,7 @@ export function useVisitFilterEngine<T extends FilterableVisit>(
 
   const domainOptions = computed(() =>
     countByDomain(visits.value).map(([domain, count]) => ({
-      title: `${domain} (${count})`,
+      title: `${domain} (${formatNumber(count, intlLocale())})`,
       value: domain
     }))
   )
