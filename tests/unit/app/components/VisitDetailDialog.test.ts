@@ -131,5 +131,27 @@ describe('VisitDetailDialog', () => {
         expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com/path')
       )
     })
+
+    it('briefly shows an error icon when the clipboard write fails', async () => {
+      Object.assign(navigator, {
+        clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) }
+      })
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="copy-title-button"]').trigger('click')
+      await vi.waitFor(() =>
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Example Domain')
+      )
+      await wrapper.vm.$nextTick()
+
+      const button = body.find('[data-testid="copy-title-button"]')
+      expect(button.find('.mdi-alert').exists()).toBe(true)
+      expect(button.find('.mdi-check').exists()).toBe(false)
+
+      vi.advanceTimersByTime(1500)
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="copy-title-button"] .mdi-alert').exists()).toBe(false)
+    })
   })
 })
