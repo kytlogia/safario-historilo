@@ -32,7 +32,13 @@ const message = computed(() =>
 )
 
 function handleReload() {
-  void clearError({ redirect: '/' })
+  // clearError({ redirect: '/' }) only does a client-side Nuxt router
+  // replace: it doesn't reset module-scope state (e.g. the shared Web
+  // Worker singleton in useSafariHistoryParser), and is a no-op if we're
+  // already on '/'. Force a real full page load instead. Use replace()
+  // rather than assigning href so the crashed error page isn't kept in
+  // history — pressing Back afterwards won't return to it.
+  window.location.replace('/')
 }
 </script>
 
