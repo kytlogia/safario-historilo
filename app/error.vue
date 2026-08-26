@@ -32,7 +32,10 @@ const message = computed(() =>
 )
 
 function handleReload() {
-  void clearError({ redirect: '/' })
+  // A client-side redirect() alone doesn't reset module-scope state (e.g.
+  // the shared Web Worker singleton in useSafariHistoryParser), and is a
+  // no-op if we're already on '/'. Force a real full page load instead.
+  window.location.href = '/'
 }
 </script>
 
