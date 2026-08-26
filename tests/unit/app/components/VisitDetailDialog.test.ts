@@ -183,5 +183,38 @@ describe('VisitDetailDialog', () => {
       resolveSecond()
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(2))
     })
+
+    it('does not show the check icon after closing before writeText resolves and reopening', async () => {
+      // writeText の解決を手動で制御できるようにする
+      let resolveWriteText: () => void = () => {}
+      const writeText = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveWriteText = resolve
+          })
+      )
+      Object.assign(navigator, { clipboard: { writeText } })
+
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="copy-title-button"]').trigger('click')
+      expect(writeText).toHaveBeenCalledWith('Example Domain')
+
+      // writeText が解決する前にダイアログを閉じる
+      await wrapper.setProps({ modelValue: false })
+      await wrapper.vm.$nextTick()
+
+      // 1500ms以内に再度開く
+      await wrapper.setProps({ modelValue: true })
+      await wrapper.vm.$nextTick()
+
+      // 閉じた後にようやく writeText が解決する
+      resolveWriteText()
+      await vi.advanceTimersByTimeAsync(0)
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="copy-title-button"] .mdi-check').exists()).toBe(false)
+      expect(body.find('[data-testid="copy-title-button"] .mdi-content-copy').exists()).toBe(true)
+    })
   })
 })

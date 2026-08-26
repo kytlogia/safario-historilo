@@ -4,6 +4,10 @@ import FirefoxVisitDetailDialog from '~/components/FirefoxVisitDetailDialog.vue'
 import type { FirefoxHistoryVisit } from '~/types/history'
 import { mountWithVuetify } from '../../support/mountWithVuetify'
 
+// Only covers the copy-feedback behavior shared via useCopyFeedback (see
+// useCopyFeedback.test.ts for the composable's own logic tests and
+// VisitDetailDialog.test.ts for this dialog family's full rendering
+// coverage) — this dialog previously had no dedicated test file at all.
 function makeVisit(overrides: Partial<FirefoxHistoryVisit> = {}): FirefoxHistoryVisit {
   return {
     visitId: 1,
@@ -20,7 +24,7 @@ function makeVisit(overrides: Partial<FirefoxHistoryVisit> = {}): FirefoxHistory
     hidden: false,
     typed: false,
     frecency: 0,
-    guid: 'abc123',
+    guid: 'guid-1',
     ...overrides
   }
 }
@@ -28,9 +32,6 @@ function makeVisit(overrides: Partial<FirefoxHistoryVisit> = {}): FirefoxHistory
 let mountedWrappers: Array<{ unmount: () => void }> = []
 
 async function mountDialog(visit: FirefoxHistoryVisit | null, open = true) {
-  // v-dialog teleports its content to document.body — see the equivalent
-  // comment in VisitDetailDialog.test.ts for why this attaches there and
-  // tracks the wrapper for cleanup.
   const wrapper = mountWithVuetify(FirefoxVisitDetailDialog, {
     props: { visit, modelValue: open },
     attachTo: document.body
@@ -124,6 +125,35 @@ describe('FirefoxVisitDetailDialog', () => {
 
       resolveSecond()
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(2))
+    })
+
+    it('does not show the check icon after closing before writeText resolves and reopening', async () => {
+      let resolveWriteText: () => void = () => {}
+      const writeText = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveWriteText = resolve
+          })
+      )
+      Object.assign(navigator, { clipboard: { writeText } })
+
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="copy-title-button"]').trigger('click')
+      expect(writeText).toHaveBeenCalledWith('Example Domain')
+
+      await wrapper.setProps({ modelValue: false })
+      await wrapper.vm.$nextTick()
+
+      await wrapper.setProps({ modelValue: true })
+      await wrapper.vm.$nextTick()
+
+      resolveWriteText()
+      await vi.advanceTimersByTimeAsync(0)
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="copy-title-button"] .mdi-check').exists()).toBe(false)
+      expect(body.find('[data-testid="copy-title-button"] .mdi-content-copy').exists()).toBe(true)
     })
   })
 })

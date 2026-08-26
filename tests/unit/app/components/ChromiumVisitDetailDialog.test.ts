@@ -4,6 +4,10 @@ import ChromiumVisitDetailDialog from '~/components/ChromiumVisitDetailDialog.vu
 import type { ChromiumHistoryVisit } from '~/types/history'
 import { mountWithVuetify } from '../../support/mountWithVuetify'
 
+// Only covers the copy-feedback behavior shared via useCopyFeedback (see
+// useCopyFeedback.test.ts for the composable's own logic tests and
+// VisitDetailDialog.test.ts for this dialog family's full rendering
+// coverage) — this dialog previously had no dedicated test file at all.
 function makeVisit(overrides: Partial<ChromiumHistoryVisit> = {}): ChromiumHistoryVisit {
   return {
     visitId: 1,
@@ -12,7 +16,7 @@ function makeVisit(overrides: Partial<ChromiumHistoryVisit> = {}): ChromiumHisto
     domain: 'example.com',
     title: 'Example Domain',
     visitTime: new Date('2024-01-02T03:04:05.000Z'),
-    visitTimeRaw: '13350000000000000',
+    visitTimeRaw: '123',
     visitCount: 7,
     typedCount: 0,
     transition: 0,
@@ -27,9 +31,6 @@ function makeVisit(overrides: Partial<ChromiumHistoryVisit> = {}): ChromiumHisto
 let mountedWrappers: Array<{ unmount: () => void }> = []
 
 async function mountDialog(visit: ChromiumHistoryVisit | null, open = true) {
-  // v-dialog teleports its content to document.body — see the equivalent
-  // comment in VisitDetailDialog.test.ts for why this attaches there and
-  // tracks the wrapper for cleanup.
   const wrapper = mountWithVuetify(ChromiumVisitDetailDialog, {
     props: { visit, modelValue: open },
     attachTo: document.body
@@ -123,6 +124,35 @@ describe('ChromiumVisitDetailDialog', () => {
 
       resolveSecond()
       await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(2))
+    })
+
+    it('does not show the check icon after closing before writeText resolves and reopening', async () => {
+      let resolveWriteText: () => void = () => {}
+      const writeText = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveWriteText = resolve
+          })
+      )
+      Object.assign(navigator, { clipboard: { writeText } })
+
+      const { wrapper, body } = await mountDialog(makeVisit({ title: 'Example Domain' }))
+
+      await body.find('[data-testid="copy-title-button"]').trigger('click')
+      expect(writeText).toHaveBeenCalledWith('Example Domain')
+
+      await wrapper.setProps({ modelValue: false })
+      await wrapper.vm.$nextTick()
+
+      await wrapper.setProps({ modelValue: true })
+      await wrapper.vm.$nextTick()
+
+      resolveWriteText()
+      await vi.advanceTimersByTimeAsync(0)
+      await wrapper.vm.$nextTick()
+
+      expect(body.find('[data-testid="copy-title-button"] .mdi-check').exists()).toBe(false)
+      expect(body.find('[data-testid="copy-title-button"] .mdi-content-copy').exists()).toBe(true)
     })
   })
 })
