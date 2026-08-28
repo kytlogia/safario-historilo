@@ -71,7 +71,7 @@ const { isDark, toggleTheme } = useAppTheme()
 
     <v-main>
       <v-container fluid class="py-6">
-        <ChromiumUploadPanel
+        <UploadPanel
           v-if="!hasData"
           brand="edge"
           :is-loading="isLoading"

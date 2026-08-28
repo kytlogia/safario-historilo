@@ -76,8 +76,8 @@ export default defineNuxtConfig({
     }
   },
   vite: {
-    // historyDatabase.worker.ts is loaded via `new Worker(url, { type: 'module' })`
-    // (see app/composables/useSafariHistoryParser.ts) — match Vite's own worker
+    // historyParser.worker.ts is loaded via `new Worker(url, { type: 'module' })`
+    // (see app/composables/useHistoryFileParser.ts) — match Vite's own worker
     // bundle format to that, otherwise it defaults to 'iife', which can't
     // represent import.meta and silently strips it in the bundled worker.
     worker: {

@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { formatDateTime, formatNumber } from '~/utils/format'
 import { formatChromiumTransitionType } from '~/utils/chromiumVisitType'
 import type { ChromiumHistoryVisit } from '~/types/history'
-import { useAppLocale } from '~/composables/useAppLocale'
-import TruncatedCell from './TruncatedCell.vue'
+import BaseVisitsTable, { type VisitsTableHeader } from './BaseVisitsTable.vue'
 
 defineProps<{
   items: ChromiumHistoryVisit[]
@@ -16,9 +14,8 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { intlLocale } = useAppLocale()
 
-const headers = computed(() => [
+const headers = computed<VisitsTableHeader[]>(() => [
   { title: t('components.visitsTable.headerTitle'), key: 'title', width: '28%' },
   { title: t('components.visitsTable.headerUrl'), key: 'url', width: '28%' },
   { title: t('components.visitsTable.headerDomain'), key: 'domain', width: 170 },
@@ -27,43 +24,20 @@ const headers = computed(() => [
     title: t('components.visitsTable.headerVisitCount'),
     key: 'visitCount',
     width: 130,
-    align: 'end' as const
+    align: 'end'
   },
-  { title: t('components.visitsTable.headerType'), key: 'flags', width: 170, sortable: false },
-  {
-    title: t('components.visitsTable.headerActions'),
-    key: 'actions',
-    width: 56,
-    sortable: false,
-    align: 'center' as const
-  }
+  { title: t('components.visitsTable.headerType'), key: 'flags', width: 170, sortable: false }
 ])
 </script>
 
 <template>
-  <v-data-table-virtual
+  <BaseVisitsTable
     :headers="headers"
     :items="items"
     item-value="visitId"
-    height="600"
-    fixed-header
-    @click:row="(_e: Event, row: { item: ChromiumHistoryVisit }) => emit('row-click', row.item)"
+    show-actions
+    @row-click="emit('row-click', $event)"
   >
-    <template #item.title="{ item }">
-      <TruncatedCell :text="item.title" />
-    </template>
-    <template #item.url="{ item }">
-      <TruncatedCell :text="item.url" class="text-medium-emphasis" />
-    </template>
-    <template #item.domain="{ item }">
-      <TruncatedCell :text="item.domain" />
-    </template>
-    <template #item.visitTime="{ item }">
-      {{ formatDateTime(item.visitTime, intlLocale) }}
-    </template>
-    <template #item.visitCount="{ item }">
-      {{ formatNumber(item.visitCount, intlLocale) }}
-    </template>
     <template #item.flags="{ item }">
       <v-chip size="x-small" variant="flat" class="mr-1">{{
         formatChromiumTransitionType(item.transition, t)
@@ -72,25 +46,5 @@ const headers = computed(() => [
         t('components.visitsTable.flagHidden')
       }}</v-chip>
     </template>
-    <template #item.actions="{ item }">
-      <v-btn
-        icon="mdi-information-outline"
-        variant="text"
-        size="small"
-        :aria-label="t('components.visitsTable.detailAriaLabel')"
-        data-testid="row-detail-button"
-        @click.stop="emit('row-click', item)"
-      />
-    </template>
-  </v-data-table-virtual>
+  </BaseVisitsTable>
 </template>
-
-<style scoped>
-/* tr/tableはVuetifyが内部でレンダリングするため、独自クラスを付与できず要素セレクタで指定する */
-:deep(tr) {
-  cursor: pointer;
-}
-:deep(table) {
-  table-layout: fixed;
-}
-</style>

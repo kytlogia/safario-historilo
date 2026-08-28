@@ -15,7 +15,7 @@ import {
 const MICROSECONDS_PER_MILLISECOND = 1000
 
 // See the equivalent comment in parseHistoryDatabase.ts — this file runs
-// inside firefoxHistoryDatabase.worker.ts, so it can't use vue-i18n either.
+// inside historyParser.worker.ts, so it can't use vue-i18n either.
 const MESSAGES = PARSER_MESSAGES.firefox
 
 const REQUIRED_COLUMNS: Record<string, string[]> = {
@@ -55,7 +55,7 @@ function assertPlacesSchema(db: Database, locale: AppLocale) {
 // The actual sql.js parsing work (init, DB open, SQL execution, row mapping),
 // mirroring app/utils/parseHistoryDatabase.ts's structure for Firefox's schema.
 // Runs either directly on the main thread (Node/test environments without
-// Worker support) or inside firefoxHistoryDatabase.worker.ts.
+// Worker support) or inside historyParser.worker.ts.
 export async function parseFirefoxHistoryBuffer(
   buffer: ArrayBuffer,
   fileName: string,

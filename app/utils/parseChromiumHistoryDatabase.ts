@@ -12,7 +12,7 @@ import {
 } from './sqlJs'
 
 // See the equivalent comment in parseHistoryDatabase.ts — this file runs
-// inside chromiumHistoryDatabase.worker.ts, so it can't use vue-i18n either.
+// inside historyParser.worker.ts, so it can't use vue-i18n either.
 const MESSAGES = PARSER_MESSAGES.chromium
 
 // Chrome/Edge (WebKit epoch) timestamps in visits.visit_time and
@@ -70,7 +70,7 @@ function assertHistorySchema(db: Database, locale: AppLocale) {
 // Chrome/Edge's schema. Shared by both brands since Chrome and Edge are both
 // Chromium-based and use an identical `urls`/`visits` schema. Runs either
 // directly on the main thread (Node/test environments without Worker
-// support) or inside chromiumHistoryDatabase.worker.ts.
+// support) or inside historyParser.worker.ts.
 export async function parseChromiumHistoryBuffer(
   buffer: ArrayBuffer,
   fileName: string,

@@ -1,9 +1,9 @@
 import { computed, ref } from 'vue'
-import type { ChromiumHistoryVisit, ChromiumProfile } from '~/types/history'
+import type { HistoryVisit, SafariProfile } from '~/types/history'
 import { toUnifiedVisit } from '~/utils/unifiedHistory'
 import { browserCatalogEntry } from '~/utils/browserCatalog'
 import { useVisitFilterI18n } from '~/composables/useAppLocale'
-import { useChromiumHistoryFilters } from './useChromiumHistoryFilters'
+import { useHistoryFilters } from './useHistoryFilters'
 import { useDebouncedRef } from './useDebouncedRef'
 import {
   booleanCodec,
@@ -13,73 +13,62 @@ import {
   stringCodec,
   useFilterPersistence
 } from './useFilterPersistence'
-import { parseChromiumHistoryFile } from './useChromiumHistoryParser'
+import { parseSafariHistoryFile } from './useSafariHistoryParser'
 import { useUnifiedHistorySource } from './useUnifiedHistorySource'
-
-function resolveDefaultProfileId(profiles: ChromiumProfile[]): string {
-  const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0]
-  return defaultProfile?.id ?? ''
-}
+import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 
 /**
- * All page-level state and orchestration shared by app/pages/chrome.vue and
- * app/pages/edge.vue — the two pages differ only in a handful of display
- * strings and their icon (already handled one layer down via the `brand`
- * prop on UploadPanel/ChromiumFilterBar), never in this loading /
- * filtering / auto-load logic itself. `brand` selects the matching
- * `/api/local-history/<brand>` routes.
- *
- * The load/status/profile orchestration itself is delegated to
- * useUnifiedHistorySource.ts (shared with app/pages/all.vue) rather than
- * duplicated here — only the Chromium-specific filtering
- * (onlyTyped/onlyRedirects/onlyHidden, which needs the full
- * ChromiumHistoryVisit shape, not the reduced UnifiedHistoryVisit
- * projection) stays local to this composable.
+ * All page-level state and orchestration for app/pages/index.vue (Safari),
+ * mirroring useChromiumHistoryPage.ts — load/status/profile orchestration is
+ * delegated to useUnifiedHistorySource.ts, and only the Safari-specific
+ * filtering (onlyFailed/onlyRedirects/onlySynthesized) stays local here.
  */
-export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
-  const source = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
-    apiBase: browserCatalogEntry(brand).apiBase,
-    serverFileName: browserCatalogEntry(brand).serverFileName,
-    parseFile: parseChromiumHistoryFile,
-    toUnified: (v) => toUnifiedVisit(v, brand),
-    resolveDefaultProfileId,
-    loadErrorFallbackKey: 'error.autoLoadFailed.chromium'
+export function useSafariHistoryPage() {
+  const { apiBase, serverFileName } = browserCatalogEntry('safari')
+
+  const source = useUnifiedHistorySource<HistoryVisit, SafariProfile>({
+    apiBase,
+    serverFileName,
+    parseFile: parseSafariHistoryFile,
+    toUnified: (v) => toUnifiedVisit(v, 'safari'),
+    initialProfileId: DEFAULT_PROFILE_ID,
+    loadErrorFallbackKey: 'error.autoLoadFailed.safari'
   })
 
   const search = ref('')
   const domainFilter = ref<string | null>(null)
   const dateFrom = ref<Date | null>(null)
   const dateTo = ref<Date | null>(null)
-  const onlyTyped = ref(false)
+  const onlyFailed = ref(false)
   const onlyRedirects = ref(false)
-  const onlyHidden = ref(false)
+  const onlySynthesized = ref(false)
 
-  useFilterPersistence(`${brand}-history-filters`, {
+  useFilterPersistence('safari-history-filters', {
     search: filterField(search, stringCodec),
     domainFilter: filterField(domainFilter, nullableStringCodec),
     dateFrom: filterField(dateFrom, nullableDateCodec),
     dateTo: filterField(dateTo, nullableDateCodec),
-    onlyTyped: filterField(onlyTyped, booleanCodec),
+    onlyFailed: filterField(onlyFailed, booleanCodec),
     onlyRedirects: filterField(onlyRedirects, booleanCodec),
-    onlyHidden: filterField(onlyHidden, booleanCodec)
+    onlySynthesized: filterField(onlySynthesized, booleanCodec)
   })
 
   const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 
-  const selectedVisit = ref<ChromiumHistoryVisit | null>(null)
+  const selectedVisit = ref<HistoryVisit | null>(null)
   const detailDialog = ref(false)
 
   const { domainOptions, filteredVisits, topDomains, dateRangeLabel, weekdayTrend, hourlyTrend } =
-    useChromiumHistoryFilters(
+    useHistoryFilters(
       source.rawVisits,
       {
         search: debouncedSearch,
         domainFilter,
         dateFrom,
         dateTo,
-        onlyTyped,
+        onlyFailed,
         onlyRedirects,
-        onlyHidden
+        onlySynthesized
       },
       useVisitFilterI18n()
     )
@@ -89,7 +78,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     () => new Set(source.rawVisits.value.map((v) => v.domain)).size
   )
 
-  function openDetail(visit: ChromiumHistoryVisit) {
+  function openDetail(visit: HistoryVisit) {
     selectedVisit.value = visit
     detailDialog.value = true
   }
@@ -101,9 +90,9 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     domainFilter.value = null
     dateFrom.value = null
     dateTo.value = null
-    onlyTyped.value = false
+    onlyFailed.value = false
     onlyRedirects.value = false
-    onlyHidden.value = false
+    onlySynthesized.value = false
   }
 
   return {
@@ -121,9 +110,9 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     domainFilter,
     dateFrom,
     dateTo,
-    onlyTyped,
+    onlyFailed,
     onlyRedirects,
-    onlyHidden,
+    onlySynthesized,
     selectedVisit,
     detailDialog,
     hasData: source.hasData,

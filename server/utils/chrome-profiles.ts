@@ -18,5 +18,3 @@ export async function listChromeProfiles(
     localStatePath: options.localStatePath
   })
 }
-
-export { resolveDefaultChromiumProfile as resolveDefaultChromeProfile } from './chromium-profiles'

@@ -11,7 +11,7 @@ import { corruptDataPages } from '../../../fixtures/corrupt-sqlite-db'
 
 // This test environment has no `Worker` global, so parseFirefoxHistoryFile
 // runs parseFirefoxHistoryBuffer() directly on the calling thread instead of
-// offloading to firefoxHistoryDatabase.worker.ts — the worker-dispatch branch
+// offloading to historyParser.worker.ts — the worker-dispatch branch
 // itself is covered separately in useFirefoxHistoryParser.worker.test.ts.
 
 async function fileFromDb(

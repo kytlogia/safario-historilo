@@ -8,9 +8,7 @@ import { useAppLocale, type AppLocale } from '~/composables/useAppLocale'
 // at the call site — `apiBase` here is a runtime value (it varies per
 // source), so these response shapes have to be declared explicitly instead
 // of relying on that inference. Shared shape across all four
-// /api/local-history[/<brand>]/{status,profiles} route groups. Exported so
-// index.vue/firefox.vue (whose status $fetch calls aren't routed through
-// this composable) can reuse it instead of redefining it.
+// /api/local-history[/<brand>]/{status,profiles} route groups.
 export interface LocalHistoryStatusResponse {
   available: boolean
   present: boolean
@@ -38,7 +36,7 @@ export interface UnifiedHistorySourceOptions<V, P> {
 /**
  * One source's worth of state and load orchestration for the cross-browser
  * search page (app/pages/all.vue) — mirrors the per-page composables
- * (useChromiumHistoryPage.ts and the inline logic in index.vue/firefox.vue)
+ * (useChromiumHistoryPage.ts / useSafariHistoryPage.ts / useFirefoxHistoryPage.ts)
  * but parameterized over the visit/profile type and API base, since /all.vue
  * needs four of these (Safari/Firefox/Chrome/Edge) side by side instead of
  * one per page. Filtering is intentionally left out — app/pages/all.vue

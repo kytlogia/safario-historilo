@@ -152,4 +152,42 @@ describe('UploadPanel', () => {
       ])
     })
   })
+
+  // The 'safari' branch (this component's default brand) is covered above;
+  // these guard the other three BRAND_META branches — the {app}/{path}
+  // interpolation shared by chrome/edge, and Safari's one structural
+  // difference from firefox/chrome/edge (no "open profile folder" step).
+  describe('brand variants', () => {
+    it('uses Safari-specific copy and skips the profile-folder step by default', () => {
+      const wrapper = mountPanel()
+
+      expect(wrapper.text()).toContain('Safariの History.db をドラッグ&ドロップ')
+      expect(wrapper.text()).not.toContain('プロファイルのフォルダ')
+    })
+
+    it('uses Firefox-specific copy and includes the profile-folder step', () => {
+      const wrapper = mountPanel({ brand: 'firefox' })
+
+      expect(wrapper.text()).toContain('Firefoxの places.sqlite をドラッグ&ドロップ')
+      expect(wrapper.text()).toContain('使用しているプロファイルのフォルダを開く')
+    })
+
+    it('interpolates the Chrome app name/path and includes the profile-folder step', () => {
+      const wrapper = mountPanel({ brand: 'chrome' })
+
+      expect(wrapper.text()).toContain('Google Chrome の History をドラッグ&ドロップ')
+      expect(wrapper.text()).toContain('Google Chrome を終了する')
+      expect(wrapper.text()).toContain('~/Library/Application Support/Google/Chrome/')
+      expect(wrapper.text()).toContain('プロファイルのフォルダ')
+    })
+
+    it('interpolates the Edge app name/path and includes the profile-folder step', () => {
+      const wrapper = mountPanel({ brand: 'edge' })
+
+      expect(wrapper.text()).toContain('Microsoft Edge の History をドラッグ&ドロップ')
+      expect(wrapper.text()).toContain('Microsoft Edge を終了する')
+      expect(wrapper.text()).toContain('~/Library/Application Support/Microsoft Edge/')
+      expect(wrapper.text()).toContain('プロファイルのフォルダ')
+    })
+  })
 })

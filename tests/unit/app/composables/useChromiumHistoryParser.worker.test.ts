@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ChromiumHistoryVisit } from '~/types/history'
 import type {
-  ChromiumHistoryDatabaseWorkerRequest,
-  ChromiumHistoryDatabaseWorkerResponse
-} from '~/composables/chromiumHistoryDatabase.worker'
+  HistoryParserWorkerRequest,
+  HistoryParserWorkerResponse
+} from '~/composables/historyParser.worker'
 
 // jsdom (this file's default environment) has no real Worker implementation, so
 // these tests stub `Worker` themselves to exercise the dispatch/response-handling
@@ -13,7 +13,7 @@ import type {
 class FakeWorker {
   static instances: FakeWorker[] = []
 
-  onmessage: ((event: MessageEvent<ChromiumHistoryDatabaseWorkerResponse>) => void) | null = null
+  onmessage: ((event: MessageEvent<HistoryParserWorkerResponse>) => void) | null = null
   onerror: ((event: ErrorEvent) => void) | null = null
   terminated = false
   posted: { data: unknown; transfer?: Transferable[] }[] = []
@@ -59,7 +59,7 @@ async function latestWorker(): Promise<FakeWorker> {
 }
 
 function postedRequest(worker: FakeWorker, index = worker.posted.length - 1) {
-  return worker.posted[index]!.data as ChromiumHistoryDatabaseWorkerRequest
+  return worker.posted[index]!.data as HistoryParserWorkerRequest
 }
 
 describe('parseChromiumHistoryFile (Worker dispatch)', () => {
@@ -83,12 +83,12 @@ describe('parseChromiumHistoryFile (Worker dispatch)', () => {
     expect(request.fileName).toBe('History')
     expect(worker.posted[0]!.transfer).toEqual([request.buffer])
 
-    const response: ChromiumHistoryDatabaseWorkerResponse = {
+    const response: HistoryParserWorkerResponse = {
       requestId: request.requestId,
       ok: true,
       visits: [SAMPLE_VISIT]
     }
-    worker.onmessage?.({ data: response } as MessageEvent<ChromiumHistoryDatabaseWorkerResponse>)
+    worker.onmessage?.({ data: response } as MessageEvent<HistoryParserWorkerResponse>)
 
     const result = await promise
     expect(result.fileName).toBe('History')
@@ -104,12 +104,12 @@ describe('parseChromiumHistoryFile (Worker dispatch)', () => {
     const promise = parseChromiumHistoryFile(file)
     const worker = await latestWorker()
 
-    const response: ChromiumHistoryDatabaseWorkerResponse = {
+    const response: HistoryParserWorkerResponse = {
       requestId: postedRequest(worker).requestId,
       ok: false,
       message: 'このファイルはChrome/Edgeの履歴データベース(History)ではないようです。'
     }
-    worker.onmessage?.({ data: response } as MessageEvent<ChromiumHistoryDatabaseWorkerResponse>)
+    worker.onmessage?.({ data: response } as MessageEvent<HistoryParserWorkerResponse>)
 
     await expect(promise).rejects.toThrow(
       'このファイルはChrome/Edgeの履歴データベース(History)ではないようです。'
@@ -138,7 +138,7 @@ describe('parseChromiumHistoryFile (Worker dispatch)', () => {
     })
     nextWorker.onmessage?.({
       data: { requestId: postedRequest(nextWorker).requestId, ok: true, visits: [] }
-    } as MessageEvent<ChromiumHistoryDatabaseWorkerResponse>)
+    } as MessageEvent<HistoryParserWorkerResponse>)
     await nextPromise
   })
 })

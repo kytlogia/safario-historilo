@@ -1,9 +1,9 @@
 import { computed, ref } from 'vue'
-import type { ChromiumHistoryVisit, ChromiumProfile } from '~/types/history'
+import type { FirefoxHistoryVisit, FirefoxProfile } from '~/types/history'
 import { toUnifiedVisit } from '~/utils/unifiedHistory'
 import { browserCatalogEntry } from '~/utils/browserCatalog'
 import { useVisitFilterI18n } from '~/composables/useAppLocale'
-import { useChromiumHistoryFilters } from './useChromiumHistoryFilters'
+import { useFirefoxHistoryFilters } from './useFirefoxHistoryFilters'
 import { useDebouncedRef } from './useDebouncedRef'
 import {
   booleanCodec,
@@ -13,37 +13,30 @@ import {
   stringCodec,
   useFilterPersistence
 } from './useFilterPersistence'
-import { parseChromiumHistoryFile } from './useChromiumHistoryParser'
+import { parseFirefoxHistoryFile } from './useFirefoxHistoryParser'
 import { useUnifiedHistorySource } from './useUnifiedHistorySource'
 
-function resolveDefaultProfileId(profiles: ChromiumProfile[]): string {
+function resolveDefaultProfileId(profiles: FirefoxProfile[]): string {
   const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0]
   return defaultProfile?.id ?? ''
 }
 
 /**
- * All page-level state and orchestration shared by app/pages/chrome.vue and
- * app/pages/edge.vue — the two pages differ only in a handful of display
- * strings and their icon (already handled one layer down via the `brand`
- * prop on UploadPanel/ChromiumFilterBar), never in this loading /
- * filtering / auto-load logic itself. `brand` selects the matching
- * `/api/local-history/<brand>` routes.
- *
- * The load/status/profile orchestration itself is delegated to
- * useUnifiedHistorySource.ts (shared with app/pages/all.vue) rather than
- * duplicated here — only the Chromium-specific filtering
- * (onlyTyped/onlyRedirects/onlyHidden, which needs the full
- * ChromiumHistoryVisit shape, not the reduced UnifiedHistoryVisit
- * projection) stays local to this composable.
+ * All page-level state and orchestration for app/pages/firefox.vue, mirroring
+ * useChromiumHistoryPage.ts — load/status/profile orchestration is delegated
+ * to useUnifiedHistorySource.ts, and only the Firefox-specific filtering
+ * (onlyTyped/onlyRedirects/onlyHidden) stays local here.
  */
-export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
-  const source = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
-    apiBase: browserCatalogEntry(brand).apiBase,
-    serverFileName: browserCatalogEntry(brand).serverFileName,
-    parseFile: parseChromiumHistoryFile,
-    toUnified: (v) => toUnifiedVisit(v, brand),
+export function useFirefoxHistoryPage() {
+  const { apiBase, serverFileName } = browserCatalogEntry('firefox')
+
+  const source = useUnifiedHistorySource<FirefoxHistoryVisit, FirefoxProfile>({
+    apiBase,
+    serverFileName,
+    parseFile: parseFirefoxHistoryFile,
+    toUnified: (v) => toUnifiedVisit(v, 'firefox'),
     resolveDefaultProfileId,
-    loadErrorFallbackKey: 'error.autoLoadFailed.chromium'
+    loadErrorFallbackKey: 'error.autoLoadFailed.firefox'
   })
 
   const search = ref('')
@@ -54,7 +47,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
   const onlyRedirects = ref(false)
   const onlyHidden = ref(false)
 
-  useFilterPersistence(`${brand}-history-filters`, {
+  useFilterPersistence('firefox-history-filters', {
     search: filterField(search, stringCodec),
     domainFilter: filterField(domainFilter, nullableStringCodec),
     dateFrom: filterField(dateFrom, nullableDateCodec),
@@ -66,11 +59,11 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
 
   const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 
-  const selectedVisit = ref<ChromiumHistoryVisit | null>(null)
+  const selectedVisit = ref<FirefoxHistoryVisit | null>(null)
   const detailDialog = ref(false)
 
   const { domainOptions, filteredVisits, topDomains, dateRangeLabel, weekdayTrend, hourlyTrend } =
-    useChromiumHistoryFilters(
+    useFirefoxHistoryFilters(
       source.rawVisits,
       {
         search: debouncedSearch,
@@ -89,7 +82,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     () => new Set(source.rawVisits.value.map((v) => v.domain)).size
   )
 
-  function openDetail(visit: ChromiumHistoryVisit) {
+  function openDetail(visit: FirefoxHistoryVisit) {
     selectedVisit.value = visit
     detailDialog.value = true
   }
