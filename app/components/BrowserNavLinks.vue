@@ -20,6 +20,7 @@ const links = computed(() => BROWSER_CATALOG.filter((b) => b.id !== props.curren
     variant="text"
     :to="link.route"
     :prepend-icon="link.icon"
+    :data-testid="`browser-nav-link-${link.id}`"
     class="mr-2"
     >{{ t(link.navLabelKey) }}</v-btn
   >

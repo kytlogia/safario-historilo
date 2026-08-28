@@ -12,18 +12,9 @@ import {
 import { useAppLocale, useVisitFilterI18n } from '~/composables/useAppLocale'
 import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 import { browserCatalogEntry } from '~/utils/browserCatalog'
+import type { LocalHistoryStatusResponse } from '~/composables/useUnifiedHistorySource'
 
 const { apiBase, serverFileName } = browserCatalogEntry('safari')
-
-// $fetch's Nitro route-type inference only kicks in for a literal URL string
-// at the call site — apiBase here is a runtime value, so these response
-// shapes have to be declared explicitly (mirrors useUnifiedHistorySource.ts).
-interface LocalHistoryStatusResponse {
-  available: boolean
-  present: boolean
-  readable: boolean
-  path: string
-}
 
 const { t } = useI18n()
 const { currentLocale } = useAppLocale()
