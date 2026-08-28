@@ -28,26 +28,30 @@ function mountLinks(props?: { current?: (typeof BROWSER_CATALOG)[number]['id'] }
 describe('BrowserNavLinks', () => {
   it('renders a link for every catalog entry when no current browser is given', async () => {
     const wrapper = mountLinks()
-    await wrapper.get('button').trigger('click')
+    try {
+      await wrapper.get('[data-testid="browser-nav-menu-button"]').trigger('click')
 
-    for (const entry of BROWSER_CATALOG) {
-      const link = document.querySelector(`[data-testid="browser-nav-link-${entry.id}"]`)
-      expect(link).not.toBeNull()
-      expect(link?.getAttribute('href')).toBe(entry.route)
+      for (const entry of BROWSER_CATALOG) {
+        const link = document.querySelector(`[data-testid="browser-nav-link-${entry.id}"]`)
+        expect(link).not.toBeNull()
+        expect(link?.getAttribute('href')).toBe(entry.route)
+      }
+    } finally {
+      wrapper.unmount()
     }
-
-    wrapper.unmount()
   })
 
   it('excludes the current browser from its own nav bar', async () => {
     const wrapper = mountLinks({ current: 'chrome' })
-    await wrapper.get('button').trigger('click')
+    try {
+      await wrapper.get('[data-testid="browser-nav-menu-button"]').trigger('click')
 
-    expect(document.querySelector('[data-testid="browser-nav-link-chrome"]')).toBeNull()
-    for (const entry of BROWSER_CATALOG.filter((b) => b.id !== 'chrome')) {
-      expect(document.querySelector(`[data-testid="browser-nav-link-${entry.id}"]`)).not.toBeNull()
+      expect(document.querySelector('[data-testid="browser-nav-link-chrome"]')).toBeNull()
+      for (const entry of BROWSER_CATALOG.filter((b) => b.id !== 'chrome')) {
+        expect(document.querySelector(`[data-testid="browser-nav-link-${entry.id}"]`)).not.toBeNull()
+      }
+    } finally {
+      wrapper.unmount()
     }
-
-    wrapper.unmount()
   })
 })

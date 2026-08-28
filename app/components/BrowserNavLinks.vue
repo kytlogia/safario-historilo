@@ -16,9 +16,14 @@ const links = computed(() => BROWSER_CATALOG.filter((b) => b.id !== props.curren
 <template>
   <v-menu>
     <template #activator="{ props: menuProps }">
-      <v-btn variant="text" append-icon="mdi-chevron-down" class="mr-2" v-bind="menuProps">{{
-        t('nav.viewHistory')
-      }}</v-btn>
+      <v-btn
+        variant="text"
+        append-icon="mdi-chevron-down"
+        class="mr-2"
+        data-testid="browser-nav-menu-button"
+        v-bind="menuProps"
+        >{{ t('nav.viewHistory') }}</v-btn
+      >
     </template>
     <v-list density="compact">
       <v-list-item
