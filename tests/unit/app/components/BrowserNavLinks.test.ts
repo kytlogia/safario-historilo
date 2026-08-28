@@ -48,7 +48,9 @@ describe('BrowserNavLinks', () => {
 
       expect(document.querySelector('[data-testid="browser-nav-link-chrome"]')).toBeNull()
       for (const entry of BROWSER_CATALOG.filter((b) => b.id !== 'chrome')) {
-        expect(document.querySelector(`[data-testid="browser-nav-link-${entry.id}"]`)).not.toBeNull()
+        expect(
+          document.querySelector(`[data-testid="browser-nav-link-${entry.id}"]`)
+        ).not.toBeNull()
       }
     } finally {
       wrapper.unmount()
