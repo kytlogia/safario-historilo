@@ -1,197 +1,44 @@
 <script setup lang="ts">
-import { FetchError } from 'ofetch'
 import { useI18n } from 'vue-i18n'
-import type { FirefoxHistoryVisit, FirefoxProfile } from '~/types/history'
-import {
-  booleanCodec,
-  filterField,
-  nullableDateCodec,
-  nullableStringCodec,
-  stringCodec
-} from '~/composables/useFilterPersistence'
-import { useAppLocale, useVisitFilterI18n } from '~/composables/useAppLocale'
-import { browserCatalogEntry } from '~/utils/browserCatalog'
-import type { LocalHistoryStatusResponse } from '~/composables/useUnifiedHistorySource'
 
 const { t } = useI18n()
-const { currentLocale } = useAppLocale()
-const { apiBase, serverFileName } = browserCatalogEntry('firefox')
-
-const visits = ref<FirefoxHistoryVisit[]>([])
-const fileName = ref('')
-const isLoading = ref(false)
-const loadError = ref('')
-
-const serverAutoLoadAvailable = ref(false)
-const serverDbPath = ref('')
-const serverPermissionHint = ref(false)
-const serverStatusWarning = ref('')
-
-const serverProfiles = ref<FirefoxProfile[]>([])
-const selectedProfileId = ref('')
-
-const search = ref('')
-const domainFilter = ref<string | null>(null)
-const dateFrom = ref<Date | null>(null)
-const dateTo = ref<Date | null>(null)
-const onlyTyped = ref(false)
-const onlyRedirects = ref(false)
-const onlyHidden = ref(false)
-
-useFilterPersistence('firefox-history-filters', {
-  search: filterField(search, stringCodec),
-  domainFilter: filterField(domainFilter, nullableStringCodec),
-  dateFrom: filterField(dateFrom, nullableDateCodec),
-  dateTo: filterField(dateTo, nullableDateCodec),
-  onlyTyped: filterField(onlyTyped, booleanCodec),
-  onlyRedirects: filterField(onlyRedirects, booleanCodec),
-  onlyHidden: filterField(onlyHidden, booleanCodec)
-})
-
-const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
-
-const selectedVisit = ref<FirefoxHistoryVisit | null>(null)
-const detailDialog = ref(false)
-
-const hasData = computed(() => visits.value.length > 0)
-
-const { domainOptions, filteredVisits, topDomains, dateRangeLabel, weekdayTrend, hourlyTrend } =
-  useFirefoxHistoryFilters(
-    visits,
-    {
-      search: debouncedSearch,
-      domainFilter,
-      dateFrom,
-      dateTo,
-      onlyTyped,
-      onlyRedirects,
-      onlyHidden
-    },
-    useVisitFilterI18n()
-  )
-
-const uniqueUrlCount = computed(() => new Set(visits.value.map((v) => v.url)).size)
-const uniqueDomainCount = computed(() => new Set(visits.value.map((v) => v.domain)).size)
-
-async function loadFile(file: File | null | undefined) {
-  if (!file || isLoading.value) return
-  isLoading.value = true
-  loadError.value = ''
-  try {
-    const result = await parseFirefoxHistoryFile(file, currentLocale.value)
-    visits.value = result.visits
-    fileName.value = result.fileName
-  } catch (err) {
-    loadError.value = err instanceof Error ? err.message : t('error.unknown')
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Guards against out-of-order responses: switching profiles quickly fires
-// overlapping requests, and without this a slower, stale response could
-// overwrite the state after a newer one already resolved. Only the response
-// whose requestId still matches the latest dispatched request is applied.
-let statusRequestId = 0
-
-async function checkServerAutoLoadAvailability() {
-  const requestId = ++statusRequestId
-  const profileId = selectedProfileId.value || undefined
-  serverStatusWarning.value = ''
-  try {
-    const body = await $fetch<LocalHistoryStatusResponse>(`${apiBase}/status`, {
-      query: { profileId }
-    })
-    if (requestId !== statusRequestId) return
-    serverAutoLoadAvailable.value = Boolean(body?.available)
-    serverDbPath.value = typeof body?.path === 'string' ? body.path : ''
-    serverPermissionHint.value = Boolean(body?.present) && !body?.readable
-  } catch (err) {
-    if (requestId !== statusRequestId) return
-    serverPermissionHint.value = false
-    // A same-origin same-machine request being rejected (403) means the
-    // server-side localhost check itself failed, not that this deployment
-    // simply lacks a Nitro server — surface that instead of silently
-    // falling back to drag & drop, which otherwise looks identical to
-    // "feature not available" and hides the real cause.
-    if (err instanceof FetchError && err.statusCode === 403) {
-      serverStatusWarning.value = err.data?.message ?? t('error.serverRestricted')
-    }
-    // No Nitro server backing this deployment (e.g. static hosting) — stay with drag & drop only.
-    serverAutoLoadAvailable.value = false
-  }
-}
-
-async function loadFirefoxProfiles() {
-  try {
-    const body = await $fetch<{ profiles: FirefoxProfile[] }>(`${apiBase}/profiles`)
-    const profiles: FirefoxProfile[] = Array.isArray(body?.profiles) ? body.profiles : []
-    serverProfiles.value = profiles
-    if (!selectedProfileId.value) {
-      const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0]
-      selectedProfileId.value = defaultProfile?.id ?? ''
-    }
-  } catch {
-    // Same fallback as checkServerAutoLoadAvailability(): no Nitro server, or
-    // the localhost/same-origin check rejected the request. Either way, stay
-    // with drag & drop only and no profile picker.
-    serverProfiles.value = []
-  }
-}
-
-async function onProfileChange(profileId: string) {
-  selectedProfileId.value = profileId
-  await checkServerAutoLoadAvailability()
-}
-
-async function loadFromServer() {
-  if (isLoading.value) return
-  isLoading.value = true
-  loadError.value = ''
-  try {
-    const blob = await $fetch<Blob>(apiBase, {
-      query: { profileId: selectedProfileId.value || undefined }
-    })
-    const result = await parseFirefoxHistoryFile(
-      new File([blob], serverFileName),
-      currentLocale.value
-    )
-    visits.value = result.visits
-    fileName.value = result.fileName
-  } catch (err) {
-    if (err instanceof FetchError) {
-      loadError.value = err.data?.message ?? t('error.autoLoadFailed.firefox')
-    } else {
-      loadError.value = err instanceof Error ? err.message : t('error.unknown')
-    }
-  } finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(async () => {
-  await Promise.all([checkServerAutoLoadAvailability(), loadFirefoxProfiles()])
-})
-
-function openDetail(visit: FirefoxHistoryVisit) {
-  selectedVisit.value = visit
-  detailDialog.value = true
-}
+const {
+  visits,
+  fileName,
+  isLoading,
+  loadError,
+  serverAutoLoadAvailable,
+  serverDbPath,
+  serverPermissionHint,
+  serverStatusWarning,
+  serverProfiles,
+  selectedProfileId,
+  search,
+  domainFilter,
+  dateFrom,
+  dateTo,
+  onlyTyped,
+  onlyRedirects,
+  onlyHidden,
+  selectedVisit,
+  detailDialog,
+  hasData,
+  domainOptions,
+  filteredVisits,
+  topDomains,
+  dateRangeLabel,
+  weekdayTrend,
+  hourlyTrend,
+  uniqueUrlCount,
+  uniqueDomainCount,
+  loadFile,
+  onProfileChange,
+  loadFromServer,
+  openDetail,
+  resetAll
+} = useFirefoxHistoryPage()
 
 const { isDark, toggleTheme } = useAppTheme()
-
-function resetAll() {
-  visits.value = []
-  fileName.value = ''
-  search.value = ''
-  resetDebouncedSearch()
-  domainFilter.value = null
-  dateFrom.value = null
-  dateTo.value = null
-  onlyTyped.value = false
-  onlyRedirects.value = false
-  onlyHidden.value = false
-}
 </script>
 
 <template>
