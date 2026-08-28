@@ -1,10 +1,4 @@
-import type {
-  ChromiumHistoryVisit,
-  FirefoxHistoryVisit,
-  HistoryVisit,
-  UnifiedHistorySource,
-  UnifiedHistoryVisit
-} from '~/types/history'
+import type { UnifiedHistorySource, UnifiedHistoryVisit } from '~/types/history'
 import { BROWSER_CATALOG, browserCatalogEntry } from './browserCatalog'
 
 export const UNIFIED_HISTORY_SOURCES: UnifiedHistorySource[] = BROWSER_CATALOG.map((b) => b.id)
@@ -20,41 +14,19 @@ export function unifiedSourceMeta(source: UnifiedHistorySource): SourceMeta {
   return { label, icon, color }
 }
 
-export function toUnifiedSafariVisit(visit: HistoryVisit): UnifiedHistoryVisit {
+// Every per-brand visit type (HistoryVisit/FirefoxHistoryVisit/
+// ChromiumHistoryVisit) carries these five fields with the same names — the
+// projection down to UnifiedHistoryVisit only needs them, so one generic
+// function covers Safari/Firefox/Chrome/Edge instead of a near-identical
+// toUnifiedXVisit() per brand. `source` alone now also determines
+// `sourceLabel` (via browserCatalogEntry), including the Chrome/Edge split
+// that used to be a separate `brand` parameter.
+export function toUnifiedVisit<
+  V extends { url: string; domain: string; title: string; visitTime: Date; visitCount: number }
+>(visit: V, source: UnifiedHistorySource): UnifiedHistoryVisit {
   return {
-    source: 'safari',
-    sourceLabel: browserCatalogEntry('safari').label,
-    url: visit.url,
-    domain: visit.domain,
-    title: visit.title,
-    visitTime: visit.visitTime,
-    visitCount: visit.visitCount
-  }
-}
-
-export function toUnifiedFirefoxVisit(visit: FirefoxHistoryVisit): UnifiedHistoryVisit {
-  return {
-    source: 'firefox',
-    sourceLabel: browserCatalogEntry('firefox').label,
-    url: visit.url,
-    domain: visit.domain,
-    title: visit.title,
-    visitTime: visit.visitTime,
-    visitCount: visit.visitCount
-  }
-}
-
-// Chrome and Edge share the exact same visit shape (both Chromium-based),
-// differing only in which brand produced the file — see
-// server/utils/chromium-history-store.ts / app/composables/useChromiumHistoryPage.ts
-// for the same 'chrome' | 'edge' split.
-export function toUnifiedChromiumVisit(
-  visit: ChromiumHistoryVisit,
-  brand: 'chrome' | 'edge'
-): UnifiedHistoryVisit {
-  return {
-    source: brand,
-    sourceLabel: browserCatalogEntry(brand).label,
+    source,
+    sourceLabel: browserCatalogEntry(source).label,
     url: visit.url,
     domain: visit.domain,
     title: visit.title,

@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import type { ChromiumHistoryVisit, ChromiumProfile } from '~/types/history'
-import { toUnifiedChromiumVisit } from '~/utils/unifiedHistory'
+import { toUnifiedVisit } from '~/utils/unifiedHistory'
 import { browserCatalogEntry } from '~/utils/browserCatalog'
 import { useVisitFilterI18n } from '~/composables/useAppLocale'
 import { useChromiumHistoryFilters } from './useChromiumHistoryFilters'
@@ -25,7 +25,7 @@ function resolveDefaultProfileId(profiles: ChromiumProfile[]): string {
  * All page-level state and orchestration shared by app/pages/chrome.vue and
  * app/pages/edge.vue — the two pages differ only in a handful of display
  * strings and their icon (already handled one layer down via the `brand`
- * prop on ChromiumUploadPanel/ChromiumFilterBar), never in this loading /
+ * prop on UploadPanel/ChromiumFilterBar), never in this loading /
  * filtering / auto-load logic itself. `brand` selects the matching
  * `/api/local-history/<brand>` routes.
  *
@@ -41,7 +41,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     apiBase: browserCatalogEntry(brand).apiBase,
     serverFileName: browserCatalogEntry(brand).serverFileName,
     parseFile: parseChromiumHistoryFile,
-    toUnified: (v) => toUnifiedChromiumVisit(v, brand),
+    toUnified: (v) => toUnifiedVisit(v, brand),
     resolveDefaultProfileId,
     loadErrorFallbackKey: 'error.autoLoadFailed.chromium'
   })

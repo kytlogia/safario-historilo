@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import type { HistoryVisit, SafariProfile } from '~/types/history'
-import { toUnifiedSafariVisit } from '~/utils/unifiedHistory'
+import { toUnifiedVisit } from '~/utils/unifiedHistory'
 import { browserCatalogEntry } from '~/utils/browserCatalog'
 import { useVisitFilterI18n } from '~/composables/useAppLocale'
 import { useHistoryFilters } from './useHistoryFilters'
@@ -30,7 +30,7 @@ export function useSafariHistoryPage() {
     apiBase,
     serverFileName,
     parseFile: parseSafariHistoryFile,
-    toUnified: toUnifiedSafariVisit,
+    toUnified: (v) => toUnifiedVisit(v, 'safari'),
     initialProfileId: DEFAULT_PROFILE_ID,
     loadErrorFallbackKey: 'error.autoLoadFailed.safari'
   })

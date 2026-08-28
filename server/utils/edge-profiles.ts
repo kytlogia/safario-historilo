@@ -18,5 +18,3 @@ export async function listEdgeProfiles(
     localStatePath: options.localStatePath
   })
 }
-
-export { resolveDefaultChromiumProfile as resolveDefaultEdgeProfile } from './chromium-profiles'

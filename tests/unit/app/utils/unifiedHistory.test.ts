@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChromiumHistoryVisit, FirefoxHistoryVisit, HistoryVisit } from '~/types/history'
-import {
-  toUnifiedChromiumVisit,
-  toUnifiedFirefoxVisit,
-  toUnifiedSafariVisit,
-  UNIFIED_HISTORY_SOURCES,
-  unifiedSourceMeta
-} from '~/utils/unifiedHistory'
+import { toUnifiedVisit, UNIFIED_HISTORY_SOURCES, unifiedSourceMeta } from '~/utils/unifiedHistory'
 
 function makeSafariVisit(overrides: Partial<HistoryVisit> = {}): HistoryVisit {
   return {
@@ -91,10 +85,10 @@ describe('unifiedSourceMeta', () => {
   })
 })
 
-describe('toUnifiedSafariVisit', () => {
+describe('toUnifiedVisit', () => {
   it('maps the common fields and tags the source as safari', () => {
     const visit = makeSafariVisit()
-    expect(toUnifiedSafariVisit(visit)).toEqual({
+    expect(toUnifiedVisit(visit, 'safari')).toEqual({
       source: 'safari',
       sourceLabel: 'Safari',
       url: visit.url,
@@ -104,12 +98,10 @@ describe('toUnifiedSafariVisit', () => {
       visitCount: visit.visitCount
     })
   })
-})
 
-describe('toUnifiedFirefoxVisit', () => {
   it('maps the common fields and tags the source as firefox', () => {
     const visit = makeFirefoxVisit()
-    expect(toUnifiedFirefoxVisit(visit)).toEqual({
+    expect(toUnifiedVisit(visit, 'firefox')).toEqual({
       source: 'firefox',
       sourceLabel: 'Firefox',
       url: visit.url,
@@ -119,12 +111,10 @@ describe('toUnifiedFirefoxVisit', () => {
       visitCount: visit.visitCount
     })
   })
-})
 
-describe('toUnifiedChromiumVisit', () => {
   it('tags the source as chrome when given that brand', () => {
     const visit = makeChromiumVisit()
-    expect(toUnifiedChromiumVisit(visit, 'chrome')).toEqual({
+    expect(toUnifiedVisit(visit, 'chrome')).toEqual({
       source: 'chrome',
       sourceLabel: 'Chrome',
       url: visit.url,
@@ -137,7 +127,7 @@ describe('toUnifiedChromiumVisit', () => {
 
   it('tags the source as edge when given that brand', () => {
     const visit = makeChromiumVisit()
-    expect(toUnifiedChromiumVisit(visit, 'edge')).toMatchObject({
+    expect(toUnifiedVisit(visit, 'edge')).toMatchObject({
       source: 'edge',
       sourceLabel: 'Edge'
     })

@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import type { FirefoxHistoryVisit, FirefoxProfile } from '~/types/history'
-import { toUnifiedFirefoxVisit } from '~/utils/unifiedHistory'
+import { toUnifiedVisit } from '~/utils/unifiedHistory'
 import { browserCatalogEntry } from '~/utils/browserCatalog'
 import { useVisitFilterI18n } from '~/composables/useAppLocale'
 import { useFirefoxHistoryFilters } from './useFirefoxHistoryFilters'
@@ -34,7 +34,7 @@ export function useFirefoxHistoryPage() {
     apiBase,
     serverFileName,
     parseFile: parseFirefoxHistoryFile,
-    toUnified: toUnifiedFirefoxVisit,
+    toUnified: (v) => toUnifiedVisit(v, 'firefox'),
     resolveDefaultProfileId,
     loadErrorFallbackKey: 'error.autoLoadFailed.firefox'
   })

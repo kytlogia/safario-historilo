@@ -12,12 +12,7 @@ import type {
   UnifiedHistorySource,
   UnifiedHistoryVisit
 } from '~/types/history'
-import {
-  toUnifiedChromiumVisit,
-  toUnifiedFirefoxVisit,
-  toUnifiedSafariVisit,
-  UNIFIED_HISTORY_SOURCES
-} from '~/utils/unifiedHistory'
+import { toUnifiedVisit, UNIFIED_HISTORY_SOURCES } from '~/utils/unifiedHistory'
 import { browserCatalogEntry } from '~/utils/browserCatalog'
 import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 import { useDebouncedRef } from './useDebouncedRef'
@@ -54,7 +49,7 @@ export function useUnifiedHistoryPage() {
     apiBase: browserCatalogEntry('safari').apiBase,
     serverFileName: browserCatalogEntry('safari').serverFileName,
     parseFile: parseSafariHistoryFile,
-    toUnified: toUnifiedSafariVisit,
+    toUnified: (v) => toUnifiedVisit(v, 'safari'),
     initialProfileId: DEFAULT_PROFILE_ID,
     loadErrorFallbackKey: 'error.autoLoadFailed.safari'
   })
@@ -63,7 +58,7 @@ export function useUnifiedHistoryPage() {
     apiBase: browserCatalogEntry('firefox').apiBase,
     serverFileName: browserCatalogEntry('firefox').serverFileName,
     parseFile: parseFirefoxHistoryFile,
-    toUnified: toUnifiedFirefoxVisit,
+    toUnified: (v) => toUnifiedVisit(v, 'firefox'),
     resolveDefaultProfileId: pickDefaultProfileId,
     loadErrorFallbackKey: 'error.autoLoadFailed.firefox'
   })
@@ -72,7 +67,7 @@ export function useUnifiedHistoryPage() {
     apiBase: browserCatalogEntry('chrome').apiBase,
     serverFileName: browserCatalogEntry('chrome').serverFileName,
     parseFile: parseChromiumHistoryFile,
-    toUnified: (v) => toUnifiedChromiumVisit(v, 'chrome'),
+    toUnified: (v) => toUnifiedVisit(v, 'chrome'),
     resolveDefaultProfileId: pickDefaultProfileId,
     loadErrorFallbackKey: 'error.autoLoadFailed.chromium'
   })
@@ -81,7 +76,7 @@ export function useUnifiedHistoryPage() {
     apiBase: browserCatalogEntry('edge').apiBase,
     serverFileName: browserCatalogEntry('edge').serverFileName,
     parseFile: parseChromiumHistoryFile,
-    toUnified: (v) => toUnifiedChromiumVisit(v, 'edge'),
+    toUnified: (v) => toUnifiedVisit(v, 'edge'),
     resolveDefaultProfileId: pickDefaultProfileId,
     loadErrorFallbackKey: 'error.autoLoadFailed.chromium'
   })
