@@ -5,13 +5,9 @@ import type {
   UnifiedHistorySource,
   UnifiedHistoryVisit
 } from '~/types/history'
+import { BROWSER_CATALOG, browserCatalogEntry } from './browserCatalog'
 
-export const UNIFIED_HISTORY_SOURCES: UnifiedHistorySource[] = [
-  'safari',
-  'firefox',
-  'chrome',
-  'edge'
-]
+export const UNIFIED_HISTORY_SOURCES: UnifiedHistorySource[] = BROWSER_CATALOG.map((b) => b.id)
 
 interface SourceMeta {
   label: string
@@ -19,21 +15,15 @@ interface SourceMeta {
   color: string
 }
 
-const SOURCE_META: Record<UnifiedHistorySource, SourceMeta> = {
-  safari: { label: 'Safari', icon: 'mdi-compass-outline', color: 'primary' },
-  firefox: { label: 'Firefox', icon: 'mdi-fire', color: 'orange' },
-  chrome: { label: 'Chrome', icon: 'mdi-google-chrome', color: 'blue' },
-  edge: { label: 'Edge', icon: 'mdi-microsoft-edge', color: 'teal' }
-}
-
 export function unifiedSourceMeta(source: UnifiedHistorySource): SourceMeta {
-  return SOURCE_META[source]
+  const { label, icon, color } = browserCatalogEntry(source)
+  return { label, icon, color }
 }
 
 export function toUnifiedSafariVisit(visit: HistoryVisit): UnifiedHistoryVisit {
   return {
     source: 'safari',
-    sourceLabel: SOURCE_META.safari.label,
+    sourceLabel: browserCatalogEntry('safari').label,
     url: visit.url,
     domain: visit.domain,
     title: visit.title,
@@ -45,7 +35,7 @@ export function toUnifiedSafariVisit(visit: HistoryVisit): UnifiedHistoryVisit {
 export function toUnifiedFirefoxVisit(visit: FirefoxHistoryVisit): UnifiedHistoryVisit {
   return {
     source: 'firefox',
-    sourceLabel: SOURCE_META.firefox.label,
+    sourceLabel: browserCatalogEntry('firefox').label,
     url: visit.url,
     domain: visit.domain,
     title: visit.title,
@@ -64,7 +54,7 @@ export function toUnifiedChromiumVisit(
 ): UnifiedHistoryVisit {
   return {
     source: brand,
-    sourceLabel: SOURCE_META[brand].label,
+    sourceLabel: browserCatalogEntry(brand).label,
     url: visit.url,
     domain: visit.domain,
     title: visit.title,

@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { BROWSER_CATALOG } from '~/utils/browserCatalog'
 
 const { t } = useI18n()
 const {
@@ -30,11 +32,19 @@ const {
 
 const { isDark, toggleTheme } = useAppTheme()
 
+const sources = { safari, firefox, chrome, edge }
+const sourceCards = computed(() =>
+  BROWSER_CATALOG.map((entry) => {
+    const source = sources[entry.id]
+    if (!source) {
+      throw new Error(`No unified history source wired up for browser catalog entry: ${entry.id}`)
+    }
+    return { entry, source }
+  })
+)
+
 function resetAllSources() {
-  safari.reset()
-  firefox.reset()
-  chrome.reset()
-  edge.reset()
+  for (const source of Object.values(sources)) source.reset()
   resetFilters()
 }
 </script>
@@ -56,18 +66,7 @@ function resetAllSources() {
           @click="resetAllSources"
           >{{ t('nav.clearAll') }}</v-btn
         >
-        <v-btn variant="text" to="/" prepend-icon="mdi-compass-outline" class="mr-2">{{
-          t('nav.viewSafari')
-        }}</v-btn>
-        <v-btn variant="text" to="/firefox" prepend-icon="mdi-fire" class="mr-2">{{
-          t('nav.viewFirefox')
-        }}</v-btn>
-        <v-btn variant="text" to="/chrome" prepend-icon="mdi-google-chrome" class="mr-2">{{
-          t('nav.viewChrome')
-        }}</v-btn>
-        <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2">{{
-          t('nav.viewEdge')
-        }}</v-btn>
+        <BrowserNavLinks />
         <v-btn
           :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
           :aria-label="isDark ? t('common.switchToLightTheme') : t('common.switchToDarkTheme')"
@@ -81,92 +80,26 @@ function resetAllSources() {
     <v-main>
       <v-container fluid class="py-6">
         <v-row>
-          <v-col cols="12" sm="6" lg="3">
+          <v-col v-for="{ entry, source } in sourceCards" :key="entry.id" cols="12" sm="6" lg="3">
             <UnifiedSourceCard
-              label="Safari"
-              icon="mdi-compass-outline"
-              color="primary"
-              :is-loading="safari.isLoading.value"
-              :load-error="safari.loadError.value"
-              :has-data="safari.hasData.value"
-              :visit-count="safari.unifiedVisits.value.length"
-              :file-name="safari.fileName.value"
-              :server-auto-load-available="safari.serverAutoLoadAvailable.value"
-              :server-db-path="safari.serverDbPath.value"
-              :server-permission-hint="safari.serverPermissionHint.value"
-              :server-status-warning="safari.serverStatusWarning.value"
-              :server-profiles="safari.serverProfiles.value"
-              :selected-profile-id="safari.selectedProfileId.value"
-              @file-selected="safari.loadFile"
-              @load-from-server="safari.loadFromServer"
-              @update:selected-profile-id="safari.onProfileChange"
-              @reset="safari.reset"
-            />
-          </v-col>
-          <v-col cols="12" sm="6" lg="3">
-            <UnifiedSourceCard
-              label="Firefox"
-              icon="mdi-fire"
-              color="orange"
-              :is-loading="firefox.isLoading.value"
-              :load-error="firefox.loadError.value"
-              :has-data="firefox.hasData.value"
-              :visit-count="firefox.unifiedVisits.value.length"
-              :file-name="firefox.fileName.value"
-              :server-auto-load-available="firefox.serverAutoLoadAvailable.value"
-              :server-db-path="firefox.serverDbPath.value"
-              :server-permission-hint="firefox.serverPermissionHint.value"
-              :server-status-warning="firefox.serverStatusWarning.value"
-              :server-profiles="firefox.serverProfiles.value"
-              :selected-profile-id="firefox.selectedProfileId.value"
-              @file-selected="firefox.loadFile"
-              @load-from-server="firefox.loadFromServer"
-              @update:selected-profile-id="firefox.onProfileChange"
-              @reset="firefox.reset"
-            />
-          </v-col>
-          <v-col cols="12" sm="6" lg="3">
-            <UnifiedSourceCard
-              label="Chrome"
-              icon="mdi-google-chrome"
-              color="blue"
-              :is-loading="chrome.isLoading.value"
-              :load-error="chrome.loadError.value"
-              :has-data="chrome.hasData.value"
-              :visit-count="chrome.unifiedVisits.value.length"
-              :file-name="chrome.fileName.value"
-              :server-auto-load-available="chrome.serverAutoLoadAvailable.value"
-              :server-db-path="chrome.serverDbPath.value"
-              :server-permission-hint="chrome.serverPermissionHint.value"
-              :server-status-warning="chrome.serverStatusWarning.value"
-              :server-profiles="chrome.serverProfiles.value"
-              :selected-profile-id="chrome.selectedProfileId.value"
-              @file-selected="chrome.loadFile"
-              @load-from-server="chrome.loadFromServer"
-              @update:selected-profile-id="chrome.onProfileChange"
-              @reset="chrome.reset"
-            />
-          </v-col>
-          <v-col cols="12" sm="6" lg="3">
-            <UnifiedSourceCard
-              label="Edge"
-              icon="mdi-microsoft-edge"
-              color="teal"
-              :is-loading="edge.isLoading.value"
-              :load-error="edge.loadError.value"
-              :has-data="edge.hasData.value"
-              :visit-count="edge.unifiedVisits.value.length"
-              :file-name="edge.fileName.value"
-              :server-auto-load-available="edge.serverAutoLoadAvailable.value"
-              :server-db-path="edge.serverDbPath.value"
-              :server-permission-hint="edge.serverPermissionHint.value"
-              :server-status-warning="edge.serverStatusWarning.value"
-              :server-profiles="edge.serverProfiles.value"
-              :selected-profile-id="edge.selectedProfileId.value"
-              @file-selected="edge.loadFile"
-              @load-from-server="edge.loadFromServer"
-              @update:selected-profile-id="edge.onProfileChange"
-              @reset="edge.reset"
+              :label="entry.label"
+              :icon="entry.icon"
+              :color="entry.color"
+              :is-loading="source.isLoading.value"
+              :load-error="source.loadError.value"
+              :has-data="source.hasData.value"
+              :visit-count="source.unifiedVisits.value.length"
+              :file-name="source.fileName.value"
+              :server-auto-load-available="source.serverAutoLoadAvailable.value"
+              :server-db-path="source.serverDbPath.value"
+              :server-permission-hint="source.serverPermissionHint.value"
+              :server-status-warning="source.serverStatusWarning.value"
+              :server-profiles="source.serverProfiles.value"
+              :selected-profile-id="source.selectedProfileId.value"
+              @file-selected="source.loadFile"
+              @load-from-server="source.loadFromServer"
+              @update:selected-profile-id="source.onProfileChange"
+              @reset="source.reset"
             />
           </v-col>
         </v-row>

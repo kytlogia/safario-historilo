@@ -18,6 +18,7 @@ import {
   toUnifiedSafariVisit,
   UNIFIED_HISTORY_SOURCES
 } from '~/utils/unifiedHistory'
+import { browserCatalogEntry } from '~/utils/browserCatalog'
 import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 import { useDebouncedRef } from './useDebouncedRef'
 import {
@@ -50,8 +51,8 @@ export function useUnifiedHistoryPage() {
   const { intlLocale } = useAppLocale()
 
   const safari = useUnifiedHistorySource<HistoryVisit, SafariProfile>({
-    apiBase: '/api/local-history',
-    serverFileName: 'History.db',
+    apiBase: browserCatalogEntry('safari').apiBase,
+    serverFileName: browserCatalogEntry('safari').serverFileName,
     parseFile: parseSafariHistoryFile,
     toUnified: toUnifiedSafariVisit,
     initialProfileId: DEFAULT_PROFILE_ID,
@@ -59,8 +60,8 @@ export function useUnifiedHistoryPage() {
   })
 
   const firefox = useUnifiedHistorySource<FirefoxHistoryVisit, FirefoxProfile>({
-    apiBase: '/api/local-history/firefox',
-    serverFileName: 'places.sqlite',
+    apiBase: browserCatalogEntry('firefox').apiBase,
+    serverFileName: browserCatalogEntry('firefox').serverFileName,
     parseFile: parseFirefoxHistoryFile,
     toUnified: toUnifiedFirefoxVisit,
     resolveDefaultProfileId: pickDefaultProfileId,
@@ -68,8 +69,8 @@ export function useUnifiedHistoryPage() {
   })
 
   const chrome = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
-    apiBase: '/api/local-history/chrome',
-    serverFileName: 'History',
+    apiBase: browserCatalogEntry('chrome').apiBase,
+    serverFileName: browserCatalogEntry('chrome').serverFileName,
     parseFile: parseChromiumHistoryFile,
     toUnified: (v) => toUnifiedChromiumVisit(v, 'chrome'),
     resolveDefaultProfileId: pickDefaultProfileId,
@@ -77,8 +78,8 @@ export function useUnifiedHistoryPage() {
   })
 
   const edge = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
-    apiBase: '/api/local-history/edge',
-    serverFileName: 'History',
+    apiBase: browserCatalogEntry('edge').apiBase,
+    serverFileName: browserCatalogEntry('edge').serverFileName,
     parseFile: parseChromiumHistoryFile,
     toUnified: (v) => toUnifiedChromiumVisit(v, 'edge'),
     resolveDefaultProfileId: pickDefaultProfileId,

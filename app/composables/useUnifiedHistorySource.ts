@@ -8,8 +8,10 @@ import { useAppLocale, type AppLocale } from '~/composables/useAppLocale'
 // at the call site — `apiBase` here is a runtime value (it varies per
 // source), so these response shapes have to be declared explicitly instead
 // of relying on that inference. Shared shape across all four
-// /api/local-history[/<brand>]/{status,profiles} route groups.
-interface LocalHistoryStatusResponse {
+// /api/local-history[/<brand>]/{status,profiles} route groups. Exported so
+// index.vue/firefox.vue (whose status $fetch calls aren't routed through
+// this composable) can reuse it instead of redefining it.
+export interface LocalHistoryStatusResponse {
   available: boolean
   present: boolean
   readable: boolean

@@ -55,15 +55,7 @@ const { isDark, toggleTheme } = useAppTheme()
             t('common.loadAnotherFile')
           }}</v-btn>
         </template>
-        <v-btn variant="text" to="/" prepend-icon="mdi-compass-outline" class="mr-2">{{
-          t('nav.viewSafari')
-        }}</v-btn>
-        <v-btn variant="text" to="/firefox" prepend-icon="mdi-fire" class="mr-2">{{
-          t('nav.viewFirefox')
-        }}</v-btn>
-        <v-btn variant="text" to="/chrome" prepend-icon="mdi-google-chrome" class="mr-2">{{
-          t('nav.viewChrome')
-        }}</v-btn>
+        <BrowserNavLinks current="edge" />
         <v-btn variant="text" to="/all" prepend-icon="mdi-magnify" class="mr-2">{{
           t('nav.crossSearch')
         }}</v-btn>
