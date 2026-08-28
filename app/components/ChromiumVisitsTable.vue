@@ -26,14 +26,7 @@ const headers = computed<VisitsTableHeader[]>(() => [
     width: 130,
     align: 'end'
   },
-  { title: t('components.visitsTable.headerType'), key: 'flags', width: 170, sortable: false },
-  {
-    title: t('components.visitsTable.headerActions'),
-    key: 'actions',
-    width: 56,
-    sortable: false,
-    align: 'center'
-  }
+  { title: t('components.visitsTable.headerType'), key: 'flags', width: 170, sortable: false }
 ])
 </script>
 
@@ -42,6 +35,7 @@ const headers = computed<VisitsTableHeader[]>(() => [
     :headers="headers"
     :items="items"
     item-value="visitId"
+    show-actions
     @row-click="emit('row-click', $event)"
   >
     <template #item.flags="{ item }">
@@ -51,16 +45,6 @@ const headers = computed<VisitsTableHeader[]>(() => [
       <v-chip v-if="item.hidden" size="x-small" color="secondary" variant="flat">{{
         t('components.visitsTable.flagHidden')
       }}</v-chip>
-    </template>
-    <template #item.actions="{ item }">
-      <v-btn
-        icon="mdi-information-outline"
-        variant="text"
-        size="small"
-        :aria-label="t('components.visitsTable.detailAriaLabel')"
-        data-testid="row-detail-button"
-        @click.stop="emit('row-click', item)"
-      />
     </template>
   </BaseVisitsTable>
 </template>

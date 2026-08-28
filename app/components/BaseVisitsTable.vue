@@ -5,6 +5,8 @@
     T extends { title: string; url: string; domain: string; visitTime: Date; visitCount: number }
   "
 >
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { formatDateTime, formatNumber } from '~/utils/format'
 import { useAppLocale } from '~/composables/useAppLocale'
 import TruncatedCell from './TruncatedCell.vue'
@@ -17,16 +19,37 @@ export interface VisitsTableHeader {
   align?: 'start' | 'end' | 'center'
 }
 
-defineProps<{
+const props = defineProps<{
   headers: VisitsTableHeader[]
   items: T[]
   itemValue: string
   height?: string | number
+  // Safari/Chromium/Firefox all append an identical detail-button column;
+  // Unified has no per-row detail action, so this stays opt-in rather than
+  // always-on.
+  showActions?: boolean
 }>()
 
 const emit = defineEmits<{
   'row-click': [item: T]
 }>()
+
+const { t } = useI18n()
+
+const resolvedHeaders = computed<VisitsTableHeader[]>(() =>
+  props.showActions
+    ? [
+        ...props.headers,
+        {
+          title: t('components.visitsTable.headerActions'),
+          key: 'actions',
+          width: 56,
+          sortable: false,
+          align: 'center'
+        }
+      ]
+    : props.headers
+)
 
 // Any extra column beyond title/url/domain/visitTime/visitCount (flags,
 // actions, the unified "source" chip, ...) is caller-specific — declared
@@ -42,7 +65,7 @@ const { intlLocale } = useAppLocale()
 
 <template>
   <v-data-table-virtual
-    :headers="headers"
+    :headers="resolvedHeaders"
     :items="items"
     :item-value="itemValue"
     :height="height ?? 600"
@@ -63,6 +86,16 @@ const { intlLocale } = useAppLocale()
     </template>
     <template #item.visitCount="{ item }">
       {{ formatNumber(item.visitCount, intlLocale) }}
+    </template>
+    <template v-if="showActions" #item.actions="{ item }">
+      <v-btn
+        icon="mdi-information-outline"
+        variant="text"
+        size="small"
+        :aria-label="t('components.visitsTable.detailAriaLabel')"
+        data-testid="row-detail-button"
+        @click.stop="emit('row-click', item)"
+      />
     </template>
     <template v-for="(_, slotName) in $slots" :key="slotName" #[slotName]="slotProps">
       <slot :name="slotName" v-bind="slotProps ?? {}" />
