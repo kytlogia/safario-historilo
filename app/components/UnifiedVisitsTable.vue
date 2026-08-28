@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { formatDateTime, formatNumber } from '~/utils/format'
 import type { UnifiedHistoryVisit } from '~/types/history'
 import { unifiedSourceMeta } from '~/utils/unifiedHistory'
-import { useAppLocale } from '~/composables/useAppLocale'
-import TruncatedCell from './TruncatedCell.vue'
+import BaseVisitsTable, { type VisitsTableHeader } from './BaseVisitsTable.vue'
 
 const props = defineProps<{
   items: UnifiedHistoryVisit[]
@@ -16,7 +14,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { intlLocale } = useAppLocale()
 
 // UnifiedHistoryVisit has no stable id of its own (it's a merged projection
 // of four different visit types), and a composite key like
@@ -27,7 +24,7 @@ const { intlLocale } = useAppLocale()
 // needs (it isn't persisted across items array changes, e.g. re-filtering).
 const indexedItems = computed(() => props.items.map((item, rowIndex) => ({ ...item, rowIndex })))
 
-const headers = computed(() => [
+const headers = computed<VisitsTableHeader[]>(() => [
   { title: t('components.visitsTable.headerSource'), key: 'source', width: 120 },
   { title: t('components.visitsTable.headerTitle'), key: 'title', width: '26%' },
   { title: t('components.visitsTable.headerUrl'), key: 'url', width: '26%' },
@@ -37,19 +34,17 @@ const headers = computed(() => [
     title: t('components.visitsTable.headerVisitCountUnified'),
     key: 'visitCount',
     width: 110,
-    align: 'end' as const
+    align: 'end'
   }
 ])
 </script>
 
 <template>
-  <v-data-table-virtual
+  <BaseVisitsTable
     :headers="headers"
     :items="indexedItems"
     item-value="rowIndex"
-    height="600"
-    fixed-header
-    @click:row="(_e: Event, row: { item: UnifiedHistoryVisit }) => emit('row-click', row.item)"
+    @row-click="emit('row-click', $event)"
   >
     <template #item.source="{ item }">
       <v-chip
@@ -61,30 +56,5 @@ const headers = computed(() => [
         {{ item.sourceLabel }}
       </v-chip>
     </template>
-    <template #item.title="{ item }">
-      <TruncatedCell :text="item.title" />
-    </template>
-    <template #item.url="{ item }">
-      <TruncatedCell :text="item.url" class="text-medium-emphasis" />
-    </template>
-    <template #item.domain="{ item }">
-      <TruncatedCell :text="item.domain" />
-    </template>
-    <template #item.visitTime="{ item }">
-      {{ formatDateTime(item.visitTime, intlLocale) }}
-    </template>
-    <template #item.visitCount="{ item }">
-      {{ formatNumber(item.visitCount, intlLocale) }}
-    </template>
-  </v-data-table-virtual>
+  </BaseVisitsTable>
 </template>
-
-<style scoped>
-/* tr/tableはVuetifyが内部でレンダリングするため、独自クラスを付与できず要素セレクタで指定する */
-:deep(tr) {
-  cursor: pointer;
-}
-:deep(table) {
-  table-layout: fixed;
-}
-</style>
