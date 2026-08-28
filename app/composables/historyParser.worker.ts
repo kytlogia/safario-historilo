@@ -31,7 +31,12 @@ export type HistoryParserWorkerResponse =
     }
   | { requestId: number; ok: false; message: string }
 
-function parseBuffer(kind: HistoryParserKind, buffer: ArrayBuffer, fileName: string, locale: AppLocale) {
+function parseBuffer(
+  kind: HistoryParserKind,
+  buffer: ArrayBuffer,
+  fileName: string,
+  locale: AppLocale
+) {
   switch (kind) {
     case 'safari':
       return parseHistoryBuffer(buffer, fileName, locale)
