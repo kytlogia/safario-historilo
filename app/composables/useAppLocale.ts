@@ -2,6 +2,7 @@ import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLocale as useVuetifyLocale } from 'vuetify'
 import type { VisitFilterEngineI18n } from '~/composables/useVisitFilterEngine'
+import { safeLocalStorage } from '~/utils/safeLocalStorage'
 
 export const APP_LOCALES = ['ja', 'en', 'zh'] as const
 export type AppLocale = (typeof APP_LOCALES)[number]
@@ -12,23 +13,9 @@ function isAppLocale(value: unknown): value is AppLocale {
   return typeof value === 'string' && (APP_LOCALES as readonly string[]).includes(value)
 }
 
-// localStorage can throw (Safari private mode, blocked storage, restrictive
-// browser policies) — mirrors useAppTheme.ts's readStoredTheme/writeStoredTheme.
 function readStoredLocale(): AppLocale | null {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return isAppLocale(stored) ? stored : null
-  } catch {
-    return null
-  }
-}
-
-function writeStoredLocale(code: AppLocale) {
-  try {
-    localStorage.setItem(STORAGE_KEY, code)
-  } catch {
-    // Ignore: the locale still applies for this session, just isn't persisted.
-  }
+  const stored = safeLocalStorage.get(STORAGE_KEY)
+  return isAppLocale(stored) ? stored : null
 }
 
 // Maps this app's own locale codes to the Intl/BCP-47 tags consumed by
@@ -72,7 +59,7 @@ export function useAppLocale() {
       locale.value = code
     }
     if (typeof window !== 'undefined') {
-      writeStoredLocale(code)
+      safeLocalStorage.set(STORAGE_KEY, code)
     }
   }
 
