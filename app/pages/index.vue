@@ -11,6 +11,19 @@ import {
 } from '~/composables/useFilterPersistence'
 import { useAppLocale, useVisitFilterI18n } from '~/composables/useAppLocale'
 import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
+import { browserCatalogEntry } from '~/utils/browserCatalog'
+
+const { apiBase, serverFileName } = browserCatalogEntry('safari')
+
+// $fetch's Nitro route-type inference only kicks in for a literal URL string
+// at the call site — apiBase here is a runtime value, so these response
+// shapes have to be declared explicitly (mirrors useUnifiedHistorySource.ts).
+interface LocalHistoryStatusResponse {
+  available: boolean
+  present: boolean
+  readable: boolean
+  path: string
+}
 
 const { t } = useI18n()
 const { currentLocale } = useAppLocale()
@@ -97,7 +110,9 @@ async function checkServerAutoLoadAvailability() {
   const profileId = selectedProfileId.value
   serverStatusWarning.value = ''
   try {
-    const body = await $fetch('/api/local-history/status', { query: { profileId } })
+    const body = await $fetch<LocalHistoryStatusResponse>(`${apiBase}/status`, {
+      query: { profileId }
+    })
     if (requestId !== statusRequestId) return
     serverAutoLoadAvailable.value = Boolean(body?.available)
     serverDbPath.value = typeof body?.path === 'string' ? body.path : ''
@@ -120,7 +135,7 @@ async function checkServerAutoLoadAvailability() {
 
 async function loadSafariProfiles() {
   try {
-    const body = await $fetch('/api/local-history/profiles')
+    const body = await $fetch<{ profiles: SafariProfile[] }>(`${apiBase}/profiles`)
     serverProfiles.value = Array.isArray(body?.profiles) ? body.profiles : []
   } catch {
     // Same fallback as checkServerAutoLoadAvailability(): no Nitro server, or
@@ -140,10 +155,10 @@ async function loadFromServer() {
   isLoading.value = true
   loadError.value = ''
   try {
-    const blob = await $fetch<Blob>('/api/local-history', {
+    const blob = await $fetch<Blob>(apiBase, {
       query: { profileId: selectedProfileId.value }
     })
-    const result = await parseSafariHistoryFile(new File([blob], 'History.db'), currentLocale.value)
+    const result = await parseSafariHistoryFile(new File([blob], serverFileName), currentLocale.value)
     visits.value = result.visits
     fileName.value = result.fileName
   } catch (err) {
@@ -196,15 +211,7 @@ function resetAll() {
             t('common.loadAnotherFile')
           }}</v-btn>
         </template>
-        <v-btn variant="text" to="/firefox" prepend-icon="mdi-fire" class="mr-2">{{
-          t('nav.viewFirefox')
-        }}</v-btn>
-        <v-btn variant="text" to="/chrome" prepend-icon="mdi-google-chrome" class="mr-2">{{
-          t('nav.viewChrome')
-        }}</v-btn>
-        <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2">{{
-          t('nav.viewEdge')
-        }}</v-btn>
+        <BrowserNavLinks current="safari" />
         <v-btn variant="text" to="/all" prepend-icon="mdi-magnify" class="mr-2">{{
           t('nav.crossSearch')
         }}</v-btn>

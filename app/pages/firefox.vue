@@ -10,9 +10,21 @@ import {
   stringCodec
 } from '~/composables/useFilterPersistence'
 import { useAppLocale, useVisitFilterI18n } from '~/composables/useAppLocale'
+import { browserCatalogEntry } from '~/utils/browserCatalog'
 
 const { t } = useI18n()
 const { currentLocale } = useAppLocale()
+const { apiBase, serverFileName } = browserCatalogEntry('firefox')
+
+// $fetch's Nitro route-type inference only kicks in for a literal URL string
+// at the call site — apiBase here is a runtime value, so these response
+// shapes have to be declared explicitly (mirrors useUnifiedHistorySource.ts).
+interface LocalHistoryStatusResponse {
+  available: boolean
+  present: boolean
+  readable: boolean
+  path: string
+}
 
 const visits = ref<FirefoxHistoryVisit[]>([])
 const fileName = ref('')
@@ -96,7 +108,9 @@ async function checkServerAutoLoadAvailability() {
   const profileId = selectedProfileId.value || undefined
   serverStatusWarning.value = ''
   try {
-    const body = await $fetch('/api/local-history/firefox/status', { query: { profileId } })
+    const body = await $fetch<LocalHistoryStatusResponse>(`${apiBase}/status`, {
+      query: { profileId }
+    })
     if (requestId !== statusRequestId) return
     serverAutoLoadAvailable.value = Boolean(body?.available)
     serverDbPath.value = typeof body?.path === 'string' ? body.path : ''
@@ -119,7 +133,7 @@ async function checkServerAutoLoadAvailability() {
 
 async function loadFirefoxProfiles() {
   try {
-    const body = await $fetch('/api/local-history/firefox/profiles')
+    const body = await $fetch<{ profiles: FirefoxProfile[] }>(`${apiBase}/profiles`)
     const profiles: FirefoxProfile[] = Array.isArray(body?.profiles) ? body.profiles : []
     serverProfiles.value = profiles
     if (!selectedProfileId.value) {
@@ -144,11 +158,11 @@ async function loadFromServer() {
   isLoading.value = true
   loadError.value = ''
   try {
-    const blob = await $fetch<Blob>('/api/local-history/firefox', {
+    const blob = await $fetch<Blob>(apiBase, {
       query: { profileId: selectedProfileId.value || undefined }
     })
     const result = await parseFirefoxHistoryFile(
-      new File([blob], 'places.sqlite'),
+      new File([blob], serverFileName),
       currentLocale.value
     )
     visits.value = result.visits
@@ -203,15 +217,7 @@ function resetAll() {
             t('common.loadAnotherFile')
           }}</v-btn>
         </template>
-        <v-btn variant="text" to="/" prepend-icon="mdi-compass-outline" class="mr-2">{{
-          t('nav.viewSafari')
-        }}</v-btn>
-        <v-btn variant="text" to="/chrome" prepend-icon="mdi-google-chrome" class="mr-2">{{
-          t('nav.viewChrome')
-        }}</v-btn>
-        <v-btn variant="text" to="/edge" prepend-icon="mdi-microsoft-edge" class="mr-2">{{
-          t('nav.viewEdge')
-        }}</v-btn>
+        <BrowserNavLinks current="firefox" />
         <v-btn variant="text" to="/all" prepend-icon="mdi-magnify" class="mr-2">{{
           t('nav.crossSearch')
         }}</v-btn>

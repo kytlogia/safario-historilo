@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import type { ChromiumHistoryVisit, ChromiumProfile } from '~/types/history'
 import { toUnifiedChromiumVisit } from '~/utils/unifiedHistory'
+import { browserCatalogEntry } from '~/utils/browserCatalog'
 import { useVisitFilterI18n } from '~/composables/useAppLocale'
 import { useChromiumHistoryFilters } from './useChromiumHistoryFilters'
 import { useDebouncedRef } from './useDebouncedRef'
@@ -37,8 +38,8 @@ function resolveDefaultProfileId(profiles: ChromiumProfile[]): string {
  */
 export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
   const source = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
-    apiBase: `/api/local-history/${brand}`,
-    serverFileName: 'History',
+    apiBase: browserCatalogEntry(brand).apiBase,
+    serverFileName: browserCatalogEntry(brand).serverFileName,
     parseFile: parseChromiumHistoryFile,
     toUnified: (v) => toUnifiedChromiumVisit(v, brand),
     resolveDefaultProfileId,
