@@ -33,7 +33,9 @@ const {
 const { isDark, toggleTheme } = useAppTheme()
 
 const sources = { safari, firefox, chrome, edge }
-const sourceCards = computed(() => BROWSER_CATALOG.map((entry) => ({ entry, source: sources[entry.id] })))
+const sourceCards = computed(() =>
+  BROWSER_CATALOG.map((entry) => ({ entry, source: sources[entry.id] }))
+)
 
 function resetAllSources() {
   for (const source of Object.values(sources)) source.reset()

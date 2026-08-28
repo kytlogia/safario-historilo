@@ -158,7 +158,10 @@ async function loadFromServer() {
     const blob = await $fetch<Blob>(apiBase, {
       query: { profileId: selectedProfileId.value }
     })
-    const result = await parseSafariHistoryFile(new File([blob], serverFileName), currentLocale.value)
+    const result = await parseSafariHistoryFile(
+      new File([blob], serverFileName),
+      currentLocale.value
+    )
     visits.value = result.visits
     fileName.value = result.fileName
   } catch (err) {
