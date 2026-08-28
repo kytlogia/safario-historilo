@@ -1,21 +1,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { HistoryVisit } from '~/types/history'
 import type {
-  HistoryDatabaseWorkerRequest,
-  HistoryDatabaseWorkerResponse
-} from '~/composables/historyDatabase.worker'
+  HistoryParserWorkerRequest,
+  HistoryParserWorkerResponse
+} from '~/composables/historyParser.worker'
 
 // jsdom (this file's default environment) has no real Worker implementation, so
 // these tests stub `Worker` themselves to exercise the dispatch/response-handling
 // branch of useSafariHistoryParser.ts in isolation from the actual sql.js parsing,
 // which is already covered (on the non-Worker fallback path) by
 // useSafariHistoryParser.test.ts, and (via the worker's own onmessage handler,
-// with real parsing) by historyDatabase.worker.test.ts.
+// with real parsing) by historyParser.worker.test.ts.
 
 class FakeWorker {
   static instances: FakeWorker[] = []
 
-  onmessage: ((event: MessageEvent<HistoryDatabaseWorkerResponse>) => void) | null = null
+  onmessage: ((event: MessageEvent<HistoryParserWorkerResponse>) => void) | null = null
   onerror: ((event: ErrorEvent) => void) | null = null
   terminated = false
   posted: { data: unknown; transfer?: Transferable[] }[] = []
@@ -66,7 +66,7 @@ async function latestWorker(): Promise<FakeWorker> {
 }
 
 function postedRequest(worker: FakeWorker, index = worker.posted.length - 1) {
-  return worker.posted[index]!.data as HistoryDatabaseWorkerRequest
+  return worker.posted[index]!.data as HistoryParserWorkerRequest
 }
 
 describe('parseSafariHistoryFile (Worker dispatch)', () => {
@@ -90,12 +90,12 @@ describe('parseSafariHistoryFile (Worker dispatch)', () => {
     expect(request.fileName).toBe('History.db')
     expect(worker.posted[0]!.transfer).toEqual([request.buffer])
 
-    const response: HistoryDatabaseWorkerResponse = {
+    const response: HistoryParserWorkerResponse = {
       requestId: request.requestId,
       ok: true,
       visits: [SAMPLE_VISIT]
     }
-    worker.onmessage?.({ data: response } as MessageEvent<HistoryDatabaseWorkerResponse>)
+    worker.onmessage?.({ data: response } as MessageEvent<HistoryParserWorkerResponse>)
 
     const result = await promise
     // fileName comes from the request the main thread already sent, not from
@@ -115,7 +115,7 @@ describe('parseSafariHistoryFile (Worker dispatch)', () => {
     const worker = await latestWorker()
     worker.onmessage?.({
       data: { requestId: postedRequest(worker).requestId, ok: true, visits: [] }
-    } as MessageEvent<HistoryDatabaseWorkerResponse>)
+    } as MessageEvent<HistoryParserWorkerResponse>)
     await firstPromise
 
     const secondPromise = parseSafariHistoryFile(new File([new Uint8Array([2])], 'History2.db'))
@@ -126,7 +126,7 @@ describe('parseSafariHistoryFile (Worker dispatch)', () => {
 
     worker.onmessage?.({
       data: { requestId: postedRequest(worker).requestId, ok: true, visits: [] }
-    } as MessageEvent<HistoryDatabaseWorkerResponse>)
+    } as MessageEvent<HistoryParserWorkerResponse>)
     await secondPromise
   })
 
@@ -138,12 +138,12 @@ describe('parseSafariHistoryFile (Worker dispatch)', () => {
     const promise = parseSafariHistoryFile(file)
     const worker = await latestWorker()
 
-    const response: HistoryDatabaseWorkerResponse = {
+    const response: HistoryParserWorkerResponse = {
       requestId: postedRequest(worker).requestId,
       ok: false,
       message: 'このファイルはSafariの履歴データベース(History.db)ではないようです。'
     }
-    worker.onmessage?.({ data: response } as MessageEvent<HistoryDatabaseWorkerResponse>)
+    worker.onmessage?.({ data: response } as MessageEvent<HistoryParserWorkerResponse>)
 
     await expect(promise).rejects.toThrow(
       'このファイルはSafariの履歴データベース(History.db)ではないようです。'
@@ -175,7 +175,7 @@ describe('parseSafariHistoryFile (Worker dispatch)', () => {
     })
     nextWorker.onmessage?.({
       data: { requestId: postedRequest(nextWorker).requestId, ok: true, visits: [] }
-    } as MessageEvent<HistoryDatabaseWorkerResponse>)
+    } as MessageEvent<HistoryParserWorkerResponse>)
     await nextPromise
   })
 })

@@ -19,7 +19,7 @@ import { corruptDataPages } from '../../../fixtures/corrupt-sqlite-db'
 //
 // This test environment has no `Worker` global either, so parseSafariHistoryFile
 // runs parseHistoryBuffer() directly on the calling thread instead of offloading
-// to historyDatabase.worker.ts (see issue #83) — the worker-dispatch branch itself
+// to historyParser.worker.ts (see issue #83) — the worker-dispatch branch itself
 // is covered separately in useSafariHistoryParser.worker.test.ts.
 
 async function fileFromDb(build: () => Promise<Awaited<ReturnType<typeof createHistoryDatabase>>>) {

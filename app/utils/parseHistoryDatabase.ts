@@ -6,7 +6,7 @@ import { getSqlJs, LocalizedParseError, runParse } from './sqlJs'
 // Safari (Core Data) timestamps are seconds since 2001-01-01T00:00:00Z.
 const CORE_DATA_EPOCH_OFFSET_SECONDS = 978307200
 
-// This module runs inside historyDatabase.worker.ts (a separate execution
+// This module runs inside historyParser.worker.ts (a separate execution
 // context with no Vue instance), so its error/placeholder text is threaded
 // in from the caller (which does have i18n context) via the `locale`
 // parameter on parseHistoryBuffer() below, resolved against
@@ -81,7 +81,7 @@ function assertHistorySchema(db: Database, locale: AppLocale) {
 
 // The actual sql.js parsing work (init, DB open, SQL execution, row mapping).
 // Runs either directly on the main thread (Node/test environments without
-// Worker support) or inside historyDatabase.worker.ts — kept independent of
+// Worker support) or inside historyParser.worker.ts — kept independent of
 // both so the same logic and error messages apply either way. `locale`
 // selects which of MESSAGES' error strings a caught failure surfaces (see
 // useSafariHistoryParser.ts, which threads through the app's currently

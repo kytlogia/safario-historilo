@@ -12,7 +12,7 @@ import { corruptDataPages } from '../../../fixtures/corrupt-sqlite-db'
 
 // This test environment has no `Worker` global, so parseChromiumHistoryFile
 // runs parseChromiumHistoryBuffer() directly on the calling thread instead of
-// offloading to chromiumHistoryDatabase.worker.ts — the worker-dispatch
+// offloading to historyParser.worker.ts — the worker-dispatch
 // branch itself is covered separately in useChromiumHistoryParser.worker.test.ts.
 
 async function fileFromDb(

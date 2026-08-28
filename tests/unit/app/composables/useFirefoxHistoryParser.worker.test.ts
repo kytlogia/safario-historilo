@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { FirefoxHistoryVisit } from '~/types/history'
 import type {
-  FirefoxHistoryDatabaseWorkerRequest,
-  FirefoxHistoryDatabaseWorkerResponse
-} from '~/composables/firefoxHistoryDatabase.worker'
+  HistoryParserWorkerRequest,
+  HistoryParserWorkerResponse
+} from '~/composables/historyParser.worker'
 
 // jsdom (this file's default environment) has no real Worker implementation, so
 // these tests stub `Worker` themselves to exercise the dispatch/response-handling
@@ -13,7 +13,7 @@ import type {
 class FakeWorker {
   static instances: FakeWorker[] = []
 
-  onmessage: ((event: MessageEvent<FirefoxHistoryDatabaseWorkerResponse>) => void) | null = null
+  onmessage: ((event: MessageEvent<HistoryParserWorkerResponse>) => void) | null = null
   onerror: ((event: ErrorEvent) => void) | null = null
   terminated = false
   posted: { data: unknown; transfer?: Transferable[] }[] = []
@@ -60,7 +60,7 @@ async function latestWorker(): Promise<FakeWorker> {
 }
 
 function postedRequest(worker: FakeWorker, index = worker.posted.length - 1) {
-  return worker.posted[index]!.data as FirefoxHistoryDatabaseWorkerRequest
+  return worker.posted[index]!.data as HistoryParserWorkerRequest
 }
 
 describe('parseFirefoxHistoryFile (Worker dispatch)', () => {
@@ -84,12 +84,12 @@ describe('parseFirefoxHistoryFile (Worker dispatch)', () => {
     expect(request.fileName).toBe('places.sqlite')
     expect(worker.posted[0]!.transfer).toEqual([request.buffer])
 
-    const response: FirefoxHistoryDatabaseWorkerResponse = {
+    const response: HistoryParserWorkerResponse = {
       requestId: request.requestId,
       ok: true,
       visits: [SAMPLE_VISIT]
     }
-    worker.onmessage?.({ data: response } as MessageEvent<FirefoxHistoryDatabaseWorkerResponse>)
+    worker.onmessage?.({ data: response } as MessageEvent<HistoryParserWorkerResponse>)
 
     const result = await promise
     expect(result.fileName).toBe('places.sqlite')
@@ -105,12 +105,12 @@ describe('parseFirefoxHistoryFile (Worker dispatch)', () => {
     const promise = parseFirefoxHistoryFile(file)
     const worker = await latestWorker()
 
-    const response: FirefoxHistoryDatabaseWorkerResponse = {
+    const response: HistoryParserWorkerResponse = {
       requestId: postedRequest(worker).requestId,
       ok: false,
       message: 'このファイルはFirefoxの履歴データベース(places.sqlite)ではないようです。'
     }
-    worker.onmessage?.({ data: response } as MessageEvent<FirefoxHistoryDatabaseWorkerResponse>)
+    worker.onmessage?.({ data: response } as MessageEvent<HistoryParserWorkerResponse>)
 
     await expect(promise).rejects.toThrow(
       'このファイルはFirefoxの履歴データベース(places.sqlite)ではないようです。'
@@ -139,7 +139,7 @@ describe('parseFirefoxHistoryFile (Worker dispatch)', () => {
     })
     nextWorker.onmessage?.({
       data: { requestId: postedRequest(nextWorker).requestId, ok: true, visits: [] }
-    } as MessageEvent<FirefoxHistoryDatabaseWorkerResponse>)
+    } as MessageEvent<HistoryParserWorkerResponse>)
     await nextPromise
   })
 })
