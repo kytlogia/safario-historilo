@@ -73,6 +73,7 @@ const { isDark, toggleTheme } = useAppTheme()
       <v-container fluid class="py-6 d-flex flex-column flex-grow-1 min-h-0">
         <UploadPanel
           v-if="!hasData"
+          brand="safari"
           :is-loading="isLoading"
           :load-error="loadError"
           :server-auto-load-available="serverAutoLoadAvailable"

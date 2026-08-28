@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { SafariProfile } from '~/types/history'
-import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 
 const { t } = useI18n()
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
+    brand?: 'safari' | 'firefox' | 'chrome' | 'edge'
     isLoading: boolean
     loadError: string
     serverAutoLoadAvailable: boolean
     serverDbPath: string
     serverPermissionHint: boolean
     serverStatusWarning: string
-    serverProfiles?: SafariProfile[]
+    serverProfiles?: { id: string; name: string }[]
     selectedProfileId?: string
   }>(),
   {
+    brand: 'safari',
     serverProfiles: () => [],
-    selectedProfileId: DEFAULT_PROFILE_ID
+    selectedProfileId: ''
   }
 )
 
@@ -28,6 +28,50 @@ const emit = defineEmits<{
   'load-from-server': []
   'update:selectedProfileId': [profileId: string]
 }>()
+
+// Safari/Firefox each have their own i18n namespace (their locationHeading,
+// steps, etc. don't take any {app}/{path} params); Chrome and Edge are both
+// Chromium-based and share one 'chromium' namespace whose strings are
+// parameterized by appName/userDataDirHint instead. `hasProfileFolderStep`
+// covers the one structural difference beyond text: Safari's history file
+// isn't nested under a per-profile folder the way Firefox/Chrome/Edge's are,
+// so its instructions skip that step entirely.
+const BRAND_META = {
+  safari: { namespace: 'safari', appName: '', userDataDirHint: '', hasProfileFolderStep: false },
+  firefox: {
+    namespace: 'firefox',
+    appName: '',
+    userDataDirHint: '',
+    hasProfileFolderStep: true
+  },
+  chrome: {
+    namespace: 'chromium',
+    appName: 'Google Chrome',
+    userDataDirHint: '~/Library/Application Support/Google/Chrome/',
+    hasProfileFolderStep: true
+  },
+  edge: {
+    namespace: 'chromium',
+    appName: 'Microsoft Edge',
+    userDataDirHint: '~/Library/Application Support/Microsoft Edge/',
+    hasProfileFolderStep: true
+  }
+} as const
+
+const brandMeta = computed(() => BRAND_META[props.brand])
+
+// Passed to every t() call below regardless of brand: vue-i18n simply
+// ignores interpolation params a given message doesn't reference, so
+// Safari/Firefox's non-parameterized strings and Chrome/Edge's
+// {app}/{path}-parameterized ones can share the same call shape.
+const params = computed(() => ({
+  app: brandMeta.value.appName,
+  path: brandMeta.value.userDataDirHint
+}))
+
+function ut(key: string) {
+  return t(`components.uploadPanel.${brandMeta.value.namespace}.${key}`, params.value)
+}
 
 const isDragging = ref(false)
 
@@ -67,7 +111,7 @@ function onDragLeave(event: DragEvent) {
           icon="mdi-database-search-outline"
           size="56"
           color="primary"
-          :title="t('components.uploadPanel.safari.dragDropTitle')"
+          :title="ut('dragDropTitle')"
           :text="t('components.uploadPanel.common.subtitle')"
           class="mb-2"
         />
@@ -99,7 +143,7 @@ function onDragLeave(event: DragEvent) {
             :disabled="isLoading"
             @click="emit('load-from-server')"
           >
-            {{ t('components.uploadPanel.safari.autoLoadButton') }}
+            {{ ut('autoLoadButton') }}
           </v-btn>
           <div class="text-caption text-medium-emphasis drop-zone__local-path">
             {{ serverDbPath }}
@@ -121,7 +165,7 @@ function onDragLeave(event: DragEvent) {
           class="drop-zone__alert drop-zone__alert--spaced"
           data-testid="permission-hint-alert"
         >
-          {{ t('components.uploadPanel.safari.permissionHint') }}
+          {{ ut('permissionHint') }}
         </v-alert>
 
         <v-alert
@@ -136,7 +180,7 @@ function onDragLeave(event: DragEvent) {
         </v-alert>
 
         <v-file-input
-          :label="t('components.uploadPanel.safari.fileInputLabel')"
+          :label="ut('fileInputLabel')"
           prepend-icon="mdi-file-upload-outline"
           variant="outlined"
           density="comfortable"
@@ -161,14 +205,15 @@ function onDragLeave(event: DragEvent) {
 
         <div class="text-body-2 drop-zone__instructions">
           <div class="font-weight-medium mb-2">
-            {{ t('components.uploadPanel.safari.locationHeading') }}
+            {{ ut('locationHeading') }}
           </div>
           <ol class="drop-zone__instructions-list">
-            <li>{{ t('components.uploadPanel.safari.stepQuitApp') }}</li>
+            <li>{{ ut('stepQuitApp') }}</li>
             <!-- eslint-disable vue/no-v-html -- static, developer-authored locale
             strings (i18n/locales/*.json), never user input -->
-            <li v-html="t('components.uploadPanel.safari.stepFinder')" />
-            <li v-html="t('components.uploadPanel.safari.stepCopy')" />
+            <li v-html="ut('stepFinder')" />
+            <li v-if="brandMeta.hasProfileFolderStep" v-html="ut('stepOpenProfileFolder')" />
+            <li v-html="ut('stepCopy')" />
             <!-- eslint-enable vue/no-v-html -->
             <li>{{ t('components.uploadPanel.common.dragDropFinalStep') }}</li>
           </ol>

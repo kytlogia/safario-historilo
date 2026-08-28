@@ -71,8 +71,9 @@ const { isDark, toggleTheme } = useAppTheme()
 
     <v-main>
       <v-container fluid class="py-6">
-        <FirefoxUploadPanel
+        <UploadPanel
           v-if="!hasData"
+          brand="firefox"
           :is-loading="isLoading"
           :load-error="loadError"
           :server-auto-load-available="serverAutoLoadAvailable"
