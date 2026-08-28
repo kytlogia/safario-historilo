@@ -44,8 +44,20 @@ function escapeCsvCell(value: unknown): string {
   return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
 }
 
-export function exportVisitsAsJson(visits: HistoryVisit[], fileName = 'safari-history.json') {
+// The leading BOM makes Excel (and other tools that sniff for one) treat the
+// file as UTF-8 instead of the system codepage — without it, non-ASCII
+// titles/URLs render as mojibake when opened directly.
+function toCsv(headers: readonly string[], rows: unknown[][]): string {
+  const lines = [headers.join(','), ...rows.map((row) => row.map(escapeCsvCell).join(','))]
+  return '﻿' + lines.join('\n')
+}
+
+function exportAsJson<T>(visits: T[], fileName: string) {
   downloadBlob(JSON.stringify(visits, null, 2), 'application/json', fileName)
+}
+
+export function exportVisitsAsJson(visits: HistoryVisit[], fileName = 'safari-history.json') {
+  exportAsJson(visits, fileName)
 }
 
 export function exportVisitsAsCsv(visits: HistoryVisit[], fileName = 'safari-history.csv') {
@@ -65,37 +77,30 @@ export function exportVisitsAsCsv(visits: HistoryVisit[], fileName = 'safari-his
     'statusCode'
   ] as const
 
-  const lines = [headers.join(',')]
-  for (const visit of visits) {
-    lines.push(
-      [
-        visit.visitId,
-        visit.title,
-        visit.url,
-        visit.domain,
-        visit.visitTime.toISOString(),
-        visit.visitCount,
-        visit.loadSuccessful,
-        visit.httpNonGet,
-        visit.synthesized,
-        visit.redirectSource ?? '',
-        visit.redirectDestination ?? '',
-        visit.origin,
-        visit.statusCode
-      ]
-        .map(escapeCsvCell)
-        .join(',')
-    )
-  }
+  const rows = visits.map((visit) => [
+    visit.visitId,
+    visit.title,
+    visit.url,
+    visit.domain,
+    visit.visitTime.toISOString(),
+    visit.visitCount,
+    visit.loadSuccessful,
+    visit.httpNonGet,
+    visit.synthesized,
+    visit.redirectSource ?? '',
+    visit.redirectDestination ?? '',
+    visit.origin,
+    visit.statusCode
+  ])
 
-  downloadBlob('﻿' + lines.join('\n'), 'text/csv;charset=utf-8', fileName)
+  downloadBlob(toCsv(headers, rows), 'text/csv;charset=utf-8', fileName)
 }
 
 export function exportFirefoxVisitsAsJson(
   visits: FirefoxHistoryVisit[],
   fileName = 'firefox-history.json'
 ) {
-  downloadBlob(JSON.stringify(visits, null, 2), 'application/json', fileName)
+  exportAsJson(visits, fileName)
 }
 
 export function exportFirefoxVisitsAsCsv(
@@ -117,36 +122,29 @@ export function exportFirefoxVisitsAsCsv(
     'frecency'
   ] as const
 
-  const lines = [headers.join(',')]
-  for (const visit of visits) {
-    lines.push(
-      [
-        visit.visitId,
-        visit.title,
-        visit.url,
-        visit.domain,
-        visit.visitTime.toISOString(),
-        visit.visitCount,
-        visit.visitType,
-        visit.fromVisit ?? '',
-        visit.session,
-        visit.hidden,
-        visit.typed,
-        visit.frecency
-      ]
-        .map(escapeCsvCell)
-        .join(',')
-    )
-  }
+  const rows = visits.map((visit) => [
+    visit.visitId,
+    visit.title,
+    visit.url,
+    visit.domain,
+    visit.visitTime.toISOString(),
+    visit.visitCount,
+    visit.visitType,
+    visit.fromVisit ?? '',
+    visit.session,
+    visit.hidden,
+    visit.typed,
+    visit.frecency
+  ])
 
-  downloadBlob('﻿' + lines.join('\n'), 'text/csv;charset=utf-8', fileName)
+  downloadBlob(toCsv(headers, rows), 'text/csv;charset=utf-8', fileName)
 }
 
 export function exportChromiumVisitsAsJson(
   visits: ChromiumHistoryVisit[],
   fileName = 'chromium-history.json'
 ) {
-  downloadBlob(JSON.stringify(visits, null, 2), 'application/json', fileName)
+  exportAsJson(visits, fileName)
 }
 
 export function exportChromiumVisitsAsCsv(
@@ -168,36 +166,29 @@ export function exportChromiumVisitsAsCsv(
     'typed'
   ] as const
 
-  const lines = [headers.join(',')]
-  for (const visit of visits) {
-    lines.push(
-      [
-        visit.visitId,
-        visit.title,
-        visit.url,
-        visit.domain,
-        visit.visitTime.toISOString(),
-        visit.visitCount,
-        visit.typedCount,
-        visit.transition,
-        visit.fromVisit ?? '',
-        visit.visitDuration,
-        visit.hidden,
-        visit.typed
-      ]
-        .map(escapeCsvCell)
-        .join(',')
-    )
-  }
+  const rows = visits.map((visit) => [
+    visit.visitId,
+    visit.title,
+    visit.url,
+    visit.domain,
+    visit.visitTime.toISOString(),
+    visit.visitCount,
+    visit.typedCount,
+    visit.transition,
+    visit.fromVisit ?? '',
+    visit.visitDuration,
+    visit.hidden,
+    visit.typed
+  ])
 
-  downloadBlob('﻿' + lines.join('\n'), 'text/csv;charset=utf-8', fileName)
+  downloadBlob(toCsv(headers, rows), 'text/csv;charset=utf-8', fileName)
 }
 
 export function exportUnifiedVisitsAsJson(
   visits: UnifiedHistoryVisit[],
   fileName = 'unified-history.json'
 ) {
-  downloadBlob(JSON.stringify(visits, null, 2), 'application/json', fileName)
+  exportAsJson(visits, fileName)
 }
 
 export function exportUnifiedVisitsAsCsv(
@@ -206,21 +197,14 @@ export function exportUnifiedVisitsAsCsv(
 ) {
   const headers = ['source', 'title', 'url', 'domain', 'visitTime', 'visitCount'] as const
 
-  const lines = [headers.join(',')]
-  for (const visit of visits) {
-    lines.push(
-      [
-        visit.source,
-        visit.title,
-        visit.url,
-        visit.domain,
-        visit.visitTime.toISOString(),
-        visit.visitCount
-      ]
-        .map(escapeCsvCell)
-        .join(',')
-    )
-  }
+  const rows = visits.map((visit) => [
+    visit.source,
+    visit.title,
+    visit.url,
+    visit.domain,
+    visit.visitTime.toISOString(),
+    visit.visitCount
+  ])
 
-  downloadBlob('﻿' + lines.join('\n'), 'text/csv;charset=utf-8', fileName)
+  downloadBlob(toCsv(headers, rows), 'text/csv;charset=utf-8', fileName)
 }
