@@ -34,7 +34,13 @@ const { isDark, toggleTheme } = useAppTheme()
 
 const sources = { safari, firefox, chrome, edge }
 const sourceCards = computed(() =>
-  BROWSER_CATALOG.map((entry) => ({ entry, source: sources[entry.id] }))
+  BROWSER_CATALOG.map((entry) => {
+    const source = sources[entry.id]
+    if (!source) {
+      throw new Error(`No unified history source wired up for browser catalog entry: ${entry.id}`)
+    }
+    return { entry, source }
+  })
 )
 
 function resetAllSources() {

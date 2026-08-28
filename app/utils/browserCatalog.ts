@@ -64,8 +64,13 @@ export const BROWSER_CATALOG: BrowserCatalogEntry[] = [
   }
 ]
 
+// Called per visit conversion and repeatedly during rendering (e.g.
+// UnifiedFilterBar calls unifiedSourceMeta once per source) — a Map lookup
+// keeps that O(1) instead of re-scanning BROWSER_CATALOG every time.
+const BROWSER_CATALOG_BY_ID = new Map(BROWSER_CATALOG.map((entry) => [entry.id, entry]))
+
 export function browserCatalogEntry(id: UnifiedHistorySource): BrowserCatalogEntry {
-  const entry = BROWSER_CATALOG.find((b) => b.id === id)
+  const entry = BROWSER_CATALOG_BY_ID.get(id)
   if (!entry) throw new Error(`Unknown browser id: ${id}`)
   return entry
 }
