@@ -52,8 +52,12 @@ self.onmessage = async (event: MessageEvent<HistoryParserWorkerRequest>) => {
   // be malformed, we still want requestId (when present) so the main thread's
   // matching pending call can be rejected instead of hanging forever — a throw
   // from an async event handler becomes an unhandled rejection in the worker's
-  // scope, not the `error` event the main thread listens for.
+  // scope, not the `error` event the main thread listens for. Guarded here
+  // (before the try, not just in the catch) so a malformed request without a
+  // usable requestId can't reach the success path either and post a response
+  // the main thread has no pending call to match it against.
   const requestId = event.data?.requestId
+  if (typeof requestId !== 'number') return
 
   try {
     const { kind, buffer, fileName, locale } = event.data
@@ -65,7 +69,6 @@ self.onmessage = async (event: MessageEvent<HistoryParserWorkerRequest>) => {
     }
     self.postMessage(response)
   } catch (err) {
-    if (requestId === undefined) return
     const response: HistoryParserWorkerResponse = {
       requestId,
       ok: false,
