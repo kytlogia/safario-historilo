@@ -14,27 +14,40 @@ const router = createRouter({
   }))
 })
 
+// v-menu's list is a v-overlay that teleports to document.body when open,
+// so its content lives outside the mounted wrapper's own element tree —
+// attach to the body and query it directly rather than via wrapper.find().
 function mountLinks(props?: { current?: (typeof BROWSER_CATALOG)[number]['id'] }) {
-  return mountWithVuetify(BrowserNavLinks, { props, global: { plugins: [router] } })
+  return mountWithVuetify(BrowserNavLinks, {
+    props,
+    attachTo: document.body,
+    global: { plugins: [router] }
+  })
 }
 
 describe('BrowserNavLinks', () => {
-  it('renders a link for every catalog entry when no current browser is given', () => {
+  it('renders a link for every catalog entry when no current browser is given', async () => {
     const wrapper = mountLinks()
+    await wrapper.get('button').trigger('click')
 
     for (const entry of BROWSER_CATALOG) {
-      const link = wrapper.find(`[data-testid="browser-nav-link-${entry.id}"]`)
-      expect(link.exists()).toBe(true)
-      expect(link.attributes('href')).toBe(entry.route)
+      const link = document.querySelector(`[data-testid="browser-nav-link-${entry.id}"]`)
+      expect(link).not.toBeNull()
+      expect(link?.getAttribute('href')).toBe(entry.route)
     }
+
+    wrapper.unmount()
   })
 
-  it('excludes the current browser from its own nav bar', () => {
+  it('excludes the current browser from its own nav bar', async () => {
     const wrapper = mountLinks({ current: 'chrome' })
+    await wrapper.get('button').trigger('click')
 
-    expect(wrapper.find('[data-testid="browser-nav-link-chrome"]').exists()).toBe(false)
+    expect(document.querySelector('[data-testid="browser-nav-link-chrome"]')).toBeNull()
     for (const entry of BROWSER_CATALOG.filter((b) => b.id !== 'chrome')) {
-      expect(wrapper.find(`[data-testid="browser-nav-link-${entry.id}"]`).exists()).toBe(true)
+      expect(document.querySelector(`[data-testid="browser-nav-link-${entry.id}"]`)).not.toBeNull()
     }
+
+    wrapper.unmount()
   })
 })

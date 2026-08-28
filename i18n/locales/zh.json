@@ -20,6 +20,7 @@
     }
   },
   "nav": {
+    "viewHistory": "查看历史记录",
     "viewSafari": "查看 Safari 历史记录",
     "viewFirefox": "查看 Firefox 历史记录",
     "viewChrome": "查看 Chrome 历史记录",
