@@ -20,6 +20,7 @@
     }
   },
   "nav": {
+    "viewHistory": "履歴を見る",
     "viewSafari": "Safariの履歴を見る",
     "viewFirefox": "Firefoxの履歴を見る",
     "viewChrome": "Chromeの履歴を見る",

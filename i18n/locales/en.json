@@ -20,6 +20,7 @@
     }
   },
   "nav": {
+    "viewHistory": "View history",
     "viewSafari": "View Safari history",
     "viewFirefox": "View Firefox history",
     "viewChrome": "View Chrome history",
