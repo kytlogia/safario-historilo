@@ -20,7 +20,6 @@ import {
   filterField,
   freeformStringArrayCodec,
   nullableDateCodec,
-  nullableStringCodec,
   stringArrayCodec,
   stringCodec,
   useFilterPersistence
@@ -118,14 +117,14 @@ export function useUnifiedHistoryPage() {
   const activeSources = ref<UnifiedHistorySource[]>([])
 
   const search = ref('')
-  const domainFilter = ref<string | null>(null)
+  const domainFilter = ref<string[]>([])
   const dateFrom = ref<Date | null>(null)
   const dateTo = ref<Date | null>(null)
   const enabledSources = ref<UnifiedHistorySource[]>([...UNIFIED_HISTORY_SOURCES])
 
   useFilterPersistence('unified-history-filters', {
     search: filterField(search, stringCodec),
-    domainFilter: filterField(domainFilter, nullableStringCodec),
+    domainFilter: filterField(domainFilter, freeformStringArrayCodec),
     dateFrom: filterField(dateFrom, nullableDateCodec),
     dateTo: filterField(dateTo, nullableDateCodec),
     enabledSources: filterField(enabledSources, stringArrayCodec(UNIFIED_HISTORY_SOURCES)),
@@ -210,7 +209,7 @@ export function useUnifiedHistoryPage() {
   function resetFilters() {
     search.value = ''
     resetDebouncedSearch()
-    domainFilter.value = null
+    domainFilter.value = []
     dateFrom.value = null
     dateTo.value = null
     enabledSources.value = [...UNIFIED_HISTORY_SOURCES]

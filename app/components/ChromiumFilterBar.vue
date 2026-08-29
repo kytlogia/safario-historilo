@@ -14,7 +14,7 @@ const props = defineProps<{
 }>()
 
 const search = defineModel<string>('search', { required: true })
-const domainFilter = defineModel<string | null>('domainFilter', { required: true })
+const domainFilter = defineModel<string[]>('domainFilter', { required: true })
 const dateFrom = defineModel<Date | null>('dateFrom', { required: true })
 const dateTo = defineModel<Date | null>('dateTo', { required: true })
 const onlyTyped = defineModel<boolean>('onlyTyped', { required: true })

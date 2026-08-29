@@ -8,8 +8,8 @@ import { useDebouncedRef } from './useDebouncedRef'
 import {
   booleanCodec,
   filterField,
+  freeformStringArrayCodec,
   nullableDateCodec,
-  nullableStringCodec,
   stringCodec,
   useFilterPersistence
 } from './useFilterPersistence'
@@ -40,7 +40,7 @@ export function useFirefoxHistoryPage() {
   })
 
   const search = ref('')
-  const domainFilter = ref<string | null>(null)
+  const domainFilter = ref<string[]>([])
   const dateFrom = ref<Date | null>(null)
   const dateTo = ref<Date | null>(null)
   const onlyTyped = ref(false)
@@ -49,7 +49,7 @@ export function useFirefoxHistoryPage() {
 
   useFilterPersistence('firefox-history-filters', {
     search: filterField(search, stringCodec),
-    domainFilter: filterField(domainFilter, nullableStringCodec),
+    domainFilter: filterField(domainFilter, freeformStringArrayCodec),
     dateFrom: filterField(dateFrom, nullableDateCodec),
     dateTo: filterField(dateTo, nullableDateCodec),
     onlyTyped: filterField(onlyTyped, booleanCodec),
@@ -100,7 +100,7 @@ export function useFirefoxHistoryPage() {
     source.reset()
     search.value = ''
     resetDebouncedSearch()
-    domainFilter.value = null
+    domainFilter.value = []
     dateFrom.value = null
     dateTo.value = null
     onlyTyped.value = false

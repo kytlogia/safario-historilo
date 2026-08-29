@@ -27,7 +27,7 @@ function makeVisit(overrides: Partial<ChromiumHistoryVisit> = {}): ChromiumHisto
 function makeFilters(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     search: ref(''),
-    domainFilter: ref<string | null>(null),
+    domainFilter: ref<string[]>([]),
     dateFrom: ref<Date | null>(null),
     dateTo: ref<Date | null>(null),
     onlyTyped: ref(false),
@@ -36,7 +36,7 @@ function makeFilters(overrides: Partial<Record<string, unknown>> = {}) {
     ...overrides
   } as {
     search: ReturnType<typeof ref<string>>
-    domainFilter: ReturnType<typeof ref<string | null>>
+    domainFilter: ReturnType<typeof ref<string[]>>
     dateFrom: ReturnType<typeof ref<Date | null>>
     dateTo: ReturnType<typeof ref<Date | null>>
     onlyTyped: ReturnType<typeof ref<boolean>>
@@ -84,7 +84,7 @@ describe('useChromiumHistoryFilters', () => {
       ])
       const { filteredVisits } = useChromiumHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('b.com') })
+        makeFilters({ domainFilter: ref(['b.com']) })
       )
 
       expect(filteredVisits.value.map((v) => v.domain)).toEqual(['b.com'])
@@ -166,7 +166,7 @@ describe('useChromiumHistoryFilters', () => {
       ])
       const { filteredVisits } = useChromiumHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com'), onlyTyped: ref(true), search: ref('match') })
+        makeFilters({ domainFilter: ref(['a.com']), onlyTyped: ref(true), search: ref('match') })
       )
 
       expect(filteredVisits.value).toHaveLength(1)
@@ -191,7 +191,7 @@ describe('useChromiumHistoryFilters', () => {
       ])
       const { topDomains } = useChromiumHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(topDomains.value).toEqual([{ domain: 'a.com', count: 1, ratio: 100 }])
@@ -206,7 +206,7 @@ describe('useChromiumHistoryFilters', () => {
       ])
       const { weekdayTrend } = useChromiumHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(weekdayTrend.value).toHaveLength(7)
@@ -222,7 +222,7 @@ describe('useChromiumHistoryFilters', () => {
       ])
       const { hourlyTrend } = useChromiumHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(hourlyTrend.value).toHaveLength(24)
@@ -248,7 +248,7 @@ describe('useChromiumHistoryFilters', () => {
       ])
       const { dateRangeLabel } = useChromiumHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(dateRangeLabel.value).toBe(`${formatDate(min)} 〜 ${formatDate(max)}`)
