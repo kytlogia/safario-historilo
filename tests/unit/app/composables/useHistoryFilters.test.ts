@@ -241,7 +241,10 @@ describe('useHistoryFilters', () => {
         makeVisit({ domain: 'a.com' }),
         makeVisit({ domain: 'b.com' })
       ])
-      const { topDomains } = useHistoryFilters(visits, makeFilters({ domainFilter: ref(['a.com']) }))
+      const { topDomains } = useHistoryFilters(
+        visits,
+        makeFilters({ domainFilter: ref(['a.com']) })
+      )
 
       expect(topDomains.value).toEqual([{ domain: 'a.com', count: 1, ratio: 100 }])
     })
