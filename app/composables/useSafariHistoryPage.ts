@@ -8,7 +8,7 @@ import { useDebouncedRef } from './useDebouncedRef'
 import {
   booleanCodec,
   filterField,
-  freeformStringArrayCodec,
+  legacyNullableToStringArrayCodec,
   nullableDateCodec,
   stringCodec,
   useFilterPersistence
@@ -45,7 +45,7 @@ export function useSafariHistoryPage() {
 
   useFilterPersistence('safari-history-filters', {
     search: filterField(search, stringCodec),
-    domainFilter: filterField(domainFilter, freeformStringArrayCodec),
+    domainFilter: filterField(domainFilter, legacyNullableToStringArrayCodec),
     dateFrom: filterField(dateFrom, nullableDateCodec),
     dateTo: filterField(dateTo, nullableDateCodec),
     onlyFailed: filterField(onlyFailed, booleanCodec),

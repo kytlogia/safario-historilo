@@ -8,7 +8,7 @@ import { useDebouncedRef } from './useDebouncedRef'
 import {
   booleanCodec,
   filterField,
-  freeformStringArrayCodec,
+  legacyNullableToStringArrayCodec,
   nullableDateCodec,
   stringCodec,
   useFilterPersistence
@@ -49,7 +49,7 @@ export function useFirefoxHistoryPage() {
 
   useFilterPersistence('firefox-history-filters', {
     search: filterField(search, stringCodec),
-    domainFilter: filterField(domainFilter, freeformStringArrayCodec),
+    domainFilter: filterField(domainFilter, legacyNullableToStringArrayCodec),
     dateFrom: filterField(dateFrom, nullableDateCodec),
     dateTo: filterField(dateTo, nullableDateCodec),
     onlyTyped: filterField(onlyTyped, booleanCodec),

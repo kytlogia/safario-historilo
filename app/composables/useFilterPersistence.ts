@@ -81,6 +81,22 @@ export const freeformStringArrayCodec: FilterPersistenceCodec<string[]> = {
   }
 }
 
+/**
+ * Like freeformStringArrayCodec, but also decodes the `string | null` shape
+ * domainFilter was persisted as before #157 introduced multi-select — so
+ * upgrading doesn't silently drop a filter a user had saved under the old
+ * single-domain format (a plain array-typed codec would just fail its
+ * Array.isArray check and fall back to the default).
+ */
+export const legacyNullableToStringArrayCodec: FilterPersistenceCodec<string[]> = {
+  toStorage: (value) => value,
+  fromStorage: (value) => {
+    if (value === null) return []
+    if (typeof value === 'string') return freeformStringArrayCodec.fromStorage([value])
+    return freeformStringArrayCodec.fromStorage(value)
+  }
+}
+
 interface FilterPersistenceField {
   get: () => unknown
   set: (value: unknown) => void

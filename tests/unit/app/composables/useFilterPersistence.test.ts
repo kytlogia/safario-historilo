@@ -4,6 +4,7 @@ import {
   booleanCodec,
   filterField,
   freeformStringArrayCodec,
+  legacyNullableToStringArrayCodec,
   nullableDateCodec,
   nullableStringCodec,
   stringArrayCodec,
@@ -249,6 +250,39 @@ describe('useFilterPersistence', () => {
 
     expect(profileIds.value.length).toBeLessThan(oversized.length)
     expect(profileIds.value).toEqual(oversized.slice(0, profileIds.value.length))
+  })
+
+  it('legacyNullableToStringArrayCodec migrates a pre-multiselect persisted string into a one-element array', () => {
+    localStorage.setItem('test-filters', JSON.stringify({ domainFilter: 'example.com' }))
+    const domainFilter = ref<string[]>([])
+
+    useFilterPersistence('test-filters', {
+      domainFilter: filterField(domainFilter, legacyNullableToStringArrayCodec)
+    })
+
+    expect(domainFilter.value).toEqual(['example.com'])
+  })
+
+  it('legacyNullableToStringArrayCodec migrates a pre-multiselect persisted null into an empty array', () => {
+    localStorage.setItem('test-filters', JSON.stringify({ domainFilter: null }))
+    const domainFilter = ref<string[]>(['unused-default'])
+
+    useFilterPersistence('test-filters', {
+      domainFilter: filterField(domainFilter, legacyNullableToStringArrayCodec)
+    })
+
+    expect(domainFilter.value).toEqual([])
+  })
+
+  it('legacyNullableToStringArrayCodec still restores an already-migrated array as-is', () => {
+    localStorage.setItem('test-filters', JSON.stringify({ domainFilter: ['a.com', 'b.com'] }))
+    const domainFilter = ref<string[]>([])
+
+    useFilterPersistence('test-filters', {
+      domainFilter: filterField(domainFilter, legacyNullableToStringArrayCodec)
+    })
+
+    expect(domainFilter.value).toEqual(['a.com', 'b.com'])
   })
 
   it('does not throw when localStorage.setItem throws', async () => {

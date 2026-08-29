@@ -19,6 +19,7 @@ import { useDebouncedRef } from './useDebouncedRef'
 import {
   filterField,
   freeformStringArrayCodec,
+  legacyNullableToStringArrayCodec,
   nullableDateCodec,
   stringArrayCodec,
   stringCodec,
@@ -124,7 +125,7 @@ export function useUnifiedHistoryPage() {
 
   useFilterPersistence('unified-history-filters', {
     search: filterField(search, stringCodec),
-    domainFilter: filterField(domainFilter, freeformStringArrayCodec),
+    domainFilter: filterField(domainFilter, legacyNullableToStringArrayCodec),
     dateFrom: filterField(dateFrom, nullableDateCodec),
     dateTo: filterField(dateTo, nullableDateCodec),
     enabledSources: filterField(enabledSources, stringArrayCodec(UNIFIED_HISTORY_SOURCES)),
