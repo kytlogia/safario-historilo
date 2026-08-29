@@ -62,6 +62,7 @@ function onFileInputChange(files: File[] | File | null) {
           icon="mdi-close"
           size="small"
           variant="text"
+          :disabled="isLoading"
           :aria-label="t('components.unifiedSourceCard.removeCard', { label })"
           data-testid="source-card-close-button"
           @click="emit('close')"

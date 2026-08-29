@@ -35,10 +35,13 @@ const { isDark, toggleTheme } = useAppTheme()
 // Only the cards the user added (see issue #156) — order follows
 // BROWSER_CATALOG so it stays stable regardless of add order.
 const sourceCards = computed(() =>
-  BROWSER_CATALOG.filter((entry) => activeSources.value.includes(entry.id)).map((entry) => ({
-    entry,
-    source: sources[entry.id]
-  }))
+  BROWSER_CATALOG.filter((entry) => activeSources.value.includes(entry.id)).map((entry) => {
+    const source = sources[entry.id]
+    if (!source) {
+      throw new Error(`No unified history source wired up for browser catalog entry: ${entry.id}`)
+    }
+    return { entry, source }
+  })
 )
 const addableSources = computed(() =>
   BROWSER_CATALOG.filter((entry) => !activeSources.value.includes(entry.id))
@@ -80,7 +83,7 @@ function resetAllSources() {
 
     <v-main>
       <v-container fluid class="py-6">
-        <v-row v-if="sourceCards.length || addableSources.length" class="align-center">
+        <v-row class="align-center">
           <v-col v-for="{ entry, source } in sourceCards" :key="entry.id" cols="12" sm="6" lg="3">
             <UnifiedSourceCard
               :label="entry.label"
