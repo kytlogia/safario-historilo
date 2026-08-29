@@ -180,7 +180,8 @@
       "profileLabel": "Profile",
       "autoLoad": "Load automatically",
       "permissionHint": "No read permission. Please grant Full Disk Access.",
-      "fileInputLabel": "Choose a file"
+      "fileInputLabel": "Choose a file",
+      "removeCard": "Close {label} card"
     },
     "uploadPanel": {
       "common": {
@@ -225,8 +226,10 @@
   },
   "pages": {
     "all": {
+      "addSource": "Add browser",
       "emptyTitle": "No data loaded yet",
-      "emptyText": "Load one or more browser history files from the cards above to search across them."
+      "emptyText": "Load one or more browser history files from the cards above to search across them.",
+      "noSourcesText": "Choose a browser to search from the \"Add browser\" button."
     }
   }
 }

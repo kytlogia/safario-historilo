@@ -31,6 +31,14 @@ export interface UnifiedHistorySourceOptions<V, P> {
   resolveDefaultProfileId?: (profiles: P[]) => string
   /** i18n key (under `error.autoLoadFailed`) resolved via t() at call time. */
   loadErrorFallbackKey: string
+  /**
+   * Whether to fetch profiles/status automatically on mount. Defaults to
+   * true (matches every single-browser page, which always shows its one
+   * source). app/pages/all.vue passes false and calls the returned
+   * checkAvailability() itself, only for sources the user actually added —
+   * see useUnifiedHistoryPage.ts.
+   */
+  autoCheckOnMount?: boolean
 }
 
 /**
@@ -51,7 +59,8 @@ export function useUnifiedHistorySource<V, P>(options: UnifiedHistorySourceOptio
     toUnified,
     initialProfileId = '',
     resolveDefaultProfileId,
-    loadErrorFallbackKey
+    loadErrorFallbackKey,
+    autoCheckOnMount = true
   } = options
 
   const { t } = useI18n()
@@ -77,18 +86,27 @@ export function useUnifiedHistorySource<V, P>(options: UnifiedHistorySourceOptio
   const hasData = computed(() => rawVisits.value.length > 0)
   const unifiedVisits = computed(() => rawVisits.value.map(toUnified))
 
+  // Bumped by reset() so a load that's still in flight when the user closes
+  // this source's card (app/pages/all.vue) can't resurrect the data it just
+  // cleared by writing its result after the fact — loadFile/loadFromServer
+  // only apply their result if their own generation is still current.
+  let loadGeneration = 0
+
   async function loadFile(file: File | null | undefined) {
     if (!file || isLoading.value) return
+    const generation = ++loadGeneration
     isLoading.value = true
     loadError.value = ''
     try {
       const result = await parseFile(file, currentLocale.value)
+      if (generation !== loadGeneration) return
       rawVisits.value = result.visits
       fileName.value = result.fileName
     } catch (err) {
+      if (generation !== loadGeneration) return
       loadError.value = err instanceof Error ? err.message : t('error.unknown')
     } finally {
-      isLoading.value = false
+      if (generation === loadGeneration) isLoading.value = false
     }
   }
 
@@ -138,6 +156,7 @@ export function useUnifiedHistorySource<V, P>(options: UnifiedHistorySourceOptio
 
   async function loadFromServer() {
     if (isLoading.value) return
+    const generation = ++loadGeneration
     isLoading.value = true
     loadError.value = ''
     try {
@@ -145,34 +164,42 @@ export function useUnifiedHistorySource<V, P>(options: UnifiedHistorySourceOptio
         query: { profileId: selectedProfileId.value || undefined }
       })
       const result = await parseFile(new File([blob], serverFileName), currentLocale.value)
+      if (generation !== loadGeneration) return
       rawVisits.value = result.visits
       fileName.value = result.fileName
     } catch (err) {
+      if (generation !== loadGeneration) return
       if (err instanceof FetchError) {
         loadError.value = err.data?.message ?? t(loadErrorFallbackKey)
       } else {
         loadError.value = err instanceof Error ? err.message : t('error.unknown')
       }
     } finally {
-      isLoading.value = false
+      if (generation === loadGeneration) isLoading.value = false
     }
   }
 
   function reset() {
+    loadGeneration++
     rawVisits.value = []
     fileName.value = ''
     loadError.value = ''
+    isLoading.value = false
   }
 
-  onMounted(async () => {
-    // Sequential, not Promise.all: checkServerAutoLoadAvailability() reads
-    // selectedProfileId synchronously, but loadProfiles() is what resolves
-    // the default profile id (via resolveDefaultProfileId) when the caller
-    // didn't pass an initialProfileId. Running them in parallel risks the
-    // status check firing before a profile is selected — resolve the
-    // profile first.
+  // Sequential, not Promise.all: checkServerAutoLoadAvailability() reads
+  // selectedProfileId synchronously, but loadProfiles() is what resolves
+  // the default profile id (via resolveDefaultProfileId) when the caller
+  // didn't pass an initialProfileId. Running them in parallel risks the
+  // status check firing before a profile is selected — resolve the
+  // profile first.
+  async function checkAvailability() {
     await loadProfiles()
     await checkServerAutoLoadAvailability()
+  }
+
+  onMounted(() => {
+    if (autoCheckOnMount) void checkAvailability()
   })
 
   return {
@@ -195,6 +222,7 @@ export function useUnifiedHistorySource<V, P>(options: UnifiedHistorySourceOptio
     loadFile,
     onProfileChange,
     loadFromServer,
+    checkAvailability,
     reset
   }
 }

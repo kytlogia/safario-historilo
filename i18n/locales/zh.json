@@ -180,7 +180,8 @@
       "profileLabel": "配置文件",
       "autoLoad": "自动加载",
       "permissionHint": "没有读取权限，请授予完全磁盘访问权限。",
-      "fileInputLabel": "选择文件"
+      "fileInputLabel": "选择文件",
+      "removeCard": "关闭 {label} 卡片"
     },
     "uploadPanel": {
       "common": {
@@ -225,8 +226,10 @@
   },
   "pages": {
     "all": {
+      "addSource": "添加浏览器",
       "emptyTitle": "尚未加载任何数据",
-      "emptyText": "请从上方卡片加载一个或多个浏览器的历史记录文件，即可进行跨浏览器搜索。"
+      "emptyText": "请从上方卡片加载一个或多个浏览器的历史记录文件，即可进行跨浏览器搜索。",
+      "noSourcesText": "点击“添加浏览器”选择要搜索的浏览器。"
     }
   }
 }

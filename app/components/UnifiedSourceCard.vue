@@ -34,6 +34,7 @@ const emit = defineEmits<{
   'load-from-server': []
   'update:selectedProfileId': [profileId: string]
   reset: []
+  close: []
 }>()
 
 function onFileInputChange(files: File[] | File | null) {
@@ -50,13 +51,22 @@ function onFileInputChange(files: File[] | File | null) {
       </template>
       <v-card-title class="text-subtitle-1">{{ label }}</v-card-title>
       <template #append>
-        <v-chip v-if="hasData" size="small" :color="color" variant="tonal">
+        <v-chip v-if="hasData" size="small" :color="color" variant="tonal" class="mr-1">
           {{
             t('components.unifiedSourceCard.visitCountSuffix', {
               count: formatNumber(visitCount, intlLocale)
             })
           }}
         </v-chip>
+        <v-btn
+          icon="mdi-close"
+          size="small"
+          variant="text"
+          :disabled="isLoading"
+          :aria-label="t('components.unifiedSourceCard.removeCard', { label })"
+          data-testid="source-card-close-button"
+          @click="emit('close')"
+        />
       </template>
     </v-card-item>
 

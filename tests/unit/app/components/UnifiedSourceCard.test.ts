@@ -47,6 +47,14 @@ describe('UnifiedSourceCard', () => {
     expect(wrapper.emitted('reset')).toHaveLength(1)
   })
 
+  it('emits close when the close button is clicked', async () => {
+    const wrapper = mountCard()
+
+    await wrapper.find('[data-testid="source-card-close-button"]').trigger('click')
+
+    expect(wrapper.emitted('close')).toHaveLength(1)
+  })
+
   it('emits file-selected with the chosen file from the file input', async () => {
     const wrapper = mountCard()
     const file = new File(['dummy'], 'History.db')

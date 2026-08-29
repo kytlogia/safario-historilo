@@ -45,13 +45,19 @@ export function useUnifiedHistoryPage() {
   const { t } = useI18n()
   const { intlLocale } = useAppLocale()
 
+  // autoCheckOnMount: false — unlike the single-browser pages, /all starts
+  // with no cards shown (see issue #156), so fetching all four sources'
+  // profile/status on page load would defeat the point of only adding the
+  // browsers actually needed. Each source's status is instead checked from
+  // checkAvailability() below, once for whichever sources are active.
   const safari = useUnifiedHistorySource<HistoryVisit, SafariProfile>({
     apiBase: browserCatalogEntry('safari').apiBase,
     serverFileName: browserCatalogEntry('safari').serverFileName,
     parseFile: parseSafariHistoryFile,
     toUnified: (v) => toUnifiedVisit(v, 'safari'),
     initialProfileId: DEFAULT_PROFILE_ID,
-    loadErrorFallbackKey: 'error.autoLoadFailed.safari'
+    loadErrorFallbackKey: 'error.autoLoadFailed.safari',
+    autoCheckOnMount: false
   })
 
   const firefox = useUnifiedHistorySource<FirefoxHistoryVisit, FirefoxProfile>({
@@ -60,7 +66,8 @@ export function useUnifiedHistoryPage() {
     parseFile: parseFirefoxHistoryFile,
     toUnified: (v) => toUnifiedVisit(v, 'firefox'),
     resolveDefaultProfileId: pickDefaultProfileId,
-    loadErrorFallbackKey: 'error.autoLoadFailed.firefox'
+    loadErrorFallbackKey: 'error.autoLoadFailed.firefox',
+    autoCheckOnMount: false
   })
 
   const chrome = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
@@ -69,7 +76,8 @@ export function useUnifiedHistoryPage() {
     parseFile: parseChromiumHistoryFile,
     toUnified: (v) => toUnifiedVisit(v, 'chrome'),
     resolveDefaultProfileId: pickDefaultProfileId,
-    loadErrorFallbackKey: 'error.autoLoadFailed.chromium'
+    loadErrorFallbackKey: 'error.autoLoadFailed.chromium',
+    autoCheckOnMount: false
   })
 
   const edge = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
@@ -78,7 +86,8 @@ export function useUnifiedHistoryPage() {
     parseFile: parseChromiumHistoryFile,
     toUnified: (v) => toUnifiedVisit(v, 'edge'),
     resolveDefaultProfileId: pickDefaultProfileId,
-    loadErrorFallbackKey: 'error.autoLoadFailed.chromium'
+    loadErrorFallbackKey: 'error.autoLoadFailed.chromium',
+    autoCheckOnMount: false
   })
 
   // Each source's own visits already arrive sorted (visit_time DESC, see the
@@ -100,6 +109,13 @@ export function useUnifiedHistoryPage() {
       safari.hasData.value || firefox.hasData.value || chrome.hasData.value || edge.hasData.value
   )
 
+  const sources = { safari, firefox, chrome, edge }
+
+  // Which browser cards are shown on the page — starts empty (see issue
+  // #156) instead of always rendering all four, and is restored from
+  // localStorage like every other filter below.
+  const activeSources = ref<UnifiedHistorySource[]>([])
+
   const search = ref('')
   const domainFilter = ref<string | null>(null)
   const dateFrom = ref<Date | null>(null)
@@ -111,8 +127,29 @@ export function useUnifiedHistoryPage() {
     domainFilter: filterField(domainFilter, nullableStringCodec),
     dateFrom: filterField(dateFrom, nullableDateCodec),
     dateTo: filterField(dateTo, nullableDateCodec),
-    enabledSources: filterField(enabledSources, stringArrayCodec(UNIFIED_HISTORY_SOURCES))
+    enabledSources: filterField(enabledSources, stringArrayCodec(UNIFIED_HISTORY_SOURCES)),
+    activeSources: filterField(activeSources, stringArrayCodec(UNIFIED_HISTORY_SOURCES))
   })
+
+  // Sources restored into activeSources above (a prior visit's selection)
+  // never got their onMounted check — it was skipped via autoCheckOnMount:
+  // false — so run it now for exactly those, instead of all four.
+  for (const id of activeSources.value) {
+    void sources[id].checkAvailability()
+  }
+
+  function addSource(id: UnifiedHistorySource) {
+    if (activeSources.value.includes(id)) return
+    activeSources.value = [...activeSources.value, id]
+    if (!enabledSources.value.includes(id)) enabledSources.value = [...enabledSources.value, id]
+    void sources[id].checkAvailability()
+  }
+
+  function removeSource(id: UnifiedHistorySource) {
+    activeSources.value = activeSources.value.filter((s) => s !== id)
+    enabledSources.value = enabledSources.value.filter((s) => s !== id)
+    sources[id].reset()
+  }
 
   const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 
@@ -171,10 +208,10 @@ export function useUnifiedHistoryPage() {
   }
 
   return {
-    safari,
-    firefox,
-    chrome,
-    edge,
+    sources,
+    activeSources,
+    addSource,
+    removeSource,
     visits,
     hasData,
     search,
