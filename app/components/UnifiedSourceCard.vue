@@ -13,6 +13,7 @@ withDefaults(
     color: string
     isLoading: boolean
     loadError: string
+    loadWarning?: string
     hasData: boolean
     visitCount: number
     fileName: string
@@ -21,18 +22,19 @@ withDefaults(
     serverPermissionHint: boolean
     serverStatusWarning: string
     serverProfiles?: { id: string; name: string }[]
-    selectedProfileId?: string
+    selectedProfileIds?: string[]
   }>(),
   {
+    loadWarning: '',
     serverProfiles: () => [],
-    selectedProfileId: ''
+    selectedProfileIds: () => []
   }
 )
 
 const emit = defineEmits<{
   'file-selected': [file: File]
   'load-from-server': []
-  'update:selectedProfileId': [profileId: string]
+  'update:selectedProfileIds': [profileIds: string[]]
   reset: []
   close: []
 }>()
@@ -83,12 +85,22 @@ function onFileInputChange(files: File[] | File | null) {
         >
           {{ t('components.unifiedSourceCard.reload') }}
         </v-btn>
+        <v-alert
+          v-if="loadWarning"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mt-2"
+          data-testid="source-card-load-warning"
+        >
+          {{ loadWarning }}
+        </v-alert>
       </template>
 
       <template v-else>
         <v-select
           v-if="serverProfiles.length > 1"
-          :model-value="selectedProfileId"
+          :model-value="selectedProfileIds"
           :items="serverProfiles"
           item-title="name"
           item-value="id"
@@ -96,9 +108,12 @@ function onFileInputChange(files: File[] | File | null) {
           variant="outlined"
           density="compact"
           hide-details
+          multiple
+          chips
+          closable-chips
           class="mb-3"
           data-testid="source-card-profile-select"
-          @update:model-value="emit('update:selectedProfileId', $event)"
+          @update:model-value="emit('update:selectedProfileIds', $event)"
         />
 
         <template v-if="serverAutoLoadAvailable">

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   booleanCodec,
   filterField,
+  freeformStringArrayCodec,
   nullableDateCodec,
   nullableStringCodec,
   stringArrayCodec,
@@ -188,6 +189,66 @@ describe('useFilterPersistence', () => {
     expect(search.value).toBe('default')
 
     vi.restoreAllMocks()
+  })
+
+  it('restores a freeform string array (not from any known allow-list)', () => {
+    localStorage.setItem('test-filters', JSON.stringify({ profileIds: ['default', 'Profile 1'] }))
+    const profileIds = ref<string[]>([])
+
+    useFilterPersistence('test-filters', {
+      profileIds: filterField(profileIds, freeformStringArrayCodec)
+    })
+
+    expect(profileIds.value).toEqual(['default', 'Profile 1'])
+  })
+
+  it('restores an intentionally-persisted empty freeform array as-is', () => {
+    localStorage.setItem('test-filters', JSON.stringify({ profileIds: [] }))
+    const profileIds = ref<string[]>(['default'])
+
+    useFilterPersistence('test-filters', {
+      profileIds: filterField(profileIds, freeformStringArrayCodec)
+    })
+
+    expect(profileIds.value).toEqual([])
+  })
+
+  it('drops non-string and empty-string entries, and de-dupes, from a freeform array', () => {
+    localStorage.setItem(
+      'test-filters',
+      JSON.stringify({ profileIds: ['default', '', 'default', 42, null, 'p1'] })
+    )
+    const profileIds = ref<string[]>(['unused-default'])
+
+    useFilterPersistence('test-filters', {
+      profileIds: filterField(profileIds, freeformStringArrayCodec)
+    })
+
+    expect(profileIds.value).toEqual(['default', 'p1'])
+  })
+
+  it('keeps the default when a non-empty stored freeform array has no valid entries', () => {
+    localStorage.setItem('test-filters', JSON.stringify({ profileIds: ['', 42, null] }))
+    const profileIds = ref<string[]>(['unused-default'])
+
+    useFilterPersistence('test-filters', {
+      profileIds: filterField(profileIds, freeformStringArrayCodec)
+    })
+
+    expect(profileIds.value).toEqual(['unused-default'])
+  })
+
+  it('caps a restored freeform array to a bounded length instead of trusting arbitrary fan-out', () => {
+    const oversized = Array.from({ length: 200 }, (_, i) => `profile-${i}`)
+    localStorage.setItem('test-filters', JSON.stringify({ profileIds: oversized }))
+    const profileIds = ref<string[]>([])
+
+    useFilterPersistence('test-filters', {
+      profileIds: filterField(profileIds, freeformStringArrayCodec)
+    })
+
+    expect(profileIds.value.length).toBeLessThan(oversized.length)
+    expect(profileIds.value).toEqual(oversized.slice(0, profileIds.value.length))
   })
 
   it('does not throw when localStorage.setItem throws', async () => {

@@ -38,6 +38,7 @@
     "unknown": "不明なエラーが発生しました。",
     "serverRestricted": "サーバー側の制限により自動読み込みが利用できません。",
     "exportFailed": "エクスポートに失敗しました。もう一度お試しください。",
+    "partialProfileLoadFailed": "一部のプロファイル（{profiles}）を読み込めませんでした。",
     "autoLoadFailed": {
       "safari": "History.db の自動読み込みに失敗しました。",
       "firefox": "places.sqlite の自動読み込みに失敗しました。",

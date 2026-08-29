@@ -66,6 +66,15 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
 
   const { debounced: debouncedSearch, reset: resetDebouncedSearch } = useDebouncedRef(search, 200)
 
+  // This page's UploadPanel keeps a single-select profile picker (unlike
+  // app/pages/all.vue's UnifiedSourceCard, which /153 made multi-select) —
+  // bridge that against useUnifiedHistorySource's array-based
+  // selectedProfileIds/onProfileChange instead of exposing them directly.
+  const selectedProfileId = computed(() => source.selectedProfileIds.value[0] ?? '')
+  async function onProfileChange(profileId: string) {
+    await source.onProfileChange(profileId ? [profileId] : [])
+  }
+
   const selectedVisit = ref<ChromiumHistoryVisit | null>(null)
   const detailDialog = ref(false)
 
@@ -116,7 +125,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     serverPermissionHint: source.serverPermissionHint,
     serverStatusWarning: source.serverStatusWarning,
     serverProfiles: source.serverProfiles,
-    selectedProfileId: source.selectedProfileId,
+    selectedProfileId,
     search,
     domainFilter,
     dateFrom,
@@ -136,7 +145,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     uniqueUrlCount,
     uniqueDomainCount,
     loadFile: source.loadFile,
-    onProfileChange: source.onProfileChange,
+    onProfileChange,
     loadFromServer: source.loadFromServer,
     openDetail,
     resetAll
