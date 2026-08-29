@@ -76,6 +76,11 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
   const fileName = ref('')
   const isLoading = ref(false)
   const loadError = ref('')
+  // Set only on a *partial* multi-profile load failure — some selected
+  // profiles' visits made it into rawVisits, but not all, and unlike a
+  // total failure (loadError) that's not obvious from the loaded card
+  // alone (visitCount is just smaller than the user would expect).
+  const loadWarning = ref('')
 
   const serverAutoLoadAvailable = ref(false)
   const serverDbPath = ref('')
@@ -128,8 +133,15 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
   // one of them failing (a deleted profile whose id is still in a restored
   // selection, a locked db, ...) must not blank out the others that
   // succeeded — only fail closed when *every* selected profile failed.
-  function firstRejectedReason(settled: PromiseSettledResult<unknown>[]): unknown {
-    return settled.find((r): r is PromiseRejectedResult => r.status === 'rejected')?.reason
+  //
+  // When every profile failed, which rejection to report matters: with
+  // mixed failure reasons (e.g. one profile 500s, another 403s), reporting
+  // whichever happened to be first would silently hide a real permission
+  // restriction whenever it isn't that one — so a 403 always wins over any
+  // other pick.
+  function pickRejectionReason(settled: PromiseSettledResult<unknown>[]): unknown {
+    const reasons = settled.flatMap((r) => (r.status === 'rejected' ? [r.reason] : []))
+    return reasons.find((err) => err instanceof FetchError && err.statusCode === 403) ?? reasons[0]
   }
 
   async function checkServerAutoLoadAvailability() {
@@ -144,7 +156,7 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
     const results = settled.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []))
     if (results.length === 0) {
       serverPermissionHint.value = false
-      const err = firstRejectedReason(settled)
+      const err = pickRejectionReason(settled)
       if (err instanceof FetchError && err.statusCode === 403) {
         serverStatusWarning.value = err.data?.message ?? t('error.serverRestricted')
       }
@@ -188,6 +200,7 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
     const generation = ++loadGeneration
     isLoading.value = true
     loadError.value = ''
+    loadWarning.value = ''
     try {
       const profileIds = queriedProfileIds()
       const settled = await Promise.allSettled(
@@ -201,7 +214,7 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
         r.status === 'fulfilled' ? [{ profileId: profileIds[index], result: r.value }] : []
       )
       if (fulfilled.length === 0) {
-        const err = firstRejectedReason(settled)
+        const err = pickRejectionReason(settled)
         if (err instanceof FetchError) {
           loadError.value = err.data?.message ?? t(loadErrorFallbackKey)
         } else {
@@ -214,15 +227,29 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
       // (serverFileName, identical for every profile of this browser), so
       // joining `result.fileName` would read as "History, History, History"
       // for a multi-profile load — use the profiles' own display names
-      // instead so the card shows which profiles were combined. A profile
-      // that failed to load (filtered out above) is simply left out here
-      // too, rather than blanking the whole card for the others.
+      // instead so the card shows which profiles were combined.
       fileName.value = fulfilled
         .map(
           ({ profileId }) =>
             serverProfiles.value.find((p) => p.id === profileId)?.name ?? serverFileName
         )
         .join(', ')
+      // A profile that failed to load is left out of rawVisits/fileName
+      // above rather than blanking the whole card for the others — but
+      // that on its own is silent (the card just shows fewer visits than
+      // selected, with hasData now true so loadError's alert no longer
+      // even renders — see UnifiedSourceCard.vue). Surface which selected
+      // profile(s) were dropped so it isn't invisible to the user.
+      if (fulfilled.length < profileIds.length) {
+        const failedProfileNames = settled
+          .flatMap((r, index) => (r.status === 'rejected' ? [profileIds[index]] : []))
+          .map(
+            (profileId) => serverProfiles.value.find((p) => p.id === profileId)?.name ?? profileId
+          )
+        loadWarning.value = t('error.partialProfileLoadFailed', {
+          profiles: failedProfileNames.join(', ')
+        })
+      }
     } finally {
       if (generation === loadGeneration) isLoading.value = false
     }
@@ -233,6 +260,7 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
     rawVisits.value = []
     fileName.value = ''
     loadError.value = ''
+    loadWarning.value = ''
     isLoading.value = false
   }
 
@@ -260,6 +288,7 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
     fileName,
     isLoading,
     loadError,
+    loadWarning,
     serverAutoLoadAvailable,
     serverDbPath,
     serverPermissionHint,

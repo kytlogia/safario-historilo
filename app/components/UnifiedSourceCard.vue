@@ -13,6 +13,7 @@ withDefaults(
     color: string
     isLoading: boolean
     loadError: string
+    loadWarning?: string
     hasData: boolean
     visitCount: number
     fileName: string
@@ -24,6 +25,7 @@ withDefaults(
     selectedProfileIds?: string[]
   }>(),
   {
+    loadWarning: '',
     serverProfiles: () => [],
     selectedProfileIds: () => []
   }
@@ -83,6 +85,16 @@ function onFileInputChange(files: File[] | File | null) {
         >
           {{ t('components.unifiedSourceCard.reload') }}
         </v-btn>
+        <v-alert
+          v-if="loadWarning"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mt-2"
+          data-testid="source-card-load-warning"
+        >
+          {{ loadWarning }}
+        </v-alert>
       </template>
 
       <template v-else>

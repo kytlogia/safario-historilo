@@ -39,6 +39,25 @@ describe('UnifiedSourceCard', () => {
     expect(wrapper.find('[data-testid="source-card-file-input"]').exists()).toBe(false)
   })
 
+  it('shows a load-warning alert once data is loaded when a partial multi-profile load failed', () => {
+    const wrapper = mountCard({
+      hasData: true,
+      visitCount: 10,
+      fileName: 'Profile A',
+      loadWarning: '一部のプロファイル（Profile B）を読み込めませんでした。'
+    })
+
+    expect(wrapper.find('[data-testid="source-card-load-warning"]').text()).toBe(
+      '一部のプロファイル（Profile B）を読み込めませんでした。'
+    )
+  })
+
+  it('hides the load-warning alert once data is loaded when nothing failed', () => {
+    const wrapper = mountCard({ hasData: true, visitCount: 10, fileName: 'History.db' })
+
+    expect(wrapper.find('[data-testid="source-card-load-warning"]').exists()).toBe(false)
+  })
+
   it('emits reset when the reset button is clicked', async () => {
     const wrapper = mountCard({ hasData: true, visitCount: 1, fileName: 'History.db' })
 

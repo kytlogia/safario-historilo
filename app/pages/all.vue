@@ -91,6 +91,7 @@ function resetAllSources() {
               :color="entry.color"
               :is-loading="source.isLoading.value"
               :load-error="source.loadError.value"
+              :load-warning="source.loadWarning.value"
               :has-data="source.hasData.value"
               :visit-count="source.unifiedVisits.value.length"
               :file-name="source.fileName.value"

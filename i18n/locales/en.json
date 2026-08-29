@@ -38,6 +38,7 @@
     "unknown": "An unknown error occurred.",
     "serverRestricted": "Automatic loading is unavailable due to server-side restrictions.",
     "exportFailed": "Export failed. Please try again.",
+    "partialProfileLoadFailed": "Failed to load some profiles ({profiles}).",
     "autoLoadFailed": {
       "safari": "Failed to automatically load History.db.",
       "firefox": "Failed to automatically load places.sqlite.",
