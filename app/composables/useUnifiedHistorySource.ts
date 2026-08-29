@@ -124,35 +124,44 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
     return selectedProfileIds.value.length > 0 ? selectedProfileIds.value : [undefined]
   }
 
+  // Promise.allSettled, not Promise.all: with several profiles selected,
+  // one of them failing (a deleted profile whose id is still in a restored
+  // selection, a locked db, ...) must not blank out the others that
+  // succeeded — only fail closed when *every* selected profile failed.
+  function firstRejectedReason(settled: PromiseSettledResult<unknown>[]): unknown {
+    return settled.find((r): r is PromiseRejectedResult => r.status === 'rejected')?.reason
+  }
+
   async function checkServerAutoLoadAvailability() {
     const requestId = ++statusRequestId
     serverStatusWarning.value = ''
-    try {
-      const results = await Promise.all(
-        queriedProfileIds().map((profileId) =>
-          $fetch<LocalHistoryStatusResponse>(`${apiBase}/status`, { query: { profileId } })
-        )
+    const settled = await Promise.allSettled(
+      queriedProfileIds().map((profileId) =>
+        $fetch<LocalHistoryStatusResponse>(`${apiBase}/status`, { query: { profileId } })
       )
-      if (requestId !== statusRequestId) return
-      serverAutoLoadAvailable.value = results.some((body) => Boolean(body?.available))
-      serverDbPath.value = results
-        .map((body) => (typeof body?.path === 'string' ? body.path : ''))
-        .filter(Boolean)
-        .join(', ')
-      // Only surface the permission hint when nothing is loadable — if at
-      // least one selected profile is available, "自動で読み込む" already
-      // covers that profile and an unreadable sibling isn't blocking.
-      serverPermissionHint.value =
-        !serverAutoLoadAvailable.value &&
-        results.some((body) => Boolean(body?.present) && !body?.readable)
-    } catch (err) {
-      if (requestId !== statusRequestId) return
+    )
+    if (requestId !== statusRequestId) return
+    const results = settled.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []))
+    if (results.length === 0) {
       serverPermissionHint.value = false
+      const err = firstRejectedReason(settled)
       if (err instanceof FetchError && err.statusCode === 403) {
         serverStatusWarning.value = err.data?.message ?? t('error.serverRestricted')
       }
       serverAutoLoadAvailable.value = false
+      return
     }
+    serverAutoLoadAvailable.value = results.some((body) => Boolean(body?.available))
+    serverDbPath.value = results
+      .map((body) => (typeof body?.path === 'string' ? body.path : ''))
+      .filter(Boolean)
+      .join(', ')
+    // Only surface the permission hint when nothing is loadable — if at
+    // least one selected profile is available, "自動で読み込む" already
+    // covers that profile and an unreadable sibling isn't blocking.
+    serverPermissionHint.value =
+      !serverAutoLoadAvailable.value &&
+      results.some((body) => Boolean(body?.present) && !body?.readable)
   }
 
   async function loadProfiles() {
@@ -181,32 +190,39 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
     loadError.value = ''
     try {
       const profileIds = queriedProfileIds()
-      const results = await Promise.all(
+      const settled = await Promise.allSettled(
         profileIds.map(async (profileId) => {
           const blob = await $fetch<Blob>(apiBase, { query: { profileId } })
           return parseFile(new File([blob], serverFileName), currentLocale.value)
         })
       )
       if (generation !== loadGeneration) return
-      rawVisits.value = results.flatMap((result) => result.visits)
+      const fulfilled = settled.flatMap((r, index) =>
+        r.status === 'fulfilled' ? [{ profileId: profileIds[index], result: r.value }] : []
+      )
+      if (fulfilled.length === 0) {
+        const err = firstRejectedReason(settled)
+        if (err instanceof FetchError) {
+          loadError.value = err.data?.message ?? t(loadErrorFallbackKey)
+        } else {
+          loadError.value = err instanceof Error ? err.message : t('error.unknown')
+        }
+        return
+      }
+      rawVisits.value = fulfilled.flatMap(({ result }) => result.visits)
       // parseFile() just echoes back the File name we handed it above
       // (serverFileName, identical for every profile of this browser), so
       // joining `result.fileName` would read as "History, History, History"
       // for a multi-profile load — use the profiles' own display names
-      // instead so the card shows which profiles were combined.
-      fileName.value = profileIds
+      // instead so the card shows which profiles were combined. A profile
+      // that failed to load (filtered out above) is simply left out here
+      // too, rather than blanking the whole card for the others.
+      fileName.value = fulfilled
         .map(
-          (profileId) =>
+          ({ profileId }) =>
             serverProfiles.value.find((p) => p.id === profileId)?.name ?? serverFileName
         )
         .join(', ')
-    } catch (err) {
-      if (generation !== loadGeneration) return
-      if (err instanceof FetchError) {
-        loadError.value = err.data?.message ?? t(loadErrorFallbackKey)
-      } else {
-        loadError.value = err instanceof Error ? err.message : t('error.unknown')
-      }
     } finally {
       if (generation === loadGeneration) isLoading.value = false
     }
