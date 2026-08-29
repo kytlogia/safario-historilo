@@ -18,6 +18,7 @@ import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 import { useDebouncedRef } from './useDebouncedRef'
 import {
   filterField,
+  freeformStringArrayCodec,
   nullableDateCodec,
   nullableStringCodec,
   stringArrayCodec,
@@ -128,7 +129,15 @@ export function useUnifiedHistoryPage() {
     dateFrom: filterField(dateFrom, nullableDateCodec),
     dateTo: filterField(dateTo, nullableDateCodec),
     enabledSources: filterField(enabledSources, stringArrayCodec(UNIFIED_HISTORY_SOURCES)),
-    activeSources: filterField(activeSources, stringArrayCodec(UNIFIED_HISTORY_SOURCES))
+    activeSources: filterField(activeSources, stringArrayCodec(UNIFIED_HISTORY_SOURCES)),
+    // Profile ids aren't drawn from a fixed, known-in-advance set the way
+    // enabledSources/activeSources are (they come from whatever profiles
+    // exist on the machine), so these use the unconstrained codec instead
+    // of stringArrayCodec's allow-list.
+    safariProfileIds: filterField(safari.selectedProfileIds, freeformStringArrayCodec),
+    firefoxProfileIds: filterField(firefox.selectedProfileIds, freeformStringArrayCodec),
+    chromeProfileIds: filterField(chrome.selectedProfileIds, freeformStringArrayCodec),
+    edgeProfileIds: filterField(edge.selectedProfileIds, freeformStringArrayCodec)
   })
 
   // Sources restored into activeSources above (a prior visit's selection)

@@ -108,17 +108,19 @@ describe('UnifiedSourceCard', () => {
     expect(multiple.find('[data-testid="source-card-profile-select"]').exists()).toBe(true)
   })
 
-  it('emits update:selectedProfileId when a different profile is chosen', async () => {
+  it('emits update:selectedProfileIds when the profile selection changes', async () => {
     const wrapper = mountCard({
       serverProfiles: [
         { id: 'default', name: 'デフォルト' },
         { id: 'p1', name: 'プロファイルA' }
       ],
-      selectedProfileId: 'default'
+      selectedProfileIds: ['default']
     })
 
-    await wrapper.findComponent({ name: 'VSelect' }).vm.$emit('update:modelValue', 'p1')
+    await wrapper
+      .findComponent({ name: 'VSelect' })
+      .vm.$emit('update:modelValue', ['default', 'p1'])
 
-    expect(wrapper.emitted('update:selectedProfileId')).toEqual([['p1']])
+    expect(wrapper.emitted('update:selectedProfileIds')).toEqual([[['default', 'p1']]])
   })
 })

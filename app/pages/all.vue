@@ -99,10 +99,10 @@ function resetAllSources() {
               :server-permission-hint="source.serverPermissionHint.value"
               :server-status-warning="source.serverStatusWarning.value"
               :server-profiles="source.serverProfiles.value"
-              :selected-profile-id="source.selectedProfileId.value"
+              :selected-profile-ids="source.selectedProfileIds.value"
               @file-selected="source.loadFile"
               @load-from-server="source.loadFromServer"
-              @update:selected-profile-id="source.onProfileChange"
+              @update:selected-profile-ids="source.onProfileChange"
               @reset="source.reset"
               @close="removeSource(entry.id)"
             />

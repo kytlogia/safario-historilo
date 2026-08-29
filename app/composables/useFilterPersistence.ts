@@ -51,6 +51,25 @@ export function stringArrayCodec<T extends string>(
   }
 }
 
+/**
+ * Like stringArrayCodec, but for arrays whose valid values aren't known
+ * ahead of time (e.g. profile ids, which come from whatever profiles exist
+ * on the machine rather than a fixed literal union) — accepts any array of
+ * strings instead of checking membership in an `allowed` list.
+ */
+export const freeformStringArrayCodec: FilterPersistenceCodec<string[]> = {
+  toStorage: (value) => value,
+  fromStorage: (value) => {
+    if (!Array.isArray(value)) return undefined
+    if (value.length === 0) return []
+    const filtered = value.filter((item): item is string => typeof item === 'string')
+    // Same fail-closed rule as stringArrayCodec: a non-empty stored array
+    // that yields zero valid strings is corrupted/foreign data, not "the
+    // user cleared their selection".
+    return filtered.length === 0 ? undefined : filtered
+  }
+}
+
 interface FilterPersistenceField {
   get: () => unknown
   set: (value: unknown) => void
