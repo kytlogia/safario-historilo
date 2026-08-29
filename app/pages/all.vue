@@ -5,10 +5,10 @@ import { BROWSER_CATALOG } from '~/utils/browserCatalog'
 
 const { t } = useI18n()
 const {
-  safari,
-  firefox,
-  chrome,
-  edge,
+  sources,
+  activeSources,
+  addSource,
+  removeSource,
   visits,
   hasData,
   search,
@@ -32,15 +32,16 @@ const {
 
 const { isDark, toggleTheme } = useAppTheme()
 
-const sources = { safari, firefox, chrome, edge }
+// Only the cards the user added (see issue #156) — order follows
+// BROWSER_CATALOG so it stays stable regardless of add order.
 const sourceCards = computed(() =>
-  BROWSER_CATALOG.map((entry) => {
-    const source = sources[entry.id]
-    if (!source) {
-      throw new Error(`No unified history source wired up for browser catalog entry: ${entry.id}`)
-    }
-    return { entry, source }
-  })
+  BROWSER_CATALOG.filter((entry) => activeSources.value.includes(entry.id)).map((entry) => ({
+    entry,
+    source: sources[entry.id]
+  }))
+)
+const addableSources = computed(() =>
+  BROWSER_CATALOG.filter((entry) => !activeSources.value.includes(entry.id))
 )
 
 function resetAllSources() {
@@ -79,7 +80,7 @@ function resetAllSources() {
 
     <v-main>
       <v-container fluid class="py-6">
-        <v-row>
+        <v-row v-if="sourceCards.length || addableSources.length" class="align-center">
           <v-col v-for="{ entry, source } in sourceCards" :key="entry.id" cols="12" sm="6" lg="3">
             <UnifiedSourceCard
               :label="entry.label"
@@ -100,7 +101,36 @@ function resetAllSources() {
               @load-from-server="source.loadFromServer"
               @update:selected-profile-id="source.onProfileChange"
               @reset="source.reset"
+              @close="removeSource(entry.id)"
             />
+          </v-col>
+
+          <v-col v-if="addableSources.length" cols="12" sm="6" lg="3">
+            <v-menu>
+              <template #activator="{ props: menuProps }">
+                <v-btn
+                  variant="outlined"
+                  prepend-icon="mdi-plus"
+                  height="100%"
+                  min-height="56"
+                  block
+                  data-testid="unified-add-source-button"
+                  v-bind="menuProps"
+                >
+                  {{ t('pages.all.addSource') }}
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item
+                  v-for="entry in addableSources"
+                  :key="entry.id"
+                  :prepend-icon="entry.icon"
+                  :title="entry.label"
+                  :data-testid="`unified-add-source-${entry.id}`"
+                  @click="addSource(entry.id)"
+                />
+              </v-list>
+            </v-menu>
           </v-col>
         </v-row>
 
@@ -146,7 +176,7 @@ function resetAllSources() {
           size="56"
           class="mt-6"
           :title="t('pages.all.emptyTitle')"
-          :text="t('pages.all.emptyText')"
+          :text="sourceCards.length ? t('pages.all.emptyText') : t('pages.all.noSourcesText')"
         />
       </v-container>
     </v-main>

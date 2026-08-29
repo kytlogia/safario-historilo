@@ -179,7 +179,8 @@
       "profileLabel": "プロファイル",
       "autoLoad": "自動で読み込む",
       "permissionHint": "読み取り権限がありません。フルディスクアクセスを許可してください。",
-      "fileInputLabel": "ファイルを選択"
+      "fileInputLabel": "ファイルを選択",
+      "removeCard": "{label} のカードを閉じる"
     },
     "uploadPanel": {
       "common": {
@@ -224,8 +225,10 @@
   },
   "pages": {
     "all": {
+      "addSource": "ブラウザを追加",
       "emptyTitle": "読み込み済みのデータがありません",
-      "emptyText": "上のカードから、横断検索したいブラウザの履歴ファイルを1つ以上読み込んでください。"
+      "emptyText": "上のカードから、横断検索したいブラウザの履歴ファイルを1つ以上読み込んでください。",
+      "noSourcesText": "「ブラウザを追加」から、横断検索したいブラウザを選んでください。"
     }
   }
 }
