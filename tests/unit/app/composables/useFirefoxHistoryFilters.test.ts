@@ -28,7 +28,7 @@ function makeVisit(overrides: Partial<FirefoxHistoryVisit> = {}): FirefoxHistory
 function makeFilters(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     search: ref(''),
-    domainFilter: ref<string | null>(null),
+    domainFilter: ref<string[]>([]),
     dateFrom: ref<Date | null>(null),
     dateTo: ref<Date | null>(null),
     onlyTyped: ref(false),
@@ -37,7 +37,7 @@ function makeFilters(overrides: Partial<Record<string, unknown>> = {}) {
     ...overrides
   } as {
     search: ReturnType<typeof ref<string>>
-    domainFilter: ReturnType<typeof ref<string | null>>
+    domainFilter: ReturnType<typeof ref<string[]>>
     dateFrom: ReturnType<typeof ref<Date | null>>
     dateTo: ReturnType<typeof ref<Date | null>>
     onlyTyped: ReturnType<typeof ref<boolean>>
@@ -85,7 +85,7 @@ describe('useFirefoxHistoryFilters', () => {
       ])
       const { filteredVisits } = useFirefoxHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('b.com') })
+        makeFilters({ domainFilter: ref(['b.com']) })
       )
 
       expect(filteredVisits.value.map((v) => v.domain)).toEqual(['b.com'])
@@ -167,7 +167,7 @@ describe('useFirefoxHistoryFilters', () => {
       ])
       const { filteredVisits } = useFirefoxHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com'), onlyTyped: ref(true), search: ref('match') })
+        makeFilters({ domainFilter: ref(['a.com']), onlyTyped: ref(true), search: ref('match') })
       )
 
       expect(filteredVisits.value).toHaveLength(1)
@@ -192,7 +192,7 @@ describe('useFirefoxHistoryFilters', () => {
       ])
       const { topDomains } = useFirefoxHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(topDomains.value).toEqual([{ domain: 'a.com', count: 1, ratio: 100 }])
@@ -207,7 +207,7 @@ describe('useFirefoxHistoryFilters', () => {
       ])
       const { weekdayTrend } = useFirefoxHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(weekdayTrend.value).toHaveLength(7)
@@ -223,7 +223,7 @@ describe('useFirefoxHistoryFilters', () => {
       ])
       const { hourlyTrend } = useFirefoxHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(hourlyTrend.value).toHaveLength(24)
@@ -249,7 +249,7 @@ describe('useFirefoxHistoryFilters', () => {
       ])
       const { dateRangeLabel } = useFirefoxHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(dateRangeLabel.value).toBe(`${formatDate(min)} 〜 ${formatDate(max)}`)

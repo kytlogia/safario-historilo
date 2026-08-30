@@ -29,6 +29,28 @@ test.describe('フィルタ', () => {
     await expect(page.getByRole('row', { name: /Blog Post One/ })).toBeVisible()
   })
 
+  test('domain filter narrows rows to any of multiple selected domains (OR)', async ({
+    page,
+    loadFixtureViaFileInput
+  }) => {
+    await page.goto('/')
+    await loadFixtureViaFileInput(page)
+
+    const domainInput = page.getByRole('combobox', { name: 'ドメインで絞り込み' })
+    await domainInput.click()
+    await domainInput.fill('blog')
+    await page.getByRole('option', { name: /blog\.example\.org/ }).click()
+
+    await domainInput.click()
+    await domainInput.fill('www.example')
+    await page.getByRole('option', { name: /www\.example\.com/ }).click()
+
+    await expect(page.getByText(`2 / ${SAMPLE_HISTORY_DATA.visits.length} 件を表示`)).toBeVisible()
+    await expect(page.getByRole('row', { name: /Blog Post One/ })).toBeVisible()
+    await expect(page.getByRole('row', { name: /Example Domain/ })).toBeVisible()
+    await expect(page.getByRole('row', { name: /Old Page \(redirected\)/ })).not.toBeVisible()
+  })
+
   test('date range filter narrows visible rows', async ({ page, loadFixtureViaFileInput }) => {
     await page.goto('/')
     await loadFixtureViaFileInput(page)

@@ -20,7 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const search = defineModel<string>('search', { required: true })
-const domainFilter = defineModel<string | null>('domainFilter', { required: true })
+const domainFilter = defineModel<string[]>('domainFilter', { required: true })
 const dateFrom = defineModel<Date | null>('dateFrom', { required: true })
 const dateTo = defineModel<Date | null>('dateTo', { required: true })
 
@@ -56,6 +56,9 @@ function filterDomainOption(_itemTitle: string, query: string, item?: { value: s
           :label="t('components.filterBar.domainLabel')"
           variant="outlined"
           density="comfortable"
+          multiple
+          chips
+          closable-chips
           clearable
           hide-details
         >

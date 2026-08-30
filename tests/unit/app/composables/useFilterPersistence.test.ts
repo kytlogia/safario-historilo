@@ -4,8 +4,8 @@ import {
   booleanCodec,
   filterField,
   freeformStringArrayCodec,
+  legacyNullableToStringArrayCodec,
   nullableDateCodec,
-  nullableStringCodec,
   stringArrayCodec,
   stringCodec,
   useFilterPersistence
@@ -30,23 +30,17 @@ describe('useFilterPersistence', () => {
   })
 
   it('restores previously persisted values synchronously', () => {
-    localStorage.setItem(
-      'test-filters',
-      JSON.stringify({ search: 'blog', onlyFailed: true, domainFilter: 'example.com' })
-    )
+    localStorage.setItem('test-filters', JSON.stringify({ search: 'blog', onlyFailed: true }))
     const search = ref('')
     const onlyFailed = ref(false)
-    const domainFilter = ref<string | null>(null)
 
     useFilterPersistence('test-filters', {
       search: filterField(search, stringCodec),
-      onlyFailed: filterField(onlyFailed, booleanCodec),
-      domainFilter: filterField(domainFilter, nullableStringCodec)
+      onlyFailed: filterField(onlyFailed, booleanCodec)
     })
 
     expect(search.value).toBe('blog')
     expect(onlyFailed.value).toBe(true)
-    expect(domainFilter.value).toBe('example.com')
   })
 
   it('persists changes to any tracked ref', async () => {
@@ -249,6 +243,39 @@ describe('useFilterPersistence', () => {
 
     expect(profileIds.value.length).toBeLessThan(oversized.length)
     expect(profileIds.value).toEqual(oversized.slice(0, profileIds.value.length))
+  })
+
+  it('legacyNullableToStringArrayCodec migrates a pre-multiselect persisted string into a one-element array', () => {
+    localStorage.setItem('test-filters', JSON.stringify({ domainFilter: 'example.com' }))
+    const domainFilter = ref<string[]>([])
+
+    useFilterPersistence('test-filters', {
+      domainFilter: filterField(domainFilter, legacyNullableToStringArrayCodec)
+    })
+
+    expect(domainFilter.value).toEqual(['example.com'])
+  })
+
+  it('legacyNullableToStringArrayCodec migrates a pre-multiselect persisted null into an empty array', () => {
+    localStorage.setItem('test-filters', JSON.stringify({ domainFilter: null }))
+    const domainFilter = ref<string[]>(['unused-default'])
+
+    useFilterPersistence('test-filters', {
+      domainFilter: filterField(domainFilter, legacyNullableToStringArrayCodec)
+    })
+
+    expect(domainFilter.value).toEqual([])
+  })
+
+  it('legacyNullableToStringArrayCodec still restores an already-migrated array as-is', () => {
+    localStorage.setItem('test-filters', JSON.stringify({ domainFilter: ['a.com', 'b.com'] }))
+    const domainFilter = ref<string[]>([])
+
+    useFilterPersistence('test-filters', {
+      domainFilter: filterField(domainFilter, legacyNullableToStringArrayCodec)
+    })
+
+    expect(domainFilter.value).toEqual(['a.com', 'b.com'])
   })
 
   it('does not throw when localStorage.setItem throws', async () => {

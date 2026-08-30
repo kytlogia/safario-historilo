@@ -41,7 +41,7 @@ function mountFilterBar(overrides: Partial<Record<string, unknown>> = {}) {
       filteredVisits: [makeVisit()],
       totalCount: 1,
       search: '',
-      domainFilter: null,
+      domainFilter: [],
       dateFrom: null,
       dateTo: null,
       onlyFailed: false,
@@ -94,10 +94,10 @@ describe('FilterBar', () => {
   })
 
   it('clears domainFilter via the clear button once a domain is selected', async () => {
-    const wrapper = mountFilterBar({ domainFilter: 'example.com' })
+    const wrapper = mountFilterBar({ domainFilter: ['example.com'] })
 
     await wrapper.find('[data-testid="domain-filter-clear"]').trigger('click')
 
-    expect(wrapper.emitted('update:domainFilter')).toEqual([[null]])
+    expect(wrapper.emitted('update:domainFilter')).toEqual([[[]]])
   })
 })

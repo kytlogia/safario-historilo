@@ -8,8 +8,8 @@ import { useDebouncedRef } from './useDebouncedRef'
 import {
   booleanCodec,
   filterField,
+  legacyNullableToStringArrayCodec,
   nullableDateCodec,
-  nullableStringCodec,
   stringCodec,
   useFilterPersistence
 } from './useFilterPersistence'
@@ -47,7 +47,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
   })
 
   const search = ref('')
-  const domainFilter = ref<string | null>(null)
+  const domainFilter = ref<string[]>([])
   const dateFrom = ref<Date | null>(null)
   const dateTo = ref<Date | null>(null)
   const onlyTyped = ref(false)
@@ -56,7 +56,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
 
   useFilterPersistence(`${brand}-history-filters`, {
     search: filterField(search, stringCodec),
-    domainFilter: filterField(domainFilter, nullableStringCodec),
+    domainFilter: filterField(domainFilter, legacyNullableToStringArrayCodec),
     dateFrom: filterField(dateFrom, nullableDateCodec),
     dateTo: filterField(dateTo, nullableDateCodec),
     onlyTyped: filterField(onlyTyped, booleanCodec),
@@ -107,7 +107,7 @@ export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
     source.reset()
     search.value = ''
     resetDebouncedSearch()
-    domainFilter.value = null
+    domainFilter.value = []
     dateFrom.value = null
     dateTo.value = null
     onlyTyped.value = false

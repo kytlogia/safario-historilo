@@ -32,7 +32,7 @@ function makeVisit(overrides: Partial<HistoryVisit> = {}): HistoryVisit {
 function makeFilters(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     search: ref(''),
-    domainFilter: ref<string | null>(null),
+    domainFilter: ref<string[]>([]),
     dateFrom: ref<Date | null>(null),
     dateTo: ref<Date | null>(null),
     onlyFailed: ref(false),
@@ -41,7 +41,7 @@ function makeFilters(overrides: Partial<Record<string, unknown>> = {}) {
     ...overrides
   } as {
     search: ReturnType<typeof ref<string>>
-    domainFilter: ReturnType<typeof ref<string | null>>
+    domainFilter: ReturnType<typeof ref<string[]>>
     dateFrom: ReturnType<typeof ref<Date | null>>
     dateTo: ReturnType<typeof ref<Date | null>>
     onlyFailed: ReturnType<typeof ref<boolean>>
@@ -73,7 +73,7 @@ describe('useHistoryFilters', () => {
       ])
       const { domainOptions } = useHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(domainOptions.value.map((o) => o.value)).toEqual(['a.com', 'b.com'])
@@ -112,10 +112,24 @@ describe('useHistoryFilters', () => {
       ])
       const { filteredVisits } = useHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('b.com') })
+        makeFilters({ domainFilter: ref(['b.com']) })
       )
 
       expect(filteredVisits.value.map((v) => v.domain)).toEqual(['b.com'])
+    })
+
+    it('filters by any of multiple selected domains', () => {
+      const visits = ref<HistoryVisit[]>([
+        makeVisit({ domain: 'a.com' }),
+        makeVisit({ domain: 'b.com' }),
+        makeVisit({ domain: 'c.com' })
+      ])
+      const { filteredVisits } = useHistoryFilters(
+        visits,
+        makeFilters({ domainFilter: ref(['a.com', 'c.com']) })
+      )
+
+      expect(filteredVisits.value.map((v) => v.domain)).toEqual(['a.com', 'c.com'])
     })
 
     it('includes visits on the dateFrom day and excludes the day before', () => {
@@ -207,7 +221,7 @@ describe('useHistoryFilters', () => {
       ])
       const { filteredVisits } = useHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com'), onlyFailed: ref(true), search: ref('match') })
+        makeFilters({ domainFilter: ref(['a.com']), onlyFailed: ref(true), search: ref('match') })
       )
 
       expect(filteredVisits.value).toHaveLength(1)
@@ -227,7 +241,10 @@ describe('useHistoryFilters', () => {
         makeVisit({ domain: 'a.com' }),
         makeVisit({ domain: 'b.com' })
       ])
-      const { topDomains } = useHistoryFilters(visits, makeFilters({ domainFilter: ref('a.com') }))
+      const { topDomains } = useHistoryFilters(
+        visits,
+        makeFilters({ domainFilter: ref(['a.com']) })
+      )
 
       expect(topDomains.value).toEqual([{ domain: 'a.com', count: 1, ratio: 100 }])
     })
@@ -273,7 +290,7 @@ describe('useHistoryFilters', () => {
       ])
       const { weekdayTrend } = useHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(weekdayTrend.value.reduce((sum, b) => sum + b.count, 0)).toBe(1)
@@ -324,7 +341,7 @@ describe('useHistoryFilters', () => {
       ])
       const { dateRangeLabel } = useHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(dateRangeLabel.value).toBe(`${formatDate(min)} 〜 ${formatDate(max)}`)

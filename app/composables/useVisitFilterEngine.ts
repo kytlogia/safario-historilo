@@ -10,7 +10,7 @@ export interface FilterableVisit {
 
 export interface BaseVisitFilterState {
   search: Ref<string>
-  domainFilter: Ref<string | null>
+  domainFilter: Ref<string[]>
   dateFrom: Ref<Date | null>
   dateTo: Ref<Date | null>
 }
@@ -111,7 +111,8 @@ export function useVisitFilterEngine<T extends FilterableVisit>(
       if (query && !v.title.toLowerCase().includes(query) && !v.url.toLowerCase().includes(query)) {
         return false
       }
-      if (filters.domainFilter.value && v.domain !== filters.domainFilter.value) return false
+      if (filters.domainFilter.value.length > 0 && !filters.domainFilter.value.includes(v.domain))
+        return false
       if (from && v.visitTime < from) return false
       if (to && v.visitTime > to) return false
       return matchesExtra(v)

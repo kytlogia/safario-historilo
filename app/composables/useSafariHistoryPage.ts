@@ -8,8 +8,8 @@ import { useDebouncedRef } from './useDebouncedRef'
 import {
   booleanCodec,
   filterField,
+  legacyNullableToStringArrayCodec,
   nullableDateCodec,
-  nullableStringCodec,
   stringCodec,
   useFilterPersistence
 } from './useFilterPersistence'
@@ -36,7 +36,7 @@ export function useSafariHistoryPage() {
   })
 
   const search = ref('')
-  const domainFilter = ref<string | null>(null)
+  const domainFilter = ref<string[]>([])
   const dateFrom = ref<Date | null>(null)
   const dateTo = ref<Date | null>(null)
   const onlyFailed = ref(false)
@@ -45,7 +45,7 @@ export function useSafariHistoryPage() {
 
   useFilterPersistence('safari-history-filters', {
     search: filterField(search, stringCodec),
-    domainFilter: filterField(domainFilter, nullableStringCodec),
+    domainFilter: filterField(domainFilter, legacyNullableToStringArrayCodec),
     dateFrom: filterField(dateFrom, nullableDateCodec),
     dateTo: filterField(dateTo, nullableDateCodec),
     onlyFailed: filterField(onlyFailed, booleanCodec),
@@ -96,7 +96,7 @@ export function useSafariHistoryPage() {
     source.reset()
     search.value = ''
     resetDebouncedSearch()
-    domainFilter.value = null
+    domainFilter.value = []
     dateFrom.value = null
     dateTo.value = null
     onlyFailed.value = false

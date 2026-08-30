@@ -21,14 +21,14 @@ function makeVisit(overrides: Partial<UnifiedHistoryVisit> = {}): UnifiedHistory
 function makeFilters(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     search: ref(''),
-    domainFilter: ref<string | null>(null),
+    domainFilter: ref<string[]>([]),
     dateFrom: ref<Date | null>(null),
     dateTo: ref<Date | null>(null),
     enabledSources: ref<UnifiedHistorySource[]>([...UNIFIED_HISTORY_SOURCES]),
     ...overrides
   } as {
     search: ReturnType<typeof ref<string>>
-    domainFilter: ReturnType<typeof ref<string | null>>
+    domainFilter: ReturnType<typeof ref<string[]>>
     dateFrom: ReturnType<typeof ref<Date | null>>
     dateTo: ReturnType<typeof ref<Date | null>>
     enabledSources: ReturnType<typeof ref<UnifiedHistorySource[]>>
@@ -74,7 +74,7 @@ describe('useUnifiedHistoryFilters', () => {
       ])
       const { filteredVisits } = useUnifiedHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('b.com') })
+        makeFilters({ domainFilter: ref(['b.com']) })
       )
 
       expect(filteredVisits.value.map((v) => v.domain)).toEqual(['b.com'])
@@ -127,7 +127,7 @@ describe('useUnifiedHistoryFilters', () => {
       const { filteredVisits } = useUnifiedHistoryFilters(
         visits,
         makeFilters({
-          domainFilter: ref('a.com'),
+          domainFilter: ref(['a.com']),
           search: ref('match'),
           enabledSources: ref<UnifiedHistorySource[]>(['firefox'])
         })
@@ -147,7 +147,7 @@ describe('useUnifiedHistoryFilters', () => {
       ])
       const { topDomains } = useUnifiedHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(topDomains.value).toEqual([{ domain: 'a.com', count: 1, ratio: 100 }])
@@ -162,7 +162,7 @@ describe('useUnifiedHistoryFilters', () => {
       ])
       const { weekdayTrend } = useUnifiedHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(weekdayTrend.value).toHaveLength(7)
@@ -178,7 +178,7 @@ describe('useUnifiedHistoryFilters', () => {
       ])
       const { hourlyTrend } = useUnifiedHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(hourlyTrend.value).toHaveLength(24)
@@ -204,7 +204,7 @@ describe('useUnifiedHistoryFilters', () => {
       ])
       const { dateRangeLabel } = useUnifiedHistoryFilters(
         visits,
-        makeFilters({ domainFilter: ref('a.com') })
+        makeFilters({ domainFilter: ref(['a.com']) })
       )
 
       expect(dateRangeLabel.value).toBe(`${formatDate(min)} 〜 ${formatDate(max)}`)
