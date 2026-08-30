@@ -220,12 +220,12 @@
       },
       "firefox": {
         "dragDropTitle": "拖放 Firefox 的 places.sqlite",
-        "autoLoadButton": "自动加载此 Mac 上的 places.sqlite",
+        "autoLoadButton": "自动加载此设备上的 places.sqlite",
         "permissionHint": "检测到此设备上的 places.sqlite，但没有读取权限。在 macOS 上，请在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中，为运行此应用的终端（或 Node）授予权限，即可使用自动加载。在 Windows 上，请完全退出 Firefox 后重试。",
         "fileInputLabel": "选择 places.sqlite",
-        "locationHeading": "places.sqlite 的位置（macOS / Firefox）",
+        "locationHeading": "places.sqlite 的位置（Firefox）",
         "stepQuitApp": "退出 Firefox（因为数据库会被锁定）",
-        "stepFinder": "在 Finder 中选择「前往」→「前往文件夹」，输入：<br /><code>~/Library/Application Support/Firefox/Profiles/</code>",
+        "stepFinder": "在 Finder 中选择「前往」→「前往文件夹」（Windows 上请粘贴到文件资源管理器的地址栏），输入：<br /><code>~/Library/Application Support/Firefox/Profiles/</code>（Windows 为 <code>%APPDATA%\\Mozilla\\Firefox\\Profiles\\</code>）",
         "stepOpenProfileFolder": "打开正在使用的配置文件夹",
         "stepCopy": "将 <code>places.sqlite</code> 复制到任意位置"
       },

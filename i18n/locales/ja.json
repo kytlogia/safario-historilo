@@ -220,12 +220,12 @@
       },
       "firefox": {
         "dragDropTitle": "Firefoxの places.sqlite をドラッグ&ドロップ",
-        "autoLoadButton": "この Mac の places.sqlite を自動で読み込む",
+        "autoLoadButton": "この端末の places.sqlite を自動で読み込む",
         "permissionHint": "お使いの端末上の places.sqlite を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。Windowsの場合はFirefoxを完全に終了してから再度お試しください。",
         "fileInputLabel": "places.sqlite を選択",
-        "locationHeading": "places.sqlite の場所（macOS / Firefox）",
+        "locationHeading": "places.sqlite の場所（Firefox）",
         "stepQuitApp": "Firefoxを終了する（DBがロックされているため）",
-        "stepFinder": "Finderで「移動」→「フォルダへ移動」を選び、次を入力：<br /><code>~/Library/Application Support/Firefox/Profiles/</code>",
+        "stepFinder": "Finderで「移動」→「フォルダへ移動」を選び（Windowsではエクスプローラーのアドレスバーに入力）、次を入力：<br /><code>~/Library/Application Support/Firefox/Profiles/</code>（Windowsは <code>%APPDATA%\\Mozilla\\Firefox\\Profiles\\</code>）",
         "stepOpenProfileFolder": "使用しているプロファイルのフォルダを開く",
         "stepCopy": "<code>places.sqlite</code> を任意の場所にコピーする"
       },

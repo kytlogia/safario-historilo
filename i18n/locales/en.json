@@ -220,12 +220,12 @@
       },
       "firefox": {
         "dragDropTitle": "Drag and drop Firefox's places.sqlite",
-        "autoLoadButton": "Automatically load places.sqlite from this Mac",
+        "autoLoadButton": "Automatically load places.sqlite from this machine",
         "permissionHint": "places.sqlite was found on this machine, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading. On Windows, fully quit Firefox and try again.",
         "fileInputLabel": "Choose places.sqlite",
-        "locationHeading": "Where to find places.sqlite (macOS / Firefox)",
+        "locationHeading": "Where to find places.sqlite (Firefox)",
         "stepQuitApp": "Quit Firefox (the database is locked while it's running)",
-        "stepFinder": "In Finder, choose Go → Go to Folder and enter:<br /><code>~/Library/Application Support/Firefox/Profiles/</code>",
+        "stepFinder": "In Finder, choose Go → Go to Folder and enter (on Windows, paste into File Explorer's address bar):<br /><code>~/Library/Application Support/Firefox/Profiles/</code> (on Windows, <code>%APPDATA%\\Mozilla\\Firefox\\Profiles\\</code>)",
         "stepOpenProfileFolder": "Open the folder for the profile you use",
         "stepCopy": "Copy <code>places.sqlite</code> to a location of your choice"
       },
