@@ -19,11 +19,11 @@ const candidates = computed(() => BROWSER_CATALOG.filter((b) => b.id !== props.c
 // assertLocalRequest's 403 on a non-local request) — so a failed check
 // never hides a link the user might actually need (fail-safe).
 //
-// ponytail: a browser installed at a non-default path is indistinguishable
-// from "not installed" here, so it silently disappears from the menu; the
-// per-page manual file upload (UploadPanel) still works if the user
-// navigates there directly. Add a "パスを指定して追加" escape hatch if that
-// turns out to bite real users.
+// Known limitation: a browser installed at a non-default path is
+// indistinguishable from "not installed" here, so it silently disappears
+// from the menu; the per-page manual file upload (UploadPanel) still works
+// if the user navigates there directly. Add a "パスを指定して追加" escape
+// hatch if that turns out to bite real users.
 const absent = ref(new Set<UnifiedHistorySource>())
 
 onMounted(async () => {
