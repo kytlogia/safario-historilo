@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import { flushPromises } from '@vue/test-utils'
 import BrowserNavLinks from '~/components/BrowserNavLinks.vue'
 import { BROWSER_CATALOG } from '~/utils/browserCatalog'
 import { mountWithVuetify } from '../../support/mountWithVuetify'
@@ -26,6 +27,53 @@ function mountLinks(props?: { current?: (typeof BROWSER_CATALOG)[number]['id'] }
 }
 
 describe('BrowserNavLinks', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('hides a browser whose status endpoint reports it as not present', async () => {
+    vi.stubGlobal(
+      '$fetch',
+      vi.fn(async (url: string) => ({ present: !url.includes('/chrome/') }))
+    )
+    const wrapper = mountLinks()
+    try {
+      await flushPromises()
+      await wrapper.get('[data-testid="browser-nav-menu-button"]').trigger('click')
+
+      expect(document.querySelector('[data-testid="browser-nav-link-chrome"]')).toBeNull()
+      for (const entry of BROWSER_CATALOG.filter((b) => b.id !== 'chrome')) {
+        expect(
+          document.querySelector(`[data-testid="browser-nav-link-${entry.id}"]`)
+        ).not.toBeNull()
+      }
+    } finally {
+      wrapper.unmount()
+    }
+  })
+
+  it('keeps showing a link when its status check fails (fail-safe)', async () => {
+    vi.stubGlobal(
+      '$fetch',
+      vi.fn(async () => {
+        throw new Error('403 Forbidden')
+      })
+    )
+    const wrapper = mountLinks()
+    try {
+      await flushPromises()
+      await wrapper.get('[data-testid="browser-nav-menu-button"]').trigger('click')
+
+      for (const entry of BROWSER_CATALOG) {
+        expect(
+          document.querySelector(`[data-testid="browser-nav-link-${entry.id}"]`)
+        ).not.toBeNull()
+      }
+    } finally {
+      wrapper.unmount()
+    }
+  })
+
   it('renders a link for every catalog entry when no current browser is given', async () => {
     const wrapper = mountLinks()
     try {
