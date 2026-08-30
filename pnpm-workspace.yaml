@@ -6,6 +6,10 @@ allowBuilds:
   "@parcel/watcher": false
   esbuild: true
   unrs-resolver: true
+  # electron-builderの依存で、Windows向け.exeインストーラー(NSIS)を作るときだけ使われる
+  # ビルドスクリプト。このリポジトリはmacOS向け.dmgのみをスコープにしており(#140)、
+  # Windows配布物のビルドは行わないため許可しない。
+  electron-winstaller: false
 
 # サプライチェーン攻撃対策: 公開されたばかりのバージョンを一定時間インストールしない（乗っ取られたアカウントからの悪意あるバージョン公開は
 # 検知・削除まで数時間〜半日程度かかることが多いため）。pnpm 11以降はデフォルトで有効（1440分=24時間）だが、

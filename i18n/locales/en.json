@@ -211,7 +211,7 @@
       "safari": {
         "dragDropTitle": "Drag and drop Safari's History.db",
         "autoLoadButton": "Automatically load History.db from this Mac",
-        "permissionHint": "History.db was found on this machine, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading. On Windows, fully quit Safari and try again.",
+        "permissionHint": "History.db was found on this machine, but it isn't readable. On macOS, grant Full Disk Access via System Settings → Privacy & Security → Full Disk Access to this app (the desktop app itself, or the terminal/Node if you're running it with `pnpm dev`) to enable automatic loading. On Windows, fully quit Safari and try again.",
         "fileInputLabel": "Choose History.db",
         "locationHeading": "Where to find History.db (macOS / Safari)",
         "stepQuitApp": "Quit Safari (the database is locked while it's running)",
@@ -221,7 +221,7 @@
       "firefox": {
         "dragDropTitle": "Drag and drop Firefox's places.sqlite",
         "autoLoadButton": "Automatically load places.sqlite from this machine",
-        "permissionHint": "places.sqlite was found on this machine, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading. On Windows, fully quit Firefox and try again.",
+        "permissionHint": "places.sqlite was found on this machine, but it isn't readable. On macOS, grant Full Disk Access via System Settings → Privacy & Security → Full Disk Access to this app (the desktop app itself, or the terminal/Node if you're running it with `pnpm dev`) to enable automatic loading. On Windows, fully quit Firefox and try again.",
         "fileInputLabel": "Choose places.sqlite",
         "locationHeading": "Where to find places.sqlite (Firefox)",
         "stepQuitApp": "Quit Firefox (the database is locked while it's running)",
@@ -232,7 +232,7 @@
       "chromium": {
         "dragDropTitle": "Drag and drop {app}'s History",
         "autoLoadButton": "Automatically load History from this Mac",
-        "permissionHint": "History was found on this Mac, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading.",
+        "permissionHint": "History was found on this Mac, but it isn't readable. On macOS, grant Full Disk Access via System Settings → Privacy & Security → Full Disk Access to this app (the desktop app itself, or the terminal/Node if you're running it with `pnpm dev`) to enable automatic loading.",
         "fileInputLabel": "Choose History",
         "locationHeading": "Where to find History (macOS / {app})",
         "stepQuitApp": "Quit {app} (the database is locked while it's running)",

@@ -17,6 +17,7 @@
     "node": ">=22.5.0"
   },
   "packageManager": "pnpm@11.21.0",
+  "main": "electron/main.mjs",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
@@ -30,7 +31,9 @@
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "electron": "pnpm build && electron .",
+    "electron:build": "pnpm build && electron-builder --mac --publish=never"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -52,6 +55,8 @@
     "@vitejs/plugin-vue": "^6.0.8",
     "@vitest/coverage-v8": "^4.1.10",
     "@vue/test-utils": "^2.4.11",
+    "electron": "^44.0.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^10.8.1",
     "eslint-config-prettier": "^10.1.8",
     "jsdom": "^30.0.1",
@@ -61,5 +66,29 @@
     "typescript": "^6.0.3",
     "vitest": "^4.1.10",
     "vue-tsc": "^3.3.9"
+  },
+  "build": {
+    "appId": "com.kytlogia.safario-historilo",
+    "productName": "Safari History Detail",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": ".output",
+        "to": "output"
+      }
+    ],
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.utilities",
+      "identity": null
+    }
   }
 }
