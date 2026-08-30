@@ -211,7 +211,7 @@
       "safari": {
         "dragDropTitle": "Drag and drop Safari's History.db",
         "autoLoadButton": "Automatically load History.db from this Mac",
-        "permissionHint": "History.db was found on this machine, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading.",
+        "permissionHint": "History.db was found on this machine, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading. On Windows, fully quit Safari and try again.",
         "fileInputLabel": "Choose History.db",
         "locationHeading": "Where to find History.db (macOS / Safari)",
         "stepQuitApp": "Quit Safari (the database is locked while it's running)",

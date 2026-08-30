@@ -260,7 +260,7 @@ export async function readLocalHistoryDb(
     throw new HistoryDbNotFoundError(
       dbPath
         ? `History.db が見つかりませんでした: ${dbPath}`
-        : 'Safari for Windowsは2012年に開発終了しているため、自動読み込みには対応していません。History.dbファイルをドラッグ&ドロップで読み込んでください。'
+        : 'Windows版のSafariは2012年に開発終了しているため、自動読み込みには対応していません。History.dbファイルをドラッグ&ドロップで読み込んでください。'
     )
   }
   if (!readable) {

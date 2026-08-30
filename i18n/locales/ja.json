@@ -211,7 +211,7 @@
       "safari": {
         "dragDropTitle": "Safariの History.db をドラッグ&ドロップ",
         "autoLoadButton": "この Mac の History.db を自動で読み込む",
-        "permissionHint": "お使いの端末上の History.db を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。",
+        "permissionHint": "お使いの端末上の History.db を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。Windowsの場合はSafariを完全に終了してから再度お試しください。",
         "fileInputLabel": "History.db を選択",
         "locationHeading": "History.db の場所（macOS / Safari）",
         "stepQuitApp": "Safariを終了する（DBがロックされているため）",
