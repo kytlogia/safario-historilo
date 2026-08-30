@@ -6,7 +6,6 @@ import {
   freeformStringArrayCodec,
   legacyNullableToStringArrayCodec,
   nullableDateCodec,
-  nullableStringCodec,
   stringArrayCodec,
   stringCodec,
   useFilterPersistence
@@ -31,23 +30,17 @@ describe('useFilterPersistence', () => {
   })
 
   it('restores previously persisted values synchronously', () => {
-    localStorage.setItem(
-      'test-filters',
-      JSON.stringify({ search: 'blog', onlyFailed: true, domainFilter: 'example.com' })
-    )
+    localStorage.setItem('test-filters', JSON.stringify({ search: 'blog', onlyFailed: true }))
     const search = ref('')
     const onlyFailed = ref(false)
-    const domainFilter = ref<string | null>(null)
 
     useFilterPersistence('test-filters', {
       search: filterField(search, stringCodec),
-      onlyFailed: filterField(onlyFailed, booleanCodec),
-      domainFilter: filterField(domainFilter, nullableStringCodec)
+      onlyFailed: filterField(onlyFailed, booleanCodec)
     })
 
     expect(search.value).toBe('blog')
     expect(onlyFailed.value).toBe(true)
-    expect(domainFilter.value).toBe('example.com')
   })
 
   it('persists changes to any tracked ref', async () => {

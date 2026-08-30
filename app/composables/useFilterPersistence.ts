@@ -10,11 +10,6 @@ export const stringCodec: FilterPersistenceCodec<string> = {
   fromStorage: (value) => (typeof value === 'string' ? value : undefined)
 }
 
-export const nullableStringCodec: FilterPersistenceCodec<string | null> = {
-  toStorage: (value) => value,
-  fromStorage: (value) => (typeof value === 'string' || value === null ? value : undefined)
-}
-
 export const booleanCodec: FilterPersistenceCodec<boolean> = {
   toStorage: (value) => value,
   fromStorage: (value) => (typeof value === 'boolean' ? value : undefined)
