@@ -26,6 +26,10 @@ const MESSAGES = PARSER_MESSAGES.netscape
 // files: a real history.dat is a few MB and never nests tables at all.
 const MAX_INPUT_BYTES = 64 * 1024 * 1024
 const MAX_NESTING_DEPTH = 64
+// Longest a transaction group marker can legitimately be (`@$$}~abort~<hex>}@`
+// is well under 32) — see readGroupMarker(), which bounds its search by this
+// so a crafted file can't make marker scanning quadratic.
+const MAX_GROUP_MARKER_LENGTH = 256
 
 // Mork's magic comment, e.g. `// <!-- <mdb:mork:z v="1.4"/> -->`. Only the
 // stable `<mdb:mork` part is matched so a different minor version still
@@ -302,19 +306,43 @@ class MorkScanner {
   private readGroupMarker() {
     this.pos++ // '@'
     if (!this.text.startsWith('$$', this.pos)) return
-    const begin = this.text.indexOf('{@', this.pos)
-    const end = this.text.indexOf('}@', this.pos)
+
+    // The terminator is searched for only within a bounded window, never to
+    // the end of the file. A real marker is a couple of dozen characters at
+    // most, but an unterminated `@$$` made each occurrence scan all the
+    // remaining text — so an upload full of them (`'@$$}@'.repeat(n) + '{@'`)
+    // cost O(n^2) and could tie the parser worker up for minutes without
+    // ever tripping the forward-progress guard.
+    const window = this.text.slice(this.pos, this.pos + MAX_GROUP_MARKER_LENGTH)
+    const begin = window.indexOf('{@')
+    const end = window.indexOf('}@')
     const candidates = [begin, end].filter((index) => index !== -1)
-    this.pos = candidates.length > 0 ? Math.min(...candidates) + 2 : this.length
+    // No terminator nearby: this isn't a group marker after all. Leave the
+    // rest to the caller's skip-one-character path instead of swallowing the
+    // remainder of the file.
+    if (candidates.length === 0) return
+    this.pos += Math.min(...candidates) + 2
   }
 }
 
 const HEX_PAIR_RE = /^[0-9a-fA-F]{2}$/
-const HEX_ESCAPE_RE = /\$[0-9a-fA-F]{2}/
 
 const UTF8_DECODER = new TextDecoder('utf-8')
 const UTF16LE_DECODER = new TextDecoder('utf-16le')
 const UTF16BE_DECODER = new TextDecoder('utf-16be')
+
+interface DecodedMorkBytes {
+  bytes: Uint8Array
+  /**
+   * Whether an *unescaped* `$XX` was actually consumed. This has to come
+   * from the decode itself rather than from re-matching `/\$[0-9a-f]{2}/`
+   * over the raw text: a backslash-escaped dollar (`Save \$50`) looks
+   * identical to that pattern but decodes to a literal '$', so testing the
+   * raw string would misread ordinary ASCII as UTF-16 and silently mojibake
+   * any title or URL containing "$" followed by two hex-ish characters.
+   */
+  hexilated: boolean
+}
 
 /**
  * Resolves Mork's two escape mechanisms into the raw bytes they stand for:
@@ -323,8 +351,9 @@ const UTF16BE_DECODER = new TextDecoder('utf-16be')
  * legitimately contain one, and a writer that wrapped a long line without a
  * backslash would otherwise leak the break into the value.
  */
-function decodeMorkBytes(raw: string): Uint8Array {
+function decodeMorkBytes(raw: string): DecodedMorkBytes {
   const bytes: number[] = []
+  let hexilated = false
   for (let i = 0; i < raw.length; i++) {
     const ch = raw[i]!
     if (ch === '\\') {
@@ -339,6 +368,7 @@ function decodeMorkBytes(raw: string): Uint8Array {
       const hex = raw.slice(i + 1, i + 3)
       if (HEX_PAIR_RE.test(hex)) {
         bytes.push(Number.parseInt(hex, 16))
+        hexilated = true
         i += 2
         continue
       }
@@ -347,20 +377,20 @@ function decodeMorkBytes(raw: string): Uint8Array {
     if (ch === '\n' || ch === '\r') continue
     bytes.push(ch.charCodeAt(0) & 0xff)
   }
-  return Uint8Array.from(bytes)
+  return { bytes: Uint8Array.from(bytes), hexilated }
 }
 
 /**
  * Mozilla hexilates a *whole* value as soon as one character doesn't fit in
  * ASCII, so `Caf$E9$00` style text is one UTF-16 byte sequence in which the
  * unescaped ASCII characters are themselves part of the encoding (each
- * followed by a `$00` low byte). That's why the presence of any `$XX` escape
- * — not the escapes alone — switches the whole value to UTF-16, in the byte
- * order the file's own ByteOrder cell declares.
+ * followed by a `$00` low byte). That's why a value that really used a `$XX`
+ * escape — see DecodedMorkBytes.hexilated — is decoded as UTF-16 as a whole,
+ * in the byte order the file's own ByteOrder cell declares.
  */
 function decodeMorkValue(raw: string, byteOrder: MorkByteOrder | null): string {
-  const bytes = decodeMorkBytes(raw)
-  if (!HEX_ESCAPE_RE.test(raw)) return UTF8_DECODER.decode(bytes)
+  const { bytes, hexilated } = decodeMorkBytes(raw)
+  if (!hexilated) return UTF8_DECODER.decode(bytes)
   return byteOrder === 'BE' ? UTF16BE_DECODER.decode(bytes) : UTF16LE_DECODER.decode(bytes)
 }
 

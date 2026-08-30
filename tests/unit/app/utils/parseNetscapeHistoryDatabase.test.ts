@@ -94,6 +94,37 @@ describe('parseNetscapeHistoryBuffer', () => {
     expect(visits.find((v) => v.rowId === '2')?.title).toBe('Ex)am\\ple Domain')
   })
 
+  // A backslash-escaped dollar decodes to a literal '$', but matches the
+  // /\$[0-9a-fA-F]{2}/ shape that used to decide "this value is UTF-16" —
+  // so ordinary ASCII titles and URLs containing "$" were silently mojibake.
+  it('treats a backslash-escaped dollar as a literal, not as a UTF-16 marker', async () => {
+    const sample = SAMPLE.replace('(^82=Example Domain)', '(^82=Save \\$50 today)')
+    const { visits } = await parse(sample)
+
+    expect(visits.find((v) => v.rowId === '2')?.title).toBe('Save $50 today')
+  })
+
+  it('keeps a URL containing an escaped dollar intact, including its domain', async () => {
+    const sample = SAMPLE.replace(
+      '(^81=http://example.org/jp)',
+      '(^81=http://example.com/pay?amt=US\\$100)'
+    )
+    const { visits } = await parse(sample)
+    const visit = visits.find((v) => v.rowId === '3')!
+
+    expect(visit.url).toBe('http://example.com/pay?amt=US$100')
+    // A mojibake URL would poison extractDomain(), the domain filter and the
+    // detail dialog's link alike.
+    expect(visit.domain).toBe('example.com')
+  })
+
+  it('still decodes a genuinely hexilated value containing no escaped dollar', async () => {
+    // Guards the fix from over-correcting: real `$XX` escapes must keep
+    // switching the value to UTF-16.
+    const { visits } = await parse(SAMPLE)
+    expect(visits.find((v) => v.rowId === '3')?.title).toBe('テスト')
+  })
+
   it('merges repeated rows in file order, with later cells winning', async () => {
     const sample = SAMPLE + '[2(^87=42)(^89=1)]\n'
     const { visits } = await parse(sample)
@@ -158,6 +189,28 @@ describe('parseNetscapeHistoryBuffer', () => {
       // leaves exactly this), and the contract being tested is that a
       // malformed upload can never spin the parser worker forever.
       await expect(parse(text)).resolves.toBeDefined()
+    })
+
+    // Unterminated `@$$` markers used to each scan to the end of the file,
+    // making this O(n^2): ~400ms at 500KB, extrapolating to minutes at the
+    // multi-MB sizes MAX_INPUT_BYTES allows. Forward progress alone never
+    // caught it — the parse finished, just not this century.
+    it('scans group markers in linear time on a crafted marker flood', async () => {
+      const timeFor = async (repeats: number) => {
+        const text = MORK_HEADER + COLUMN_DICT + '@$$}@'.repeat(repeats) + '{@'
+        const started = performance.now()
+        await parse(text)
+        return performance.now() - started
+      }
+
+      // Timing ratios are noisy in CI, so this asserts only the shape that
+      // separates linear from quadratic: 4x the input must not cost ~16x.
+      await timeFor(20000) // warm up, so JIT effects don't skew the first sample
+      const small = await timeFor(25000)
+      const large = await timeFor(100000)
+
+      expect(large).toBeLessThan(Math.max(small, 5) * 8)
+      expect(large).toBeLessThan(5000)
     })
 
     it('never loops on a pathological repetition of unparsable bytes', async () => {
