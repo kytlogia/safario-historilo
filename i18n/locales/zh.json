@@ -25,6 +25,10 @@
     "viewFirefox": "查看 Firefox 历史记录",
     "viewChrome": "查看 Chrome 历史记录",
     "viewEdge": "查看 Edge 历史记录",
+    "viewOpera": "查看 Opera 历史记录",
+    "viewArc": "查看 Arc 历史记录",
+    "viewBrave": "查看 Brave 历史记录",
+    "viewVivaldi": "查看 Vivaldi 历史记录",
     "crossSearch": "跨浏览器搜索",
     "clearAll": "全部清除"
   },

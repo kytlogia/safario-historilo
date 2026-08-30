@@ -25,6 +25,10 @@
     "viewFirefox": "Firefoxの履歴を見る",
     "viewChrome": "Chromeの履歴を見る",
     "viewEdge": "Edgeの履歴を見る",
+    "viewOpera": "Operaの履歴を見る",
+    "viewArc": "Arcの履歴を見る",
+    "viewBrave": "Braveの履歴を見る",
+    "viewVivaldi": "Vivaldiの履歴を見る",
     "crossSearch": "横断検索",
     "clearAll": "すべてクリア"
   },

@@ -22,12 +22,12 @@ function resolveDefaultProfileId(profiles: ChromiumProfile[]): string {
 }
 
 /**
- * All page-level state and orchestration shared by app/pages/chrome.vue and
- * app/pages/edge.vue — the two pages differ only in a handful of display
- * strings and their icon (already handled one layer down via the `brand`
- * prop on UploadPanel/ChromiumFilterBar), never in this loading /
- * filtering / auto-load logic itself. `brand` selects the matching
- * `/api/local-history/<brand>` routes.
+ * All page-level state and orchestration shared by the six Chromium-based
+ * browser pages (app/pages/{chrome,edge,opera,arc,brave,vivaldi}.vue) — they
+ * differ only in a handful of display strings and their icon (already
+ * handled one layer down via the `brand` prop on UploadPanel/
+ * ChromiumFilterBar), never in this loading / filtering / auto-load logic
+ * itself. `brand` selects the matching `/api/local-history/<brand>` routes.
  *
  * The load/status/profile orchestration itself is delegated to
  * useUnifiedHistorySource.ts (shared with app/pages/all.vue) rather than
@@ -36,7 +36,9 @@ function resolveDefaultProfileId(profiles: ChromiumProfile[]): string {
  * ChromiumHistoryVisit shape, not the reduced UnifiedHistoryVisit
  * projection) stays local to this composable.
  */
-export function useChromiumHistoryPage(brand: 'chrome' | 'edge') {
+export function useChromiumHistoryPage(
+  brand: 'chrome' | 'edge' | 'opera' | 'arc' | 'brave' | 'vivaldi'
+) {
   const source = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
     apiBase: browserCatalogEntry(brand).apiBase,
     serverFileName: browserCatalogEntry(brand).serverFileName,

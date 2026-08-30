@@ -6,7 +6,7 @@ const { t } = useI18n()
 
 const props = withDefaults(
   defineProps<{
-    brand?: 'safari' | 'firefox' | 'chrome' | 'edge'
+    brand?: 'safari' | 'firefox' | 'chrome' | 'edge' | 'opera' | 'arc' | 'brave' | 'vivaldi'
     isLoading: boolean
     loadError: string
     serverAutoLoadAvailable: boolean
@@ -30,12 +30,12 @@ const emit = defineEmits<{
 }>()
 
 // Safari/Firefox each have their own i18n namespace (their locationHeading,
-// steps, etc. don't take any {app}/{path} params); Chrome and Edge are both
-// Chromium-based and share one 'chromium' namespace whose strings are
-// parameterized by appName/userDataDirHint instead. `hasProfileFolderStep`
-// covers the one structural difference beyond text: Safari's history file
-// isn't nested under a per-profile folder the way Firefox/Chrome/Edge's are,
-// so its instructions skip that step entirely.
+// steps, etc. don't take any {app}/{path} params); Chrome, Edge, Opera, Arc,
+// Brave and Vivaldi are all Chromium-based and share one 'chromium' namespace
+// whose strings are parameterized by appName/userDataDirHint instead.
+// `hasProfileFolderStep` covers the one structural difference beyond text:
+// Safari's history file isn't nested under a per-profile folder the way the
+// Chromium-based brands' are, so its instructions skip that step entirely.
 const BRAND_META = {
   safari: { namespace: 'safari', appName: '', userDataDirHint: '', hasProfileFolderStep: false },
   firefox: {
@@ -54,6 +54,30 @@ const BRAND_META = {
     namespace: 'chromium',
     appName: 'Microsoft Edge',
     userDataDirHint: '~/Library/Application Support/Microsoft Edge/',
+    hasProfileFolderStep: true
+  },
+  opera: {
+    namespace: 'chromium',
+    appName: 'Opera',
+    userDataDirHint: '~/Library/Application Support/com.operasoftware.Opera/',
+    hasProfileFolderStep: true
+  },
+  arc: {
+    namespace: 'chromium',
+    appName: 'Arc',
+    userDataDirHint: '~/Library/Application Support/Arc/User Data/',
+    hasProfileFolderStep: true
+  },
+  brave: {
+    namespace: 'chromium',
+    appName: 'Brave',
+    userDataDirHint: '~/Library/Application Support/BraveSoftware/Brave-Browser/',
+    hasProfileFolderStep: true
+  },
+  vivaldi: {
+    namespace: 'chromium',
+    appName: 'Vivaldi',
+    userDataDirHint: '~/Library/Application Support/Vivaldi/',
     hasProfileFolderStep: true
   }
 } as const

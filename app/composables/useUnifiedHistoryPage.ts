@@ -37,9 +37,9 @@ function pickDefaultProfileId(profiles: { id: string; isDefault: boolean }[]): s
 }
 
 /**
- * Orchestrates the cross-browser search page (app/pages/all.vue): loads
- * Safari/Firefox/Chrome/Edge independently via four useUnifiedHistorySource()
- * instances, combines their visits into one UnifiedHistoryVisit[], and
+ * Orchestrates the cross-browser search page (app/pages/all.vue): loads every
+ * BROWSER_CATALOG source independently via its own useUnifiedHistorySource()
+ * instance, combines their visits into one UnifiedHistoryVisit[], and
  * applies search/domain/date/source filtering across the combined list.
  */
 export function useUnifiedHistoryPage() {
@@ -47,7 +47,7 @@ export function useUnifiedHistoryPage() {
   const { intlLocale } = useAppLocale()
 
   // autoCheckOnMount: false — unlike the single-browser pages, /all starts
-  // with no cards shown (see issue #156), so fetching all four sources'
+  // with no cards shown (see issue #156), so fetching every source's
   // profile/status on page load would defeat the point of only adding the
   // browsers actually needed. Each source's status is instead checked from
   // checkAvailability() below, once for whichever sources are active.
@@ -91,9 +91,49 @@ export function useUnifiedHistoryPage() {
     autoCheckOnMount: false
   })
 
+  const opera = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
+    apiBase: browserCatalogEntry('opera').apiBase,
+    serverFileName: browserCatalogEntry('opera').serverFileName,
+    parseFile: parseChromiumHistoryFile,
+    toUnified: (v) => toUnifiedVisit(v, 'opera'),
+    resolveDefaultProfileId: pickDefaultProfileId,
+    loadErrorFallbackKey: 'error.autoLoadFailed.chromium',
+    autoCheckOnMount: false
+  })
+
+  const arc = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
+    apiBase: browserCatalogEntry('arc').apiBase,
+    serverFileName: browserCatalogEntry('arc').serverFileName,
+    parseFile: parseChromiumHistoryFile,
+    toUnified: (v) => toUnifiedVisit(v, 'arc'),
+    resolveDefaultProfileId: pickDefaultProfileId,
+    loadErrorFallbackKey: 'error.autoLoadFailed.chromium',
+    autoCheckOnMount: false
+  })
+
+  const brave = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
+    apiBase: browserCatalogEntry('brave').apiBase,
+    serverFileName: browserCatalogEntry('brave').serverFileName,
+    parseFile: parseChromiumHistoryFile,
+    toUnified: (v) => toUnifiedVisit(v, 'brave'),
+    resolveDefaultProfileId: pickDefaultProfileId,
+    loadErrorFallbackKey: 'error.autoLoadFailed.chromium',
+    autoCheckOnMount: false
+  })
+
+  const vivaldi = useUnifiedHistorySource<ChromiumHistoryVisit, ChromiumProfile>({
+    apiBase: browserCatalogEntry('vivaldi').apiBase,
+    serverFileName: browserCatalogEntry('vivaldi').serverFileName,
+    parseFile: parseChromiumHistoryFile,
+    toUnified: (v) => toUnifiedVisit(v, 'vivaldi'),
+    resolveDefaultProfileId: pickDefaultProfileId,
+    loadErrorFallbackKey: 'error.autoLoadFailed.chromium',
+    autoCheckOnMount: false
+  })
+
   // Each source's own visits already arrive sorted (visit_time DESC, see the
-  // per-brand SQL), but concatenating four independently-sorted arrays does
-  // not itself produce a sorted result — re-sort the merged list so /all
+  // per-brand SQL), but concatenating independently-sorted arrays does not
+  // itself produce a sorted result — re-sort the merged list so /all
   // actually reads as one interleaved timeline instead of "all of Safari,
   // then all of Firefox, ...".
   const visits = computed<UnifiedHistoryVisit[]>(() =>
@@ -101,19 +141,22 @@ export function useUnifiedHistoryPage() {
       ...safari.unifiedVisits.value,
       ...firefox.unifiedVisits.value,
       ...chrome.unifiedVisits.value,
-      ...edge.unifiedVisits.value
+      ...edge.unifiedVisits.value,
+      ...opera.unifiedVisits.value,
+      ...arc.unifiedVisits.value,
+      ...brave.unifiedVisits.value,
+      ...vivaldi.unifiedVisits.value
     ].sort((a, b) => b.visitTime.getTime() - a.visitTime.getTime())
   )
 
-  const hasData = computed(
-    () =>
-      safari.hasData.value || firefox.hasData.value || chrome.hasData.value || edge.hasData.value
+  const hasData = computed(() =>
+    [safari, firefox, chrome, edge, opera, arc, brave, vivaldi].some((s) => s.hasData.value)
   )
 
-  const sources = { safari, firefox, chrome, edge }
+  const sources = { safari, firefox, chrome, edge, opera, arc, brave, vivaldi }
 
   // Which browser cards are shown on the page — starts empty (see issue
-  // #156) instead of always rendering all four, and is restored from
+  // #156) instead of always rendering every source, and is restored from
   // localStorage like every other filter below.
   const activeSources = ref<UnifiedHistorySource[]>([])
 
@@ -137,12 +180,16 @@ export function useUnifiedHistoryPage() {
     safariProfileIds: filterField(safari.selectedProfileIds, freeformStringArrayCodec),
     firefoxProfileIds: filterField(firefox.selectedProfileIds, freeformStringArrayCodec),
     chromeProfileIds: filterField(chrome.selectedProfileIds, freeformStringArrayCodec),
-    edgeProfileIds: filterField(edge.selectedProfileIds, freeformStringArrayCodec)
+    edgeProfileIds: filterField(edge.selectedProfileIds, freeformStringArrayCodec),
+    operaProfileIds: filterField(opera.selectedProfileIds, freeformStringArrayCodec),
+    arcProfileIds: filterField(arc.selectedProfileIds, freeformStringArrayCodec),
+    braveProfileIds: filterField(brave.selectedProfileIds, freeformStringArrayCodec),
+    vivaldiProfileIds: filterField(vivaldi.selectedProfileIds, freeformStringArrayCodec)
   })
 
   // Sources restored into activeSources above (a prior visit's selection)
   // never got their onMounted check — it was skipped via autoCheckOnMount:
-  // false — so run it now for exactly those, instead of all four.
+  // false — so run it now for exactly those, instead of all of them.
   for (const id of activeSources.value) {
     void sources[id].checkAvailability()
   }

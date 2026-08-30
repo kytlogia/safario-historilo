@@ -7,7 +7,7 @@ import BaseFilterBar from './BaseFilterBar.vue'
 const { t } = useI18n()
 
 const props = defineProps<{
-  brand: 'chrome' | 'edge'
+  brand: 'chrome' | 'edge' | 'opera' | 'arc' | 'brave' | 'vivaldi'
   domainOptions: { title: string; value: string }[]
   filteredVisits: ChromiumHistoryVisit[]
   totalCount: number

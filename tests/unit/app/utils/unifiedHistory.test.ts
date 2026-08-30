@@ -69,8 +69,17 @@ function makeChromiumVisit(overrides: Partial<ChromiumHistoryVisit> = {}): Chrom
 }
 
 describe('UNIFIED_HISTORY_SOURCES', () => {
-  it('lists all four sources', () => {
-    expect(UNIFIED_HISTORY_SOURCES).toEqual(['safari', 'firefox', 'chrome', 'edge'])
+  it('lists every catalog source', () => {
+    expect(UNIFIED_HISTORY_SOURCES).toEqual([
+      'safari',
+      'firefox',
+      'chrome',
+      'edge',
+      'opera',
+      'arc',
+      'brave',
+      'vivaldi'
+    ])
   })
 })
 
