@@ -78,7 +78,8 @@ describe('UNIFIED_HISTORY_SOURCES', () => {
       'opera',
       'arc',
       'brave',
-      'vivaldi'
+      'vivaldi',
+      'netscape'
     ])
   })
 })

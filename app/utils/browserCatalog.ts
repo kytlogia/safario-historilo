@@ -8,10 +8,15 @@ export interface BrowserCatalogEntry {
   color: string
   /** i18n key (e.g. 'nav.viewSafari') for the nav bar link label. */
   navLabelKey: string
-  /** `/api/local-history[/<brand>]` — base for the download/status/profiles endpoints. */
-  apiBase: string
+  /**
+   * `/api/local-history[/<brand>]` — base for the download/status/profiles
+   * endpoints. Absent for upload-only browsers: Netscape is discontinued and
+   * can't be running on this machine, so there is no live database to read
+   * and no server route for one (see issue #160).
+   */
+  apiBase?: string
   /** File name to wrap the auto-loaded server blob in before parsing. */
-  serverFileName: string
+  serverFileName?: string
 }
 
 /**
@@ -101,6 +106,15 @@ export const BROWSER_CATALOG: BrowserCatalogEntry[] = [
     navLabelKey: 'nav.viewVivaldi',
     apiBase: '/api/local-history/vivaldi',
     serverFileName: 'History'
+  },
+  {
+    id: 'netscape',
+    route: '/netscape',
+    icon: 'mdi-sail-boat',
+    label: 'Netscape',
+    color: 'green',
+    navLabelKey: 'nav.viewNetscape'
+    // Upload-only: no apiBase/serverFileName — see the interface above.
   }
 ]
 

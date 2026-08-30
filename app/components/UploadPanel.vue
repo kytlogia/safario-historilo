@@ -6,7 +6,8 @@ const { t } = useI18n()
 
 const props = withDefaults(
   defineProps<{
-    brand?: 'safari' | 'firefox' | 'chrome' | 'edge' | 'opera' | 'arc' | 'brave' | 'vivaldi'
+    brand?:
+      'safari' | 'firefox' | 'chrome' | 'edge' | 'opera' | 'arc' | 'brave' | 'vivaldi' | 'netscape'
     isLoading: boolean
     loadError: string
     serverAutoLoadAvailable: boolean
@@ -33,6 +34,9 @@ const emit = defineEmits<{
 // steps, etc. don't take any {app}/{path} params); Chrome, Edge, Opera, Arc,
 // Brave and Vivaldi are all Chromium-based and share one 'chromium' namespace
 // whose strings are parameterized by appName/userDataDirHint instead.
+// Netscape gets its own namespace too, and is the only upload-only brand:
+// it has no autoLoadButton/permissionHint strings because those branches
+// can never render for it (see app/pages/netscape.vue).
 // `hasProfileFolderStep` covers the one structural difference beyond text:
 // Safari's history file isn't nested under a per-profile folder the way the
 // Chromium-based brands' are, so its instructions skip that step entirely.
@@ -78,6 +82,12 @@ const BRAND_META = {
     namespace: 'chromium',
     appName: 'Vivaldi',
     userDataDirHint: '~/Library/Application Support/Vivaldi/',
+    hasProfileFolderStep: true
+  },
+  netscape: {
+    namespace: 'netscape',
+    appName: '',
+    userDataDirHint: '',
     hasProfileFolderStep: true
   }
 } as const

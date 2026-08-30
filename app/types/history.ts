@@ -82,8 +82,37 @@ export interface ParsedChromiumHistory {
   fileName: string
 }
 
+/**
+ * One row of Netscape Navigator 9's Mork `history.dat`. Unlike every other
+ * browser here, that file stores one record *per URL* (with its own
+ * first/last visit dates and visit count) rather than one row per visit, so
+ * `visitTime` is the URL's last visit and there is no per-visit id — the
+ * Mork row id stands in for it.
+ */
+export interface NetscapeHistoryVisit {
+  rowId: string
+  url: string
+  domain: string
+  title: string
+  visitTime: Date
+  /** LastVisitDate, in microseconds since the Unix epoch (Mozilla PRTime). */
+  visitTimeRaw: number
+  firstVisitTime: Date | null
+  firstVisitTimeRaw: number
+  visitCount: number
+  referrer: string
+  hostname: string
+  hidden: boolean
+  typed: boolean
+}
+
+export interface ParsedNetscapeHistory {
+  visits: NetscapeHistoryVisit[]
+  fileName: string
+}
+
 export type UnifiedHistorySource =
-  'safari' | 'firefox' | 'chrome' | 'edge' | 'opera' | 'arc' | 'brave' | 'vivaldi'
+  'safari' | 'firefox' | 'chrome' | 'edge' | 'opera' | 'arc' | 'brave' | 'vivaldi' | 'netscape'
 
 /**
  * Common minimal shape used by the cross-browser search page (app/pages/all.vue)

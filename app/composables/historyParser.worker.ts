@@ -1,11 +1,21 @@
 import { parseHistoryBuffer } from '~/utils/parseHistoryDatabase'
 import { parseFirefoxHistoryBuffer } from '~/utils/parseFirefoxHistoryDatabase'
 import { parseChromiumHistoryBuffer } from '~/utils/parseChromiumHistoryDatabase'
+import { parseNetscapeHistoryBuffer } from '~/utils/parseNetscapeHistoryDatabase'
 import { normalizeError } from '~/utils/error-reporting'
-import type { ChromiumHistoryVisit, FirefoxHistoryVisit, HistoryVisit } from '~/types/history'
+import type {
+  ChromiumHistoryVisit,
+  FirefoxHistoryVisit,
+  HistoryVisit,
+  NetscapeHistoryVisit
+} from '~/types/history'
+import type { ParserBrand } from '~/utils/workerLocaleMessages'
 import type { AppLocale } from '~/composables/useAppLocale'
 
-export type HistoryParserKind = 'safari' | 'firefox' | 'chromium'
+// Same set as the localized message maps in workerLocaleMessages.ts —
+// useHistoryFileParser.ts indexes WORKER_CRASH_MESSAGES by this kind, so the
+// two must stay in lockstep.
+export type HistoryParserKind = ParserBrand
 
 // A single Worker instance is reused across parses per kind (see getWorker()
 // in useHistoryFileParser.ts) and can therefore receive several requests
@@ -27,7 +37,8 @@ export type HistoryParserWorkerResponse =
   | {
       requestId: number
       ok: true
-      visits: HistoryVisit[] | FirefoxHistoryVisit[] | ChromiumHistoryVisit[]
+      visits:
+        HistoryVisit[] | FirefoxHistoryVisit[] | ChromiumHistoryVisit[] | NetscapeHistoryVisit[]
     }
   | { requestId: number; ok: false; message: string }
 
@@ -44,6 +55,8 @@ function parseBuffer(
       return parseFirefoxHistoryBuffer(buffer, fileName, locale)
     case 'chromium':
       return parseChromiumHistoryBuffer(buffer, fileName, locale)
+    case 'netscape':
+      return parseNetscapeHistoryBuffer(buffer, fileName, locale)
   }
 }
 

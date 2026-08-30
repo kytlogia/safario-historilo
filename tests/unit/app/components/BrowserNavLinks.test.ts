@@ -74,6 +74,29 @@ describe('BrowserNavLinks', () => {
     }
   })
 
+  it('never status-checks an upload-only browser, and always shows its link', async () => {
+    // Netscape is discontinued, so it has no /status endpoint to ask and can
+    // never be "installed" — its link must not depend on one (issue #160).
+    const fetchMock = vi.fn(async () => ({ present: true }))
+    vi.stubGlobal('$fetch', fetchMock)
+    const wrapper = mountLinks()
+    try {
+      await flushPromises()
+      await wrapper.get('[data-testid="browser-nav-menu-button"]').trigger('click')
+
+      const uploadOnly = BROWSER_CATALOG.filter((b) => !b.apiBase)
+      expect(uploadOnly.length).toBeGreaterThan(0)
+      for (const entry of uploadOnly) {
+        expect(
+          document.querySelector(`[data-testid="browser-nav-link-${entry.id}"]`)
+        ).not.toBeNull()
+      }
+      expect(fetchMock).toHaveBeenCalledTimes(BROWSER_CATALOG.length - uploadOnly.length)
+    } finally {
+      wrapper.unmount()
+    }
+  })
+
   it('renders a link for every catalog entry when no current browser is given', async () => {
     const wrapper = mountLinks()
     try {

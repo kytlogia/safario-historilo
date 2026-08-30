@@ -21,10 +21,14 @@ interface LocalHistoryProfilesResponse<P> {
 }
 
 export interface UnifiedHistorySourceOptions<V, P extends { id: string; name: string }> {
-  /** `/api/local-history` (Safari) or `/api/local-history/<brand>`. */
-  apiBase: string
+  /**
+   * `/api/local-history` (Safari) or `/api/local-history/<brand>`. Omitted
+   * for upload-only browsers (Netscape — see browserCatalog.ts), which skip
+   * the status/profiles requests entirely and only ever load via loadFile().
+   */
+  apiBase?: string
   /** File name to wrap the auto-loaded server blob in before parsing. */
-  serverFileName: string
+  serverFileName?: string
   parseFile: (file: File, locale: AppLocale) => Promise<{ visits: V[]; fileName: string }>
   toUnified: (visit: V) => UnifiedHistoryVisit
   initialProfileId?: string
@@ -56,7 +60,9 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
 ) {
   const {
     apiBase,
-    serverFileName,
+    // Only ever used on the loadFromServer() path, which an upload-only
+    // source (no apiBase) never reaches — hence the harmless default.
+    serverFileName = '',
     parseFile,
     toUnified,
     initialProfileId = '',
@@ -145,6 +151,7 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
   }
 
   async function checkServerAutoLoadAvailability() {
+    if (!apiBase) return
     const requestId = ++statusRequestId
     serverStatusWarning.value = ''
     const settled = await Promise.allSettled(
@@ -177,6 +184,7 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
   }
 
   async function loadProfiles() {
+    if (!apiBase) return
     try {
       const body = await $fetch<LocalHistoryProfilesResponse<P>>(`${apiBase}/profiles`)
       const profiles: P[] = Array.isArray(body?.profiles) ? body.profiles : []
@@ -196,7 +204,10 @@ export function useUnifiedHistorySource<V, P extends { id: string; name: string 
   }
 
   async function loadFromServer() {
-    if (isLoading.value) return
+    // Unreachable from the UI for an upload-only source (the auto-load
+    // button only renders when serverAutoLoadAvailable, which stays false
+    // without an apiBase) — guarded anyway so it can't fetch a relative URL.
+    if (!apiBase || isLoading.value) return
     const generation = ++loadGeneration
     isLoading.value = true
     loadError.value = ''

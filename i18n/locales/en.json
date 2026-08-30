@@ -30,7 +30,8 @@
     "viewBrave": "View Brave history",
     "viewVivaldi": "View Vivaldi history",
     "crossSearch": "Cross-browser search",
-    "clearAll": "Clear all"
+    "clearAll": "Clear all",
+    "viewNetscape": "View Netscape history"
   },
   "error": {
     "notFoundTitle": "Page not found",
@@ -128,6 +129,17 @@
         "fieldVisitDuration": "Visit duration (visit_duration)",
         "visitDurationValue": "{value} microseconds",
         "fieldVisitUrlId": "visit ID / URL ID"
+      },
+      "netscape": {
+        "fieldLastVisitTime": "Last visited",
+        "fieldFirstVisitTime": "First visited",
+        "fieldInternalTimestamp": "Internal timestamp (Unix epoch)",
+        "internalTimestampValue": "{microseconds} microseconds (since 1970-01-01 UTC) / ISO: {iso}",
+        "fieldHidden": "Hidden",
+        "fieldTyped": "Typed URL",
+        "fieldReferrer": "Referrer",
+        "fieldHostname": "Hostname",
+        "fieldRowId": "Mork row ID"
       }
     },
     "filterBar": {
@@ -159,7 +171,8 @@
       "flagFailed": "Failed",
       "flagRedirect": "Redirect",
       "flagSynthesized": "Synthesized",
-      "flagHidden": "Hidden"
+      "flagHidden": "Hidden",
+      "flagTyped": "Typed"
     },
     "summaryCards": {
       "totalVisits": "Total visits",
@@ -193,7 +206,7 @@
         "subtitle": "Or choose a file. All parsing happens in this browser and no data is sent externally.",
         "profileLabel": "Profile to load",
         "dragDropFinalStep": "Drag and drop the copied file onto this screen",
-        "privacyNote": "This app never uploads files to a server. All parsing runs entirely inside the browser via WebAssembly (sql.js)."
+        "privacyNote": "This app never uploads files to a server. All parsing runs entirely inside the browser."
       },
       "safari": {
         "dragDropTitle": "Drag and drop Safari's History.db",
@@ -226,6 +239,15 @@
         "stepFinder": "In Finder, choose Go → Go to Folder and enter:<br /><code>{path}</code>",
         "stepOpenProfileFolder": "Open the folder for the profile you use (e.g. <code>Default</code> or <code>Profile 1</code>)",
         "stepCopy": "Copy <code>History</code> to a location of your choice"
+      },
+      "netscape": {
+        "dragDropTitle": "Drag & drop Netscape's history.dat",
+        "fileInputLabel": "Choose history.dat",
+        "locationHeading": "Where history.dat lives (Netscape Navigator 9)",
+        "stepQuitApp": "Quit Netscape Navigator 9 if it is running (the database is locked while it is open)",
+        "stepFinder": "Open the profiles folder:<br /><code>~/Library/Application Support/Netscape/Profiles/</code> (on Windows, <code>%APPDATA%\\Netscape\\Navigator\\Profiles\\</code>)",
+        "stepOpenProfileFolder": "Open the profile folder you used (e.g. <code>xxxxxxxx.slt</code>)",
+        "stepCopy": "Copy <code>history.dat</code> somewhere else"
       }
     }
   },
