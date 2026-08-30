@@ -144,7 +144,9 @@ describe('checkFirefoxHistoryDbAccess', () => {
   })
 
   it('reports present:true, readable:false when the file exists but is not readable', async () => {
-    if (process.getuid?.() === 0) return // root bypasses permission bits
+    // Windows' fs.chmod only toggles the read-only attribute, not a real
+    // read-access ACL, so chmod(0o000) can't reproduce this on Windows (#138).
+    if (process.platform === 'win32' || process.getuid?.() === 0) return // root bypasses permission bits too
     const dbPath = join(dir, 'places.sqlite')
     await writeFile(dbPath, 'dummy')
     await chmod(dbPath, 0o000)
@@ -165,7 +167,8 @@ describe('readLocalFirefoxHistoryDb', () => {
   })
 
   it('throws HistoryDbNotReadableError when the places.sqlite exists but is not readable', async () => {
-    if (process.getuid?.() === 0) return // root bypasses permission bits
+    // See the equivalent skip in checkFirefoxHistoryDbAccess's suite above.
+    if (process.platform === 'win32' || process.getuid?.() === 0) return
     await createProfile('Profiles/aaaaaaaa.default-release', true)
     await writeFile(
       profilesIniPath,

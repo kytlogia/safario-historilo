@@ -14,7 +14,11 @@ import { createSampleHistoryDatabaseBytes } from '../fixtures/build-history-db'
 
 const PROFILE_ID = '11111111-1111-1111-1111-111111111111'
 
-describe('/api/local-history profile support', async () => {
+// Safari for Windows was discontinued in 2012 (#138) — PROFILES_DIR is
+// unconditionally null there (server/utils/history-store.ts), regardless of
+// $HOME, so this suite's whole premise (faking a Safari container layout
+// under a redirected $HOME) has nothing to exercise on Windows.
+describe.skipIf(process.platform === 'win32')('/api/local-history profile support', async () => {
   // server/utils/safari-profiles.ts scans a fixed path under the home
   // directory (there's no NUXT_-prefixed override for it, unlike
   // NUXT_HISTORY_DB_PATH). Redirecting $HOME for the spawned server process

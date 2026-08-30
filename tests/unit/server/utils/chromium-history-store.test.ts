@@ -103,7 +103,9 @@ describe('checkChromiumHistoryDbAccess', () => {
   })
 
   it('reports present:true, readable:false when the file exists but is not readable', async () => {
-    if (process.getuid?.() === 0) return // root bypasses permission bits
+    // Windows' fs.chmod only toggles the read-only attribute, not a real
+    // read-access ACL, so chmod(0o000) can't reproduce this on Windows (#138).
+    if (process.platform === 'win32' || process.getuid?.() === 0) return // root bypasses permission bits too
     const dbPath = join(dir, 'History')
     await writeFile(dbPath, 'dummy')
     await chmod(dbPath, 0o000)
@@ -124,7 +126,8 @@ describe('readLocalChromiumHistoryDb', () => {
   })
 
   it('throws HistoryDbNotReadableError when the History file exists but is not readable', async () => {
-    if (process.getuid?.() === 0) return // root bypasses permission bits
+    // See the equivalent skip in checkChromiumHistoryDbAccess's suite above.
+    if (process.platform === 'win32' || process.getuid?.() === 0) return
     await createProfileDir('Default', true)
     await writeLocalState({ Default: { name: 'Alice' } })
     const dbPath = join(userDataDir, 'Default', 'History')
