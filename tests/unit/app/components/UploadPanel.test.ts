@@ -189,5 +189,22 @@ describe('UploadPanel', () => {
       expect(wrapper.text()).toContain('~/Library/Application Support/Microsoft Edge/')
       expect(wrapper.text()).toContain('プロファイルのフォルダ')
     })
+
+    it.each([
+      ['opera', 'Opera', '~/Library/Application Support/com.operasoftware.Opera/'],
+      ['arc', 'Arc', '~/Library/Application Support/Arc/User Data/'],
+      ['brave', 'Brave', '~/Library/Application Support/BraveSoftware/Brave-Browser/'],
+      ['vivaldi', 'Vivaldi', '~/Library/Application Support/Vivaldi/']
+    ] as const)(
+      'interpolates the %s app name/path and includes the profile-folder step',
+      (brand, appName, path) => {
+        const wrapper = mountPanel({ brand })
+
+        expect(wrapper.text()).toContain(`${appName} の History をドラッグ&ドロップ`)
+        expect(wrapper.text()).toContain(`${appName} を終了する`)
+        expect(wrapper.text()).toContain(path)
+        expect(wrapper.text()).toContain('プロファイルのフォルダ')
+      }
+    )
   })
 })

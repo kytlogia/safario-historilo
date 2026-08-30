@@ -82,7 +82,8 @@ export interface ParsedChromiumHistory {
   fileName: string
 }
 
-export type UnifiedHistorySource = 'safari' | 'firefox' | 'chrome' | 'edge'
+export type UnifiedHistorySource =
+  'safari' | 'firefox' | 'chrome' | 'edge' | 'opera' | 'arc' | 'brave' | 'vivaldi'
 
 /**
  * Common minimal shape used by the cross-browser search page (app/pages/all.vue)

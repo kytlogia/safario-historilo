@@ -15,7 +15,7 @@ export interface BrowserCatalogEntry {
 }
 
 /**
- * Single source of truth for the four supported browsers' static definition
+ * Single source of truth for each supported browser's static definition
  * (icon/label/route/API base), consumed by the nav bar (BrowserNavLinks.vue),
  * the /all cross-search cards (app/pages/all.vue), and the per-source loaders
  * (useUnifiedHistoryPage.ts, useChromiumHistoryPage.ts, index.vue, firefox.vue)
@@ -60,6 +60,46 @@ export const BROWSER_CATALOG: BrowserCatalogEntry[] = [
     color: 'teal',
     navLabelKey: 'nav.viewEdge',
     apiBase: '/api/local-history/edge',
+    serverFileName: 'History'
+  },
+  {
+    id: 'opera',
+    route: '/opera',
+    icon: 'mdi-opera',
+    label: 'Opera',
+    color: 'red',
+    navLabelKey: 'nav.viewOpera',
+    apiBase: '/api/local-history/opera',
+    serverFileName: 'History'
+  },
+  {
+    id: 'arc',
+    route: '/arc',
+    icon: 'mdi-chart-arc',
+    label: 'Arc',
+    color: 'purple',
+    navLabelKey: 'nav.viewArc',
+    apiBase: '/api/local-history/arc',
+    serverFileName: 'History'
+  },
+  {
+    id: 'brave',
+    route: '/brave',
+    icon: 'mdi-shield-outline',
+    label: 'Brave',
+    color: 'deep-orange',
+    navLabelKey: 'nav.viewBrave',
+    apiBase: '/api/local-history/brave',
+    serverFileName: 'History'
+  },
+  {
+    id: 'vivaldi',
+    route: '/vivaldi',
+    icon: 'mdi-web',
+    label: 'Vivaldi',
+    color: 'pink',
+    navLabelKey: 'nav.viewVivaldi',
+    apiBase: '/api/local-history/vivaldi',
     serverFileName: 'History'
   }
 ]

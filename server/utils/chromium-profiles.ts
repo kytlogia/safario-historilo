@@ -4,15 +4,15 @@ import { join } from 'node:path'
 import type { ChromiumProfile } from '../../shared/types/profile'
 import { promoteFirstAsDefaultIfNoneSet } from '../../shared/utils/profile'
 
-export type ChromiumBrand = 'chrome' | 'edge'
+export type ChromiumBrand = 'chrome' | 'edge' | 'opera' | 'arc' | 'brave' | 'vivaldi'
 
 /**
- * Chrome and Edge are both Chromium-based and keep an identical profile
- * layout under their own user data directory: a `Local State` JSON file
- * (whose `profile.info_cache` maps each profile's directory name to display
- * metadata) alongside the profile directories themselves (`Default`,
- * `Profile 1`, ...), each holding a `History` SQLite file. Only the user
- * data directory itself differs between the two brands.
+ * Chrome, Edge, Opera, Arc, Brave and Vivaldi are all Chromium-based and keep
+ * an identical profile layout under their own user data directory: a `Local
+ * State` JSON file (whose `profile.info_cache` maps each profile's directory
+ * name to display metadata) alongside the profile directories themselves
+ * (`Default`, `Profile 1`, ...), each holding a `History` SQLite file. Only
+ * the user data directory itself differs between brands.
  */
 interface ChromiumProfileInfoCacheEntry {
   name?: string

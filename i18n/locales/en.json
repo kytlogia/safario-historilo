@@ -25,6 +25,10 @@
     "viewFirefox": "View Firefox history",
     "viewChrome": "View Chrome history",
     "viewEdge": "View Edge history",
+    "viewOpera": "View Opera history",
+    "viewArc": "View Arc history",
+    "viewBrave": "View Brave history",
+    "viewVivaldi": "View Vivaldi history",
     "crossSearch": "Cross-browser search",
     "clearAll": "Clear all"
   },
