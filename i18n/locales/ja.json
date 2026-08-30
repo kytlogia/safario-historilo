@@ -211,7 +211,7 @@
       "safari": {
         "dragDropTitle": "Safariの History.db をドラッグ&ドロップ",
         "autoLoadButton": "この Mac の History.db を自動で読み込む",
-        "permissionHint": "お使いの端末上の History.db を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。Windowsの場合はSafariを完全に終了してから再度お試しください。",
+        "permissionHint": "お使いの端末上の History.db を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリ（デスクトップアプリの場合はアプリ本体、`pnpm dev`等で実行している場合はターミナルまたはNode）に権限を付与すると自動読み込みが利用できます。Windowsの場合はSafariを完全に終了してから再度お試しください。",
         "fileInputLabel": "History.db を選択",
         "locationHeading": "History.db の場所（macOS / Safari）",
         "stepQuitApp": "Safariを終了する（DBがロックされているため）",
@@ -221,7 +221,7 @@
       "firefox": {
         "dragDropTitle": "Firefoxの places.sqlite をドラッグ&ドロップ",
         "autoLoadButton": "この端末の places.sqlite を自動で読み込む",
-        "permissionHint": "お使いの端末上の places.sqlite を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。Windowsの場合はFirefoxを完全に終了してから再度お試しください。",
+        "permissionHint": "お使いの端末上の places.sqlite を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリ（デスクトップアプリの場合はアプリ本体、`pnpm dev`等で実行している場合はターミナルまたはNode）に権限を付与すると自動読み込みが利用できます。Windowsの場合はFirefoxを完全に終了してから再度お試しください。",
         "fileInputLabel": "places.sqlite を選択",
         "locationHeading": "places.sqlite の場所（Firefox）",
         "stepQuitApp": "Firefoxを終了する（DBがロックされているため）",
@@ -232,7 +232,7 @@
       "chromium": {
         "dragDropTitle": "{app} の History をドラッグ&ドロップ",
         "autoLoadButton": "この Mac の History を自動で読み込む",
-        "permissionHint": "この Mac 上の History を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。",
+        "permissionHint": "この Mac 上の History を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリ（デスクトップアプリの場合はアプリ本体、`pnpm dev`等で実行している場合はターミナルまたはNode）に権限を付与すると自動読み込みが利用できます。",
         "fileInputLabel": "History を選択",
         "locationHeading": "History の場所（macOS / {app}）",
         "stepQuitApp": "{app} を終了する（DBがロックされているため）",

@@ -115,6 +115,21 @@ pnpm build
 
 静的ホスティング用途では引き続き `pnpm generate` が使えます。その場合Nitro APIルートは含まれないため、自動読み込みボタンは表示されずドラッグ&ドロップのみになります（機能は自動的にフォールバックするため、コードの変更は不要です）。
 
+## デスクトップアプリ（macOS, Electron）
+
+これまでの自動読み込み機能を使うには `pnpm dev` でターミナルからNitroサーバーを起動する必要があり、非エンジニアには敷居が高いという課題がありました（#140）。[Electron](https://www.electronjs.org/) でラップしたデスクトップアプリとして、この自動読み込み機能一式（サーバー起動・フルディスクアクセスの案内）をダブルクリックで使えるようにしています。
+
+```bash
+pnpm electron        # ビルド＋Electronアプリを起動して動作確認
+pnpm electron:build  # 未署名の .dmg を release/ に生成（macOSのみ）
+```
+
+- `pnpm electron` はビルド済みの `.output/server/index.mjs`（Nitroサーバー、既存の自動読み込みロジックそのもの）を、Electron自身に同梱されたNode.jsランタイム上で子プロセスとして起動し（`ELECTRON_RUN_AS_NODE=1`）、起動確認後にその画面を1つのウインドウで表示します。パース処理（sql.js）は他の読み込み方法と同様ブラウザ内（Electronのレンダラープロセス内のChromium）で完結します。
+- フルディスクアクセスが付与されていない場合の案内は、既存のWeb版の「読み取り権限がありません」アラート（`app/components/UploadPanel.vue` の `serverPermissionHint`）がそのままデスクトップアプリのウインドウ内にも表示されます（専用のUIを別途実装していません）。System Settings → プライバシーとセキュリティ → フルディスクアクセスで、このアプリ自体に権限を付与してください。
+- **未署名です**: コード署名・Notarizationは行っていません（Apple Developer Program の証明書が必要なため対象外。README/#140参照）。`pnpm electron:build` で生成した `.dmg` から初回起動する際は、Gatekeeperの警告が出るため、Finderでアプリを右クリック→「開く」から起動してください。
+- Windows向け `.exe` パッケージングは対象外です（別issueで対応予定）。
+- 実装は `electron/main.mjs`（メインプロセス。子プロセスの起動・起動待ち・ウインドウ表示）と `electron/serverProcess.mjs`（Nitroサーバーのエントリパス解決・起動待ちの純粋関数、`tests/unit/electron/serverProcess.test.ts` でテスト）にあります。パッケージング設定は `package.json` の `build` フィールド（[electron-builder](https://www.electron.build/)）です。
+
 ## テスト
 
 ```bash
@@ -148,6 +163,7 @@ ESLintは [`@nuxt/eslint`](https://eslint.nuxt.com/) モジュールが `nuxt.co
 - [sql.js](https://sql.js.org/)（ブラウザ内SQLite/WebAssembly）
 - `node:sqlite`（Node.js組み込み。自動読み込み時のWALマージに使用）
 - [pnpm](https://pnpm.io/)
+- [Electron](https://www.electronjs.org/) / [electron-builder](https://www.electron.build/)（macOSデスクトップアプリとしての配布。上記「デスクトップアプリ」参照）
 
 ## サプライチェーン攻撃対策
 

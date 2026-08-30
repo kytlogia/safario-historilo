@@ -9,6 +9,9 @@ dist
 # Node dependencies
 node_modules
 
+# electron-builder output (pnpm electron:build)
+release
+
 # Logs
 logs
 *.log
