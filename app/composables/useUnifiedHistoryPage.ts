@@ -8,6 +8,7 @@ import type {
   FirefoxHistoryVisit,
   FirefoxProfile,
   HistoryVisit,
+  NetscapeHistoryVisit,
   SafariProfile,
   UnifiedHistorySource,
   UnifiedHistoryVisit
@@ -27,6 +28,7 @@ import {
 } from './useFilterPersistence'
 import { parseChromiumHistoryFile } from './useChromiumHistoryParser'
 import { parseFirefoxHistoryFile } from './useFirefoxHistoryParser'
+import { parseNetscapeHistoryFile } from './useNetscapeHistoryParser'
 import { parseSafariHistoryFile } from './useSafariHistoryParser'
 import { useUnifiedHistoryFilters } from './useUnifiedHistoryFilters'
 import { useUnifiedHistorySource } from './useUnifiedHistorySource'
@@ -131,6 +133,16 @@ export function useUnifiedHistoryPage() {
     autoCheckOnMount: false
   })
 
+  // Upload-only (no apiBase/profiles): Netscape is discontinued, so there is
+  // never a live database on this machine to auto-load — the card shows only
+  // its file input. See browserCatalog.ts and issue #160.
+  const netscape = useUnifiedHistorySource<NetscapeHistoryVisit, { id: string; name: string }>({
+    parseFile: parseNetscapeHistoryFile,
+    toUnified: (v) => toUnifiedVisit(v, 'netscape'),
+    loadErrorFallbackKey: 'error.unknown',
+    autoCheckOnMount: false
+  })
+
   // Each source's own visits already arrive sorted (visit_time DESC, see the
   // per-brand SQL), but concatenating independently-sorted arrays does not
   // itself produce a sorted result — re-sort the merged list so /all
@@ -145,15 +157,18 @@ export function useUnifiedHistoryPage() {
       ...opera.unifiedVisits.value,
       ...arc.unifiedVisits.value,
       ...brave.unifiedVisits.value,
-      ...vivaldi.unifiedVisits.value
+      ...vivaldi.unifiedVisits.value,
+      ...netscape.unifiedVisits.value
     ].sort((a, b) => b.visitTime.getTime() - a.visitTime.getTime())
   )
 
   const hasData = computed(() =>
-    [safari, firefox, chrome, edge, opera, arc, brave, vivaldi].some((s) => s.hasData.value)
+    [safari, firefox, chrome, edge, opera, arc, brave, vivaldi, netscape].some(
+      (s) => s.hasData.value
+    )
   )
 
-  const sources = { safari, firefox, chrome, edge, opera, arc, brave, vivaldi }
+  const sources = { safari, firefox, chrome, edge, opera, arc, brave, vivaldi, netscape }
 
   // Which browser cards are shown on the page — starts empty (see issue
   // #156) instead of always rendering every source, and is restored from
@@ -185,6 +200,7 @@ export function useUnifiedHistoryPage() {
     arcProfileIds: filterField(arc.selectedProfileIds, freeformStringArrayCodec),
     braveProfileIds: filterField(brave.selectedProfileIds, freeformStringArrayCodec),
     vivaldiProfileIds: filterField(vivaldi.selectedProfileIds, freeformStringArrayCodec)
+    // Netscape has no profiles to remember — it is upload-only.
   })
 
   // Sources restored into activeSources above (a prior visit's selection)

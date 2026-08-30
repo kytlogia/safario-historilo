@@ -30,6 +30,10 @@ onMounted(async () => {
   const next = new Set<UnifiedHistorySource>()
   await Promise.all(
     candidates.value.map(async (b) => {
+      // Upload-only browsers (no status endpoint) can't be "installed" —
+      // their link is always shown, since the page's file upload is the only
+      // way to use them anyway. See browserCatalog.ts.
+      if (!b.apiBase) return
       try {
         const status = await $fetch<LocalHistoryStatusResponse>(`${b.apiBase}/status`)
         if (!status.present) next.add(b.id)

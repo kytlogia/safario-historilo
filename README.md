@@ -4,7 +4,7 @@
 
 SafariおよびFirefoxのブラウズ履歴データベース（`History.db` / `places.sqlite`）を読み込み、訪問履歴を詳細に確認できるWebアプリです。
 
-- **プライバシー重視**: 履歴データベースはどちらの読み込み方法でも外部サーバーへ送信されません。ファイルの解析処理そのものは常にブラウザ内でWebAssembly版SQLite ([sql.js](https://sql.js.org/)) を使って行われます。
+- **プライバシー重視**: 履歴データベースはどちらの読み込み方法でも外部サーバーへ送信されません。ファイルの解析処理そのものは常にブラウザ内で完結します（SQLite形式の履歴はWebAssembly版SQLite [sql.js](https://sql.js.org/)、Netscapeの `history.dat` は同梱のMorkパーサー）。
 - Nuxt 4 + Vuetify 4 + Vite + pnpm で構築。
 - 履歴データベースの読み込みは**自動読み込みとドラッグ&ドロップの両対応**です（詳細は下記）。
 - `/` がSafari向け、`/firefox` がFirefox向けのページです（画面右上のボタンで切り替え可能）。
@@ -64,6 +64,22 @@ Safariを終了してから、Finderの「移動」→「フォルダへ移動�
 - `Default=1` が設定されたプロファイルを既定として選択します。どのプロファイルにも設定がない場合は先頭のプロファイルにフォールバックします。
 - 自動読み込みはSafariと同じくSQLiteのOnline Backup API（`node:sqlite`）でホットバックアップするため、Firefox実行中でも安全に読み取れます。ローカルホスト/同一オリジン制限やフルディスクアクセスに関する注意点もSafariと共通です。
 - 手動で読み込む場合は、Firefoxを終了してから `~/Library/Application Support/Firefox/Profiles/<プロファイル>/` 内の `places.sqlite` をコピーし、画面にドラッグ&ドロップしてください。
+
+## Netscapeのhistory.dat（`/netscape`）
+
+`/netscape` ページは、最終版のNetscape Navigator 9（Gecko 1.8系）の履歴ファイル `history.dat` に対応します。**ドラッグ&ドロップ/ファイル選択による読み込み専用**です。
+
+- Netscape Navigator 9は開発終了済みで、現行OS上に「実行中のNetscape」も既定の履歴ファイルパスも存在しません。そのため他ブラウザのような自動読み込み（`/api/local-history/*`）は提供せず、サーバー側のコードも追加していません。
+- `history.dat` は `places.sqlite` 移行（Firefox 3 / 2008年）より前の **Mork形式**（行指向のテキストベースDB）で、SQLiteではありません。既存のsql.jsベースのパーサーは流用できないため、`app/utils/parseNetscapeHistoryDatabase.ts` にMorkパーサーを実装しています（追加の依存パッケージなし）。
+- `history.dat` の場所（Netscape Navigator 9のプロファイル配下）:
+  - macOS: `~/Library/Application Support/Netscape/Profiles/<プロファイル>.slt/history.dat`
+  - Windows: `%APPDATA%\Netscape\Navigator\Profiles\<プロファイル>.slt\history.dat`
+- Mork形式は1URL=1レコード（`FirstVisitDate` / `LastVisitDate` / `VisitCount`）で、他ブラウザのような1訪問=1行の履歴は保持していません。そのため一覧の「訪問日時」は各URLの**最終訪問日時**を表します。
+- 絞り込みは `URL直接入力のみ`（`Typed`）と `非表示の履歴のみ`（`Hidden`）の2つです。Morkには訪問種別（リダイレクト等）の記録がないため、Firefox/Chromium系にある「リダイレクトのみ」に相当するフィルタはありません。
+
+### Internet Explorer（未対応）
+
+同じissueで検討したIE11の `WebCacheV01.dat` は **ESE（Extensible Storage Engine / Jet Blue）形式**で、ブラウザ内で完結して読めるJS/WASM実装が存在しません（既存実装はPythonの[libesedb](https://github.com/libyal/libesedb)、Goの[go-ese](https://github.com/Velocidex/go-ese)などネイティブ言語のみ）。B-treeページ・カタログ・long value圧縮まで自前実装するコストが大きいため、このリポジトリでは別issueとして切り出す方針としています。
 
 ## セットアップ
 
@@ -153,6 +169,8 @@ CI環境で使う場合は `--ci` フラグ付きでセットアップします�
 - 自動読み込み関連のサーバーコードは `server/utils/history-store.ts`（`History.db`のパス解決・読み取り権限判定・`node:sqlite`のBackup APIによるホットバックアップ・ローカル/同一オリジン判定）と `server/api/local-history/`（`status.get.ts` で利用可否判定、`index.get.ts` でバイト列を返却）にあります。フロントエンドは `GET /api/local-history/status` で利用可否を判定し、利用可能な場合のみ `GET /api/local-history` からバイト列を取得して既存の `parseSafariHistoryFile`（ドラッグ&ドロップと共通のsql.jsパーサー）に渡します。
 - プロファイル対応は `server/utils/safari-profiles.ts`（`Profiles/` ディレクトリのスキャンと `SafariTabs.db` からのプロファイル名解決）と `server/api/local-history/profiles.get.ts` にあります。`status.get.ts` / `index.get.ts` はクエリパラメータ `?profileId=<UUID>` を受け取り、`resolveHistoryDbPath()` に渡すことで対象のプロファイルを切り替えます（未指定または `default` は従来通り既定プロファイル）。
 - Firefoxの `moz_places` / `moz_historyvisits` テーブルを `hv.place_id = p.id` で結合して1訪問=1行として取得しています（`app/utils/parseFirefoxHistoryDatabase.ts`）。`visit_date` はUnixエポックからのマイクロ秒のため、1000で割ってミリ秒に変換したうえで `Date` に変換しています。sql.jsの初期化処理自体はSafari向けパーサーと共通化し `app/utils/sqlJs.ts` に切り出しています。
+- Netscapeの `history.dat` はMork形式のため専用パーサー `app/utils/parseNetscapeHistoryDatabase.ts` を実装しています。列名辞書（`<(a=c)>` タグ付き）・値辞書・行を走査し、`\)` などのバックスラッシュエスケープと `$XX` の16進エスケープを解決します。`$XX` を含む値はMozillaが値全体をUTF-16でヘキサ化して書き出すため、`ByteOrder` セルが示すバイトオーダー（既定はLE）でUTF-16としてデコードします。`LastVisitDate` / `FirstVisitDate` はFirefoxと同じくUnixエポックからのマイクロ秒（PRTime）です。
+- 上記パーサーはアップロードされた任意のファイルを読むトラストバウンダリのため、入力サイズ上限・テーブルのネスト深さ上限を設けたうえで、全ループが1イテレーションあたり必ず1文字以上進むこと（進まなければ例外）を不変条件として無限ループを防いでいます。途中で切れたファイルはエラーにせず読めたところまでを返します。
 - Firefoxの自動読み込み関連のサーバーコードは `server/utils/firefox-profiles.ts`（`profiles.ini` の解析とプロファイル一覧の取得）と `server/utils/firefox-history-store.ts`（プロファイル解決・読み取り権限判定・ホットバックアップ）、`server/api/local-history/firefox/` にあります。`profileId` はプロファイルの `Path`（profiles.ini上の値）で指定し、必ず `listFirefoxProfiles()` が返した一覧と突き合わせて解決するため、未知の値がそのままファイルパスの組み立てに使われることはありません。
 
 ## 開発に参加する

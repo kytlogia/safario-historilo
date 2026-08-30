@@ -2,6 +2,7 @@ import type {
   ChromiumHistoryVisit,
   FirefoxHistoryVisit,
   HistoryVisit,
+  NetscapeHistoryVisit,
   UnifiedHistoryVisit
 } from '~/types/history'
 import { useAppSnackbar } from '~/composables/useAppSnackbar'
@@ -177,6 +178,48 @@ export function exportChromiumVisitsAsCsv(
     visit.transition,
     visit.fromVisit ?? '',
     visit.visitDuration,
+    visit.hidden,
+    visit.typed
+  ])
+
+  downloadBlob(toCsv(headers, rows), 'text/csv;charset=utf-8', fileName)
+}
+
+export function exportNetscapeVisitsAsJson(
+  visits: NetscapeHistoryVisit[],
+  fileName = 'netscape-history.json'
+) {
+  exportAsJson(visits, fileName)
+}
+
+export function exportNetscapeVisitsAsCsv(
+  visits: NetscapeHistoryVisit[],
+  fileName = 'netscape-history.csv'
+) {
+  const headers = [
+    'rowId',
+    'title',
+    'url',
+    'domain',
+    'visitTime',
+    'firstVisitTime',
+    'visitCount',
+    'referrer',
+    'hostname',
+    'hidden',
+    'typed'
+  ] as const
+
+  const rows = visits.map((visit) => [
+    visit.rowId,
+    visit.title,
+    visit.url,
+    visit.domain,
+    visit.visitTime.toISOString(),
+    visit.firstVisitTime?.toISOString() ?? '',
+    visit.visitCount,
+    visit.referrer,
+    visit.hostname,
     visit.hidden,
     visit.typed
   ])

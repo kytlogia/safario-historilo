@@ -15,10 +15,14 @@ export interface ParserMessages {
   noTitle: string
 }
 
-export const PARSER_MESSAGES: Record<
-  'safari' | 'firefox' | 'chromium',
-  Record<AppLocale, ParserMessages>
-> = {
+/**
+ * Every browser whose history file this app can parse in-browser. Matches
+ * HistoryParserKind in app/composables/historyParser.worker.ts — the two are
+ * indexed against each other in useHistoryFileParser.ts.
+ */
+export type ParserBrand = 'safari' | 'firefox' | 'chromium' | 'netscape'
+
+export const PARSER_MESSAGES: Record<ParserBrand, Record<AppLocale, ParserMessages>> = {
   safari: {
     ja: {
       openFailed:
@@ -99,13 +103,40 @@ export const PARSER_MESSAGES: Record<
         `此 History 的架构不受支持。表 "${table}" 缺少预期的列：${missing}`,
       noTitle: '(无标题)'
     }
+  },
+  // Netscape's history.dat is Mork, not SQLite, so `openFailed` covers
+  // "unreadable or too large to parse" rather than "not a SQLite file", and
+  // `missingColumns` refers to Mork's column dictionary.
+  netscape: {
+    ja: {
+      openFailed:
+        'ファイルを開けませんでした。有効な history.dat を選択してください（サイズが大きすぎるファイルも読み込めません）。',
+      wrongSchema:
+        'このファイルはNetscapeの履歴データベース(history.dat)ではないようです。Mork形式のヘッダーが見つかりませんでした。',
+      missingColumns: (table, missing) =>
+        `この${table}のスキーマは対応していません。想定していた列が見つかりませんでした: ${missing}`,
+      noTitle: '(タイトルなし)'
+    },
+    en: {
+      openFailed:
+        'Could not open the file. Please choose a valid history.dat (files that are too large cannot be read either).',
+      wrongSchema:
+        "This file doesn't look like Netscape's history database (history.dat). No Mork format header was found.",
+      missingColumns: (table, missing) =>
+        `This ${table}'s schema isn't supported. Expected column(s) not found: ${missing}`,
+      noTitle: '(no title)'
+    },
+    zh: {
+      openFailed: '无法打开文件。请选择一个有效的 history.dat（文件过大时也无法读取）。',
+      wrongSchema:
+        '该文件似乎不是 Netscape 的历史记录数据库 (history.dat)。未找到 Mork 格式的文件头。',
+      missingColumns: (table, missing) => `此 ${table} 的架构不受支持。未找到预期的列：${missing}`,
+      noTitle: '(无标题)'
+    }
   }
 }
 
-export const WORKER_CRASH_MESSAGES: Record<
-  'safari' | 'firefox' | 'chromium',
-  Record<AppLocale, string>
-> = {
+export const WORKER_CRASH_MESSAGES: Record<ParserBrand, Record<AppLocale, string>> = {
   safari: {
     ja: 'History.dbの解析中にエラーが発生しました。',
     en: 'An error occurred while parsing History.db.',
@@ -120,5 +151,10 @@ export const WORKER_CRASH_MESSAGES: Record<
     ja: 'Historyの解析中にエラーが発生しました。',
     en: 'An error occurred while parsing History.',
     zh: '解析 History 时发生错误。'
+  },
+  netscape: {
+    ja: 'history.datの解析中にエラーが発生しました。',
+    en: 'An error occurred while parsing history.dat.',
+    zh: '解析 history.dat 时发生错误。'
   }
 }

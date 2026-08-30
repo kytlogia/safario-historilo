@@ -1,5 +1,5 @@
 // This test drives historyParser.worker.ts's real `self.onmessage` handler
-// directly (with real sql.js parsing) for all three `kind`s it dispatches —
+// directly (with real parsing) for every `kind` it dispatches —
 // replaces the three separate historyDatabase.worker.test.ts /
 // chromiumHistoryDatabase.worker.test.ts / firefoxHistoryDatabase.worker.test.ts
 // files that used to each drive their own per-browser worker module (see
@@ -199,6 +199,55 @@ describe('historyParser.worker onmessage', () => {
       expect(response.message).toMatch(
         /moz_places \/ moz_historyvisits テーブルが見つかりませんでした/
       )
+    })
+  })
+
+  // Netscape's history.dat is Mork, not SQLite, so this kind exercises the
+  // one dispatch branch that never touches sql.js (see issue #160).
+  describe('kind: netscape', () => {
+    const MORK_SAMPLE =
+      '// <!-- <mdb:mork:z v="1.4"/> -->\n' +
+      '< <(a=c)>(80=URL)(81=Name)(82=LastVisitDate)>\n' +
+      '<(90=http://example.com/)>\n' +
+      '[1(^80^90)(^81=Example)(^82=1200000000000000)]\n'
+
+    it('parses a well-formed history.dat and posts back the visits under the request id', async () => {
+      const scope = await loadWorkerScope()
+
+      const request: HistoryParserWorkerRequest = {
+        requestId: 42,
+        kind: 'netscape',
+        buffer: new TextEncoder().encode(MORK_SAMPLE).buffer as ArrayBuffer,
+        fileName: 'history.dat',
+        locale: 'ja'
+      }
+      await scope.onmessage?.({ data: request })
+
+      expect(scope.posted).toHaveLength(1)
+      const response = scope.posted[0]!
+      expect(response.requestId).toBe(42)
+      if (!response.ok) throw new Error(`expected ok response, got: ${response.message}`)
+      expect(response.visits).toHaveLength(1)
+      expect(response.visits[0]?.url).toBe('http://example.com/')
+    })
+
+    it('posts back a Japanese-language error response, still tagged with the request id, on failure', async () => {
+      const scope = await loadWorkerScope()
+
+      const request: HistoryParserWorkerRequest = {
+        requestId: 7,
+        kind: 'netscape',
+        buffer: new TextEncoder().encode('definitely not mork').buffer as ArrayBuffer,
+        fileName: 'bad.dat',
+        locale: 'ja'
+      }
+      await scope.onmessage?.({ data: request })
+
+      expect(scope.posted).toHaveLength(1)
+      const response = scope.posted[0]!
+      expect(response.requestId).toBe(7)
+      if (response.ok) throw new Error('expected an error response')
+      expect(response.message).toMatch(/Mork形式のヘッダーが見つかりませんでした/)
     })
   })
 })

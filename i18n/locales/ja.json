@@ -30,7 +30,8 @@
     "viewBrave": "Braveの履歴を見る",
     "viewVivaldi": "Vivaldiの履歴を見る",
     "crossSearch": "横断検索",
-    "clearAll": "すべてクリア"
+    "clearAll": "すべてクリア",
+    "viewNetscape": "Netscapeの履歴を見る"
   },
   "error": {
     "notFoundTitle": "ページが見つかりません",
@@ -128,6 +129,17 @@
         "fieldVisitDuration": "滞在時間 (visit_duration)",
         "visitDurationValue": "{value} マイクロ秒",
         "fieldVisitUrlId": "visit ID / URL ID"
+      },
+      "netscape": {
+        "fieldLastVisitTime": "最終訪問日時",
+        "fieldFirstVisitTime": "初回訪問日時",
+        "fieldInternalTimestamp": "内部タイムスタンプ (Unixエポック)",
+        "internalTimestampValue": "{microseconds} マイクロ秒（1970-01-01 UTCから） / ISO: {iso}",
+        "fieldHidden": "非表示 (Hidden)",
+        "fieldTyped": "URLを直接入力 (Typed)",
+        "fieldReferrer": "リンク元URL (Referrer)",
+        "fieldHostname": "ホスト名 (Hostname)",
+        "fieldRowId": "Mork行ID"
       }
     },
     "filterBar": {
@@ -159,7 +171,8 @@
       "flagFailed": "失敗",
       "flagRedirect": "リダイレクト",
       "flagSynthesized": "自動",
-      "flagHidden": "非表示"
+      "flagHidden": "非表示",
+      "flagTyped": "直接入力"
     },
     "summaryCards": {
       "totalVisits": "総訪問数",
@@ -193,7 +206,7 @@
         "subtitle": "またはファイルを選択してください。解析はすべてこのブラウザ内で行われ、データは外部に送信されません。",
         "profileLabel": "読み込むプロファイル",
         "dragDropFinalStep": "コピーしたファイルをこの画面にドラッグ&ドロップする",
-        "privacyNote": "このアプリはファイルをサーバーへアップロードしません。すべての解析はブラウザ内のWebAssembly (sql.js) で完結します。"
+        "privacyNote": "このアプリはファイルをサーバーへアップロードしません。すべての解析はブラウザ内で完結します。"
       },
       "safari": {
         "dragDropTitle": "Safariの History.db をドラッグ&ドロップ",
@@ -226,6 +239,15 @@
         "stepFinder": "Finderで「移動」→「フォルダへ移動」を選び、次を入力：<br /><code>{path}</code>",
         "stepOpenProfileFolder": "使用しているプロファイルのフォルダ（<code>Default</code> や <code>Profile 1</code> など）を開く",
         "stepCopy": "<code>History</code> を任意の場所にコピーする"
+      },
+      "netscape": {
+        "dragDropTitle": "Netscapeの history.dat をドラッグ&ドロップ",
+        "fileInputLabel": "history.dat を選択",
+        "locationHeading": "history.dat の場所（Netscape Navigator 9）",
+        "stepQuitApp": "Netscape Navigator 9 が起動している場合は終了する（DBがロックされているため）",
+        "stepFinder": "プロファイルの保存先を開く：<br /><code>~/Library/Application Support/Netscape/Profiles/</code>（Windowsは <code>%APPDATA%\\Netscape\\Navigator\\Profiles\\</code>）",
+        "stepOpenProfileFolder": "使用していたプロファイルのフォルダ（<code>xxxxxxxx.slt</code> など）を開く",
+        "stepCopy": "<code>history.dat</code> を任意の場所にコピーする"
       }
     }
   },

@@ -30,7 +30,8 @@
     "viewBrave": "查看 Brave 历史记录",
     "viewVivaldi": "查看 Vivaldi 历史记录",
     "crossSearch": "跨浏览器搜索",
-    "clearAll": "全部清除"
+    "clearAll": "全部清除",
+    "viewNetscape": "查看 Netscape 的历史记录"
   },
   "error": {
     "notFoundTitle": "找不到页面",
@@ -128,6 +129,17 @@
         "fieldVisitDuration": "停留时间 (visit_duration)",
         "visitDurationValue": "{value} 微秒",
         "fieldVisitUrlId": "visit ID / URL ID"
+      },
+      "netscape": {
+        "fieldLastVisitTime": "最后访问时间",
+        "fieldFirstVisitTime": "首次访问时间",
+        "fieldInternalTimestamp": "内部时间戳 (Unix 纪元)",
+        "internalTimestampValue": "{microseconds} 微秒（自 1970-01-01 UTC）/ ISO: {iso}",
+        "fieldHidden": "隐藏 (Hidden)",
+        "fieldTyped": "直接输入的网址 (Typed)",
+        "fieldReferrer": "来源网址 (Referrer)",
+        "fieldHostname": "主机名 (Hostname)",
+        "fieldRowId": "Mork 行 ID"
       }
     },
     "filterBar": {
@@ -159,7 +171,8 @@
       "flagFailed": "失败",
       "flagRedirect": "重定向",
       "flagSynthesized": "自动",
-      "flagHidden": "隐藏"
+      "flagHidden": "隐藏",
+      "flagTyped": "直接输入"
     },
     "summaryCards": {
       "totalVisits": "总访问数",
@@ -193,7 +206,7 @@
         "subtitle": "或选择文件。所有解析都在此浏览器内完成，数据不会发送到外部。",
         "profileLabel": "要加载的配置文件",
         "dragDropFinalStep": "将复制的文件拖放到此屏幕",
-        "privacyNote": "此应用不会将文件上传到服务器。所有解析都在浏览器内通过 WebAssembly (sql.js) 完成。"
+        "privacyNote": "此应用不会将文件上传到服务器。所有解析都在浏览器内完成。"
       },
       "safari": {
         "dragDropTitle": "拖放 Safari 的 History.db",
@@ -226,6 +239,15 @@
         "stepFinder": "在 Finder 中选择「前往」→「前往文件夹」，输入：<br /><code>{path}</code>",
         "stepOpenProfileFolder": "打开正在使用的配置文件夹（例如 <code>Default</code> 或 <code>Profile 1</code>）",
         "stepCopy": "将 <code>History</code> 复制到任意位置"
+      },
+      "netscape": {
+        "dragDropTitle": "拖放 Netscape 的 history.dat",
+        "fileInputLabel": "选择 history.dat",
+        "locationHeading": "history.dat 的位置（Netscape Navigator 9）",
+        "stepQuitApp": "如果 Netscape Navigator 9 正在运行，请先退出（数据库处于锁定状态）",
+        "stepFinder": "打开配置文件目录：<br /><code>~/Library/Application Support/Netscape/Profiles/</code>（Windows 为 <code>%APPDATA%\\Netscape\\Navigator\\Profiles\\</code>）",
+        "stepOpenProfileFolder": "打开你使用过的配置文件夹（例如 <code>xxxxxxxx.slt</code>）",
+        "stepCopy": "将 <code>history.dat</code> 复制到任意位置"
       }
     }
   },
