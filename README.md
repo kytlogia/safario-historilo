@@ -126,7 +126,7 @@ pnpm electron:build  # 未署名の .dmg を release/ に生成（macOSのみ）
 
 - `pnpm electron` はビルド済みの `.output/server/index.mjs`（Nitroサーバー、既存の自動読み込みロジックそのもの）を、Electron自身に同梱されたNode.jsランタイム上で子プロセスとして起動し（`ELECTRON_RUN_AS_NODE=1`）、起動確認後にその画面を1つのウインドウで表示します。パース処理（sql.js）は他の読み込み方法と同様ブラウザ内（Electronのレンダラープロセス内のChromium）で完結します。
 - フルディスクアクセスが付与されていない場合の案内は、既存のWeb版の「読み取り権限がありません」アラート（`app/components/UploadPanel.vue` の `serverPermissionHint`）がそのままデスクトップアプリのウインドウ内にも表示されます（専用のUIを別途実装していません）。System Settings → プライバシーとセキュリティ → フルディスクアクセスで、このアプリ自体に権限を付与してください。
-- **未署名です**: コード署名・Notarizationは行っていません（Apple Developer Program の証明書が必要なため対象外。README/#140参照）。`pnpm electron:build` で生成した `.dmg` から初回起動する際は、Gatekeeperの警告が出るため、Finderでアプリを右クリック→「開く」から起動してください。
+- **未署名です**: コード署名・Notarizationは行っていません（Apple Developer Program の証明書が必要なため対象外。README/#140参照）。`pnpm electron:build` で生成した `.dmg` から初回起動する際は、Gatekeeperの警告が出るため、Finderでアプリを右クリック→「開く」から起動してください。未署名ビルドはmacOSのTCC（フルディスクアクセス等の権限管理）がアプリを固定の署名IDではなくパスや実行ファイルの内容で識別するため、再ビルドしたアプリを別の場所に配置し直した場合などに、以前付与したフルディスクアクセス権限が引き継がれず再付与が必要になることがあります。
 - Windows向け `.exe` パッケージングは対象外です（別issueで対応予定）。
 - 実装は `electron/main.mjs`（メインプロセス。子プロセスの起動・起動待ち・ウインドウ表示）と `electron/serverProcess.mjs`（Nitroサーバーのエントリパス解決・起動待ちの純粋関数、`tests/unit/electron/serverProcess.test.ts` でテスト）にあります。パッケージング設定は `package.json` の `build` フィールド（[electron-builder](https://www.electron.build/)）です。
 

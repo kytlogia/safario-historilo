@@ -98,8 +98,14 @@ if (!gotLock) {
 
   void app.whenReady().then(createWindow)
 
+  // Always quit here, including on macOS: this app has no menu bar
+  // (setMenuBarVisibility(false) above) and nothing useful to do Dock-resident
+  // with no window open. Quitting unconditionally also guarantees the
+  // `serverProcess` child (bound to the one fixed PORT) is torn down via
+  // `will-quit` before a Dock-icon click could otherwise reach `activate`
+  // and spawn a second server process on the same port.
   app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit()
+    app.quit()
   })
 
   app.on('activate', () => {
