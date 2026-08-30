@@ -2,24 +2,34 @@
 // jsdom-targeted app bundle — see the equivalent note in
 // tests/unit/server/utils/history-store.test.ts for why `node` is forced here.
 // @vitest-environment node
+import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { resolveServerEntryPath, waitForServer } from '../../../electron/serverProcess.mjs'
 
+// Expected values below are built with the same `join()` used by the code
+// under test rather than hardcoded `/`-separated literals, so this passes
+// on Windows too (`join()` there produces `\`-separated paths) — even
+// though the Electron packaging this supports is macOS-only for now (#140),
+// this helper itself is plain node:path logic with no macOS-specific
+// behavior, and the shared CI `pnpm test` step also runs on windows-latest.
 describe('resolveServerEntryPath', () => {
   it('points inside the packaged app bundle resources when packaged', () => {
-    expect(
-      resolveServerEntryPath({
-        isPackaged: true,
-        resourcesPath: '/Applications/Safari History Detail.app/Contents/Resources',
-        appDir: '/dev/repo'
-      })
-    ).toBe('/Applications/Safari History Detail.app/Contents/Resources/output/server/index.mjs')
+    const resourcesPath = join(
+      '/Applications',
+      'Safari History Detail.app',
+      'Contents',
+      'Resources'
+    )
+    expect(resolveServerEntryPath({ isPackaged: true, resourcesPath, appDir: '/dev/repo' })).toBe(
+      join(resourcesPath, 'output', 'server', 'index.mjs')
+    )
   })
 
   it('points at the repo .output when not packaged', () => {
-    expect(
-      resolveServerEntryPath({ isPackaged: false, resourcesPath: '/unused', appDir: '/dev/repo' })
-    ).toBe('/dev/repo/.output/server/index.mjs')
+    const appDir = join('/dev', 'repo')
+    expect(resolveServerEntryPath({ isPackaged: false, resourcesPath: '/unused', appDir })).toBe(
+      join(appDir, '.output', 'server', 'index.mjs')
+    )
   })
 })
 
