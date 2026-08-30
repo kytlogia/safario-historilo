@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import VisitsTable from '~/components/VisitsTable.vue'
 import type { HistoryVisit } from '~/types/history'
 import { formatDateTime } from '~/utils/format'
@@ -107,5 +108,84 @@ describe('VisitsTable', () => {
     await dataRow!.trigger('click')
 
     expect(wrapper.emitted('row-click')).toEqual([[visit]])
+  })
+
+  describe('列幅のドラッグリサイズ (#127)', () => {
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('ドラッグハンドルはキーボード操作の邪魔にならない装飾要素として描画される', () => {
+      const wrapper = mountTable([makeVisit()])
+
+      const handles = wrapper.findAll('.column-resize-handle')
+      expect(handles.length).toBeGreaterThan(0)
+      for (const handle of handles) {
+        expect(handle.attributes('aria-hidden')).toBe('true')
+        expect(handle.attributes('tabindex')).toBeUndefined()
+      }
+    })
+
+    it('ヘッダー境界をドラッグすると列幅が変わり、TruncatedCellの内容も維持される', async () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+        width: 200,
+        height: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => ({})
+      })
+
+      const wrapper = mountTable([
+        makeVisit({ title: 'Example Domain', url: 'https://example.com/', domain: 'example.com' })
+      ])
+
+      const titleHandle = wrapper.findAll('.column-resize-handle')[0]!
+      const titleHeader = wrapper.findAll('th')[0]!
+
+      await titleHandle.trigger('mousedown', { clientX: 100 })
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: 160 }))
+      await nextTick()
+      window.dispatchEvent(new MouseEvent('mouseup'))
+      await nextTick()
+
+      expect(titleHeader.attributes('style')).toContain('width: 260px')
+
+      const stubs = wrapper.findAll('truncated-cell-stub')
+      expect(stubs.map((s) => s.attributes('text'))).toEqual([
+        'Example Domain',
+        'https://example.com/',
+        'example.com'
+      ])
+    })
+
+    it('列幅は最小値を下回らない', async () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+        width: 100,
+        height: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => ({})
+      })
+
+      const wrapper = mountTable([makeVisit()])
+      const titleHandle = wrapper.findAll('.column-resize-handle')[0]!
+      const titleHeader = wrapper.findAll('th')[0]!
+
+      await titleHandle.trigger('mousedown', { clientX: 100 })
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: -1000 }))
+      await nextTick()
+      window.dispatchEvent(new MouseEvent('mouseup'))
+      await nextTick()
+
+      expect(titleHeader.attributes('style')).toContain('width: 60px')
+    })
   })
 })
