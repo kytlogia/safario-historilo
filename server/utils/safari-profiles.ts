@@ -78,7 +78,10 @@ export async function listSafariProfiles(
 ): Promise<SafariProfile[]> {
   const profilesDir = options.profilesDir ?? PROFILES_DIR
   const safariTabsDbPath = options.safariTabsDbPath ?? SAFARI_TABS_DB_PATH
-  const defaultDbPath = options.defaultDbPath ?? DEFAULT_DB_PATH
+  // DEFAULT_DB_PATH is null on Windows (no Safari install — see
+  // history-store.ts); '' keeps SafariProfile.dbPath's string type and is
+  // already what checkDbFileAccess treats as "not present".
+  const defaultDbPath = options.defaultDbPath ?? DEFAULT_DB_PATH ?? ''
 
   const names = await readProfileNames(safariTabsDbPath)
   const profiles: SafariProfile[] = [
@@ -89,7 +92,9 @@ export async function listSafariProfiles(
     }
   ]
 
-  if (!existsSync(profilesDir)) return profiles
+  // profilesDir is null on Windows (no Safari install to scan — see
+  // PROFILES_DIR in history-store.ts), unless a caller passed one explicitly.
+  if (!profilesDir || !existsSync(profilesDir)) return profiles
 
   let entries: string[]
   try {

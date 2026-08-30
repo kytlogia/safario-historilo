@@ -1,7 +1,8 @@
 import {
   checkDbFileAccess,
   HistoryDbNotFoundError,
-  HistoryDbNotReadableError
+  HistoryDbNotReadableError,
+  unreadableDbHint
 } from './history-store'
 import { backupSqliteDatabaseToBuffer } from './sqlite-backup'
 import { listFirefoxProfiles, resolveDefaultFirefoxProfile } from './firefox-profiles'
@@ -61,7 +62,7 @@ export async function readLocalFirefoxHistoryDb(
   }
   if (!readable) {
     throw new HistoryDbNotReadableError(
-      `places.sqlite を読み取る権限がありません（macOSの場合、実行プロセスに「フルディスクアクセス」権限が必要です）: ${dbPath}`
+      `places.sqlite を読み取る権限がありません（${unreadableDbHint()}）: ${dbPath}`
     )
   }
 

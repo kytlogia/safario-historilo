@@ -5,7 +5,30 @@ import { isAbsolute, join } from 'node:path'
 import type { FirefoxProfile } from '../../shared/types/profile'
 import { promoteFirstAsDefaultIfNoneSet } from '../../shared/utils/profile'
 
-export const FIREFOX_DIR = join(homedir(), 'Library/Application Support/Firefox')
+/**
+ * Firefox keeps profiles.ini (and, for relative Path entries, the profile
+ * directories themselves) directly under this directory on both OSes — only
+ * the directory itself differs: macOS uses the standard per-user
+ * Application Support folder, Windows uses %APPDATA%\Mozilla\Firefox
+ * (falling back to the conventional Roaming path if the env var is somehow
+ * unset, which real Windows installs always set).
+ *
+ * `platform`/`appDataEnv` are only ever overridden by tests — exercising the
+ * win32 branch on a non-Windows CI runner (and vice versa) without having to
+ * mutate global `process` state.
+ */
+export function resolveFirefoxDir(
+  platform: NodeJS.Platform = process.platform,
+  appDataEnv: string | undefined = process.env.APPDATA
+): string {
+  if (platform === 'win32') {
+    const appData = appDataEnv ?? join(homedir(), 'AppData', 'Roaming')
+    return join(appData, 'Mozilla', 'Firefox')
+  }
+  return join(homedir(), 'Library/Application Support/Firefox')
+}
+
+export const FIREFOX_DIR = resolveFirefoxDir()
 export const PROFILES_INI_PATH = join(FIREFOX_DIR, 'profiles.ini')
 
 interface ProfilesIniEntry {
