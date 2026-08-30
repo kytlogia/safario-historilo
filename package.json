@@ -65,7 +65,7 @@
     "sass": "^1.102.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10",
-    "vue-tsc": "^3.3.9"
+    "vue-tsc": "^3.3.11"
   },
   "build": {
     "appId": "com.kytlogia.safario-historilo",
