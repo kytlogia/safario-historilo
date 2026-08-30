@@ -85,14 +85,28 @@ const {
   isNodeSqliteSupported,
   isValidProfileId,
   profileHistoryDbPath,
+  unreadableDbHint,
   HistoryDbNotFoundError,
   HistoryDbNotReadableError
 } = historyStore
 
+// Safari for Windows was discontinued in 2012 (#138) — DEFAULT_DB_PATH/
+// PROFILES_DIR are only ever a real macOS-shaped path on non-Windows
+// platforms (including Linux, e.g. the ubuntu-latest "quality" CI job) and
+// `null` on win32, so every expectation that touches them branches on the
+// actual platform running the test rather than mocking it, exercising each
+// OS's real behavior on its own CI runner (ubuntu/macOS vs. the "windows" job).
+const isWindows = process.platform === 'win32'
+
 describe('resolveHistoryDbPath', () => {
   it('falls back to DEFAULT_DB_PATH when NUXT_HISTORY_DB_PATH is unset', () => {
-    expect(DEFAULT_DB_PATH).toBe(join(homedir(), 'Library/Safari/History.db'))
-    expect(resolveHistoryDbPath(fakeEvent())).toBe(DEFAULT_DB_PATH)
+    if (isWindows) {
+      expect(DEFAULT_DB_PATH).toBeNull()
+      expect(resolveHistoryDbPath(fakeEvent())).toBeNull()
+    } else {
+      expect(DEFAULT_DB_PATH).toBe(join(homedir(), 'Library/Safari/History.db'))
+      expect(resolveHistoryDbPath(fakeEvent())).toBe(DEFAULT_DB_PATH)
+    }
   })
 
   it('uses the configured path when set', () => {
@@ -100,9 +114,9 @@ describe('resolveHistoryDbPath', () => {
     expect(resolveHistoryDbPath(fakeEvent())).toBe('/custom/History.db')
   })
 
-  it('expands a leading ~/ to the home directory', () => {
+  it('expands a leading ~/ to the home directory (NUXT_HISTORY_DB_PATH works on any OS)', () => {
     runtimeConfig.historyDbPath = '~/Library/Safari/History.db'
-    expect(resolveHistoryDbPath(fakeEvent())).toBe(DEFAULT_DB_PATH)
+    expect(resolveHistoryDbPath(fakeEvent())).toBe(join(homedir(), 'Library/Safari/History.db'))
   })
 
   it('expands a bare ~ to the home directory', () => {
@@ -118,9 +132,11 @@ describe('resolveHistoryDbPath', () => {
   it('resolves a valid profile UUID to its container path, ignoring the env override', () => {
     runtimeConfig.historyDbPath = '/custom/History.db'
     const profileId = '11111111-1111-1111-1111-111111111111'
-    expect(resolveHistoryDbPath(fakeEvent(), profileId)).toBe(
-      join(PROFILES_DIR, profileId, 'History.db')
-    )
+    // On Windows there is no Safari profiles directory to resolve against
+    // (PROFILES_DIR is null) — profileHistoryDbPath's own null-guard is what
+    // makes this '' instead of throwing; see its test below.
+    const expected = isWindows ? '' : join(PROFILES_DIR as string, profileId, 'History.db')
+    expect(resolveHistoryDbPath(fakeEvent(), profileId)).toBe(expected)
   })
 
   it('rejects a malformed profileId with a 400 error instead of building a path from it', () => {
@@ -149,7 +165,18 @@ describe('isValidProfileId', () => {
 describe('profileHistoryDbPath', () => {
   it('joins the profile id onto PROFILES_DIR', () => {
     const profileId = '11111111-1111-1111-1111-111111111111'
-    expect(profileHistoryDbPath(profileId)).toBe(join(PROFILES_DIR, profileId, 'History.db'))
+    if (isWindows) {
+      // No Safari profiles directory on Windows — see PROFILES_DIR above.
+      expect(profileHistoryDbPath(profileId)).toBe('')
+    } else {
+      expect(profileHistoryDbPath(profileId)).toBe(
+        join(PROFILES_DIR as string, profileId, 'History.db')
+      )
+    }
+  })
+
+  it('returns an empty string instead of throwing when profilesDir is null', () => {
+    expect(profileHistoryDbPath('11111111-1111-1111-1111-111111111111', null)).toBe('')
   })
 })
 
@@ -186,7 +213,11 @@ describe('checkHistoryDbAccess', () => {
   })
 
   it('reports present:true, readable:false when the file exists but is not readable', async () => {
-    if (process.getuid?.() === 0) return // root bypasses permission bits
+    // Windows' fs.chmod only toggles the read-only attribute, not the
+    // read-access ACL a real permission-denied read would need — chmod(0o000)
+    // there still leaves the owner able to read the file, so this POSIX
+    // permission-bit scenario can't be reproduced on Windows.
+    if (isWindows || process.getuid?.() === 0) return // root bypasses permission bits too
     const dbPath = join(dir, 'History.db')
     await writeFile(dbPath, 'dummy')
     await chmod(dbPath, 0o000)
@@ -311,13 +342,35 @@ describe('readLocalHistoryDb', () => {
   })
 
   it('throws HistoryDbNotReadableError when the file exists but is not readable', async () => {
-    if (process.getuid?.() === 0) return // root bypasses permission bits
+    // See the equivalent skip in the checkHistoryDbAccess suite above.
+    if (isWindows || process.getuid?.() === 0) return
     const dbPath = join(dir, 'History.db')
     await writeFile(dbPath, 'dummy')
     await chmod(dbPath, 0o000)
     runtimeConfig.historyDbPath = dbPath
     await expect(readLocalHistoryDb(fakeEvent())).rejects.toBeInstanceOf(HistoryDbNotReadableError)
     await chmod(dbPath, 0o600)
+  })
+
+  if (isWindows) {
+    it('explains Safari for Windows is unsupported instead of reporting a blank path (#138)', async () => {
+      // No NUXT_HISTORY_DB_PATH override and DEFAULT_DB_PATH is null on
+      // Windows — see the DEFAULT_DB_PATH comment in history-store.ts.
+      await expect(readLocalHistoryDb(fakeEvent())).rejects.toThrow(/Windows/)
+    })
+  }
+})
+
+describe('unreadableDbHint', () => {
+  it('mentions Full Disk Access on non-Windows platforms', () => {
+    if (isWindows) return
+    expect(unreadableDbHint()).toContain('フルディスクアクセス')
+  })
+
+  it('mentions closing the browser on Windows, not Full Disk Access', () => {
+    if (!isWindows) return
+    expect(unreadableDbHint()).not.toContain('フルディスクアクセス')
+    expect(unreadableDbHint()).toContain('終了')
   })
 })
 

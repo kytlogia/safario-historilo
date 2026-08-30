@@ -197,7 +197,7 @@
       "reload": "読み込み直す",
       "profileLabel": "プロファイル",
       "autoLoad": "自動で読み込む",
-      "permissionHint": "読み取り権限がありません。フルディスクアクセスを許可してください。",
+      "permissionHint": "読み取り権限がありません。macOSの場合はフルディスクアクセスを許可してください。Windowsの場合は対象のブラウザを完全に終了してから再度お試しください。",
       "fileInputLabel": "ファイルを選択",
       "removeCard": "{label} のカードを閉じる"
     },
@@ -211,7 +211,7 @@
       "safari": {
         "dragDropTitle": "Safariの History.db をドラッグ&ドロップ",
         "autoLoadButton": "この Mac の History.db を自動で読み込む",
-        "permissionHint": "この Mac 上の History.db を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。",
+        "permissionHint": "お使いの端末上の History.db を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。",
         "fileInputLabel": "History.db を選択",
         "locationHeading": "History.db の場所（macOS / Safari）",
         "stepQuitApp": "Safariを終了する（DBがロックされているため）",
@@ -221,7 +221,7 @@
       "firefox": {
         "dragDropTitle": "Firefoxの places.sqlite をドラッグ&ドロップ",
         "autoLoadButton": "この Mac の places.sqlite を自動で読み込む",
-        "permissionHint": "この Mac 上の places.sqlite を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。",
+        "permissionHint": "お使いの端末上の places.sqlite を検出しましたが、読み取り権限がありません。macOSの場合は「システム設定 → プライバシーとセキュリティ → フルディスクアクセス」で、このアプリを実行しているターミナル（またはNode）に権限を付与すると自動読み込みが利用できます。Windowsの場合はFirefoxを完全に終了してから再度お試しください。",
         "fileInputLabel": "places.sqlite を選択",
         "locationHeading": "places.sqlite の場所（macOS / Firefox）",
         "stepQuitApp": "Firefoxを終了する（DBがロックされているため）",

@@ -197,7 +197,7 @@
       "reload": "Reload",
       "profileLabel": "Profile",
       "autoLoad": "Load automatically",
-      "permissionHint": "No read permission. Please grant Full Disk Access.",
+      "permissionHint": "No read permission. On macOS, grant Full Disk Access. On Windows, fully quit the browser and try again.",
       "fileInputLabel": "Choose a file",
       "removeCard": "Close {label} card"
     },
@@ -211,7 +211,7 @@
       "safari": {
         "dragDropTitle": "Drag and drop Safari's History.db",
         "autoLoadButton": "Automatically load History.db from this Mac",
-        "permissionHint": "History.db was found on this Mac, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading.",
+        "permissionHint": "History.db was found on this machine, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading.",
         "fileInputLabel": "Choose History.db",
         "locationHeading": "Where to find History.db (macOS / Safari)",
         "stepQuitApp": "Quit Safari (the database is locked while it's running)",
@@ -221,7 +221,7 @@
       "firefox": {
         "dragDropTitle": "Drag and drop Firefox's places.sqlite",
         "autoLoadButton": "Automatically load places.sqlite from this Mac",
-        "permissionHint": "places.sqlite was found on this Mac, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading.",
+        "permissionHint": "places.sqlite was found on this machine, but it isn't readable. On macOS, grant this app's terminal (or Node) Full Disk Access via System Settings → Privacy & Security → Full Disk Access to enable automatic loading. On Windows, fully quit Firefox and try again.",
         "fileInputLabel": "Choose places.sqlite",
         "locationHeading": "Where to find places.sqlite (macOS / Firefox)",
         "stepQuitApp": "Quit Firefox (the database is locked while it's running)",

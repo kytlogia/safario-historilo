@@ -197,7 +197,7 @@
       "reload": "重新加载",
       "profileLabel": "配置文件",
       "autoLoad": "自动加载",
-      "permissionHint": "没有读取权限，请授予完全磁盘访问权限。",
+      "permissionHint": "没有读取权限。在 macOS 上，请授予完全磁盘访问权限；在 Windows 上，请完全退出该浏览器后重试。",
       "fileInputLabel": "选择文件",
       "removeCard": "关闭 {label} 卡片"
     },
@@ -211,7 +211,7 @@
       "safari": {
         "dragDropTitle": "拖放 Safari 的 History.db",
         "autoLoadButton": "自动加载此 Mac 上的 History.db",
-        "permissionHint": "检测到此 Mac 上的 History.db，但没有读取权限。在 macOS 上，请在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中，为运行此应用的终端（或 Node）授予权限，即可使用自动加载。",
+        "permissionHint": "检测到此设备上的 History.db，但没有读取权限。在 macOS 上，请在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中，为运行此应用的终端（或 Node）授予权限，即可使用自动加载。",
         "fileInputLabel": "选择 History.db",
         "locationHeading": "History.db 的位置（macOS / Safari）",
         "stepQuitApp": "退出 Safari（因为数据库会被锁定）",
@@ -221,7 +221,7 @@
       "firefox": {
         "dragDropTitle": "拖放 Firefox 的 places.sqlite",
         "autoLoadButton": "自动加载此 Mac 上的 places.sqlite",
-        "permissionHint": "检测到此 Mac 上的 places.sqlite，但没有读取权限。在 macOS 上，请在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中，为运行此应用的终端（或 Node）授予权限，即可使用自动加载。",
+        "permissionHint": "检测到此设备上的 places.sqlite，但没有读取权限。在 macOS 上，请在「系统设置 → 隐私与安全性 → 完全磁盘访问权限」中，为运行此应用的终端（或 Node）授予权限，即可使用自动加载。在 Windows 上，请完全退出 Firefox 后重试。",
         "fileInputLabel": "选择 places.sqlite",
         "locationHeading": "places.sqlite 的位置（macOS / Firefox）",
         "stepQuitApp": "退出 Firefox（因为数据库会被锁定）",

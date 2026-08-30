@@ -1,12 +1,32 @@
 // @vitest-environment node
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   listFirefoxProfiles,
-  resolveDefaultFirefoxProfile
+  resolveDefaultFirefoxProfile,
+  resolveFirefoxDir
 } from '../../../../server/utils/firefox-profiles'
+
+describe('resolveFirefoxDir (#138 Windows support)', () => {
+  it('uses %APPDATA%\\Mozilla\\Firefox on win32', () => {
+    expect(resolveFirefoxDir('win32', 'C:\\Users\\alice\\AppData\\Roaming')).toBe(
+      join('C:\\Users\\alice\\AppData\\Roaming', 'Mozilla', 'Firefox')
+    )
+  })
+
+  it('falls back to the conventional Roaming path on win32 when APPDATA is unset', () => {
+    expect(resolveFirefoxDir('win32', undefined)).toBe(
+      join(homedir(), 'AppData', 'Roaming', 'Mozilla', 'Firefox')
+    )
+  })
+
+  it('uses ~/Library/Application Support/Firefox on non-Windows platforms', () => {
+    expect(resolveFirefoxDir('darwin')).toBe(join(homedir(), 'Library/Application Support/Firefox'))
+    expect(resolveFirefoxDir('linux')).toBe(join(homedir(), 'Library/Application Support/Firefox'))
+  })
+})
 
 let dir: string
 let firefoxDir: string

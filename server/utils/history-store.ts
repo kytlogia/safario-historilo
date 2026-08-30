@@ -5,17 +5,29 @@ import type { H3Event } from 'h3'
 import { DEFAULT_PROFILE_ID } from '../../shared/utils/profile'
 import { backupSqliteDatabaseToBuffer } from './sqlite-backup'
 
-export const DEFAULT_DB_PATH = join(homedir(), 'Library/Safari/History.db')
+const isWindows = process.platform === 'win32'
+
+/**
+ * Safari for Windows was discontinued in 2012 — there is no OS-default
+ * install to resolve a path against, so auto-load has nothing to offer on
+ * Windows. `null` here (rather than a path that simply never exists) makes
+ * that explicit and is what checkDbFileAccess/checkHistoryDbAccess already
+ * treat as "not present", so the existing UI flow (no auto-load button, no
+ * permission hint) falls through to drag & drop with no further changes.
+ * `NUXT_HISTORY_DB_PATH` still works on Windows regardless — a user who
+ * copies a Safari History.db over from a Mac can still point at it manually.
+ */
+export const DEFAULT_DB_PATH = isWindows ? null : join(homedir(), 'Library/Safari/History.db')
 
 /**
  * Safari 17+'s "profile" feature (separate profiles per use case) keeps each profile's
  * browsing data in its own sandboxed container directory, isolated from the
- * unnamed default profile at DEFAULT_DB_PATH.
+ * unnamed default profile at DEFAULT_DB_PATH. Windows has no Safari install
+ * at all (see DEFAULT_DB_PATH above), so there is no equivalent directory.
  */
-export const PROFILES_DIR = join(
-  homedir(),
-  'Library/Containers/com.apple.Safari/Data/Library/Safari/Profiles'
-)
+export const PROFILES_DIR = isWindows
+  ? null
+  : join(homedir(), 'Library/Containers/com.apple.Safari/Data/Library/Safari/Profiles')
 
 const PROFILE_ID_PATTERN =
   /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/
@@ -33,8 +45,13 @@ export function isValidProfileId(id: string): boolean {
 
 export function profileHistoryDbPath(
   profileId: string,
-  profilesDir: string = PROFILES_DIR
+  profilesDir: string | null = PROFILES_DIR
 ): string {
+  // No profiles directory to join against on Windows (see PROFILES_DIR
+  // above) — returning '' rather than throwing lets checkDbFileAccess's
+  // existing falsy-path handling report "not present" like any other
+  // missing path, instead of every named-profile lookup crashing.
+  if (!profilesDir) return ''
   return join(profilesDir, profileId, 'History.db')
 }
 
@@ -60,7 +77,7 @@ function expandTilde(path: string): string {
  * for the classic single-profile setup, which keeps the existing
  * `NUXT_HISTORY_DB_PATH` override behaving exactly as before.
  */
-export function resolveHistoryDbPath(event: H3Event, profileId?: string): string {
+export function resolveHistoryDbPath(event: H3Event, profileId?: string): string | null {
   if (profileId && profileId !== DEFAULT_PROFILE_ID) {
     if (!isValidProfileId(profileId)) {
       throw createError({
@@ -100,6 +117,20 @@ export function checkDbFileAccess(dbPath: string | null): {
   } catch {
     return { present: true, readable: false, path: dbPath }
   }
+}
+
+/**
+ * A present-but-unreadable db has a different likely cause per OS: on macOS
+ * it's almost always the process missing "Full Disk Access" (a TCC
+ * restriction with no Windows equivalent); on Windows the far more common
+ * cause is the browser itself still holding the file open with an
+ * exclusive lock. Branching the hint keeps Windows users from being sent to
+ * a system setting that doesn't exist on their OS.
+ */
+export function unreadableDbHint(): string {
+  return isWindows
+    ? '対象のブラウザを完全に終了してから再度お試しください'
+    : 'macOSの場合、実行プロセスに「フルディスクアクセス」権限が必要です'
 }
 
 export function checkHistoryDbAccess(
@@ -223,11 +254,18 @@ export async function readLocalHistoryDb(
 ): Promise<{ buffer: Buffer; fileName: string }> {
   const { present, readable, path: dbPath } = checkHistoryDbAccess(event, profileId)
   if (!present) {
-    throw new HistoryDbNotFoundError(`History.db が見つかりませんでした: ${dbPath}`)
+    // An empty dbPath only happens when DEFAULT_DB_PATH is null (Windows,
+    // no NUXT_HISTORY_DB_PATH override) — Safari for Windows doesn't exist,
+    // so there's no path to report; explain why instead of showing a blank one.
+    throw new HistoryDbNotFoundError(
+      dbPath
+        ? `History.db が見つかりませんでした: ${dbPath}`
+        : 'Safari for Windowsは2012年に開発終了しているため、自動読み込みには対応していません。History.dbファイルをドラッグ&ドロップで読み込んでください。'
+    )
   }
   if (!readable) {
     throw new HistoryDbNotReadableError(
-      `History.db を読み取る権限がありません（macOSの場合、実行プロセスに「フルディスクアクセス」権限が必要です）: ${dbPath}`
+      `History.db を読み取る権限がありません（${unreadableDbHint()}）: ${dbPath}`
     )
   }
 
