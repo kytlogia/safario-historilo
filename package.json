@@ -63,7 +63,7 @@
     "jsdom": "^30.0.1",
     "prettier": "^3.9.6",
     "resize-observer-polyfill": "^1.5.1",
-    "sass": "^1.102.0",
+    "sass": "^1.103.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10",
     "vue-tsc": "^3.3.9"
