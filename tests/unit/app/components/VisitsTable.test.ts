@@ -147,7 +147,7 @@ describe('VisitsTable', () => {
       const titleHeader = wrapper.findAll('th')[0]!
 
       await titleHandle.trigger('mousedown', { clientX: 100 })
-      window.dispatchEvent(new MouseEvent('mousemove', { clientX: 160 }))
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: 160, buttons: 1 }))
       await nextTick()
       window.dispatchEvent(new MouseEvent('mouseup'))
       await nextTick()
@@ -180,12 +180,45 @@ describe('VisitsTable', () => {
       const titleHeader = wrapper.findAll('th')[0]!
 
       await titleHandle.trigger('mousedown', { clientX: 100 })
-      window.dispatchEvent(new MouseEvent('mousemove', { clientX: -1000 }))
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: -1000, buttons: 1 }))
       await nextTick()
       window.dispatchEvent(new MouseEvent('mouseup'))
       await nextTick()
 
       expect(titleHeader.attributes('style')).toContain('width: 60px')
+    })
+
+    it('ブラウザウィンドウ外でボタンを離した場合(mouseupが発火しない)もリサイズを止める', async () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+        width: 200,
+        height: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => ({})
+      })
+
+      const wrapper = mountTable([makeVisit()])
+      const titleHandle = wrapper.findAll('.column-resize-handle')[0]!
+      const titleHeader = wrapper.findAll('th')[0]!
+
+      await titleHandle.trigger('mousedown', { clientX: 100 })
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: 160, buttons: 1 }))
+      await nextTick()
+      expect(titleHeader.attributes('style')).toContain('width: 260px')
+
+      // ウィンドウ外でボタンを離すとmouseupが発火しないままmousemoveだけ届くことがある。
+      // event.buttonsが0(ボタンなし)ならそこでリサイズを止め、それ以降のmousemoveを無視する。
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: 500, buttons: 0 }))
+      await nextTick()
+      expect(titleHeader.attributes('style')).toContain('width: 260px')
+
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: 900, buttons: 1 }))
+      await nextTick()
+      expect(titleHeader.attributes('style')).toContain('width: 260px')
     })
   })
 })

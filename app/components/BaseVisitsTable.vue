@@ -71,6 +71,12 @@ let resizeStartWidth = 0
 
 function onColumnResizeMove(event: MouseEvent) {
   if (resizingKey === null) return
+  // ブラウザウィンドウの外でボタンを離すとwindowのmouseupが発火しないことがある。
+  // その場合でもevent.buttonsは0になるため、ここで検知してリサイズを止める。
+  if (event.buttons === 0) {
+    stopColumnResize()
+    return
+  }
   const width = Math.max(MIN_COLUMN_WIDTH, resizeStartWidth + (event.clientX - resizeStartX))
   columnWidthOverrides.value = { ...columnWidthOverrides.value, [resizingKey]: width }
 }
