@@ -115,20 +115,22 @@ pnpm build
 
 静的ホスティング用途では引き続き `pnpm generate` が使えます。その場合Nitro APIルートは含まれないため、自動読み込みボタンは表示されずドラッグ&ドロップのみになります（機能は自動的にフォールバックするため、コードの変更は不要です）。
 
-## デスクトップアプリ（macOS, Electron）
+## デスクトップアプリ（macOS / Windows, Electron）
 
-これまでの自動読み込み機能を使うには `pnpm dev` でターミナルからNitroサーバーを起動する必要があり、非エンジニアには敷居が高いという課題がありました（#140）。[Electron](https://www.electronjs.org/) でラップしたデスクトップアプリとして、この自動読み込み機能一式（サーバー起動・フルディスクアクセスの案内）をダブルクリックで使えるようにしています。
+これまでの自動読み込み機能を使うには `pnpm dev` でターミナルからNitroサーバーを起動する必要があり、非エンジニアには敷居が高いという課題がありました（#140）。[Electron](https://www.electronjs.org/) でラップしたデスクトップアプリとして、この自動読み込み機能一式（サーバー起動・権限不足時の案内）をダブルクリックで使えるようにしています。
 
 ```bash
-pnpm electron        # ビルド＋Electronアプリを起動して動作確認
-pnpm electron:build  # 未署名の .dmg を release/ に生成（macOSのみ）
+pnpm electron            # ビルド＋Electronアプリを起動して動作確認
+pnpm electron:build      # 未署名の .dmg を release/ に生成（macOSのみ）
+pnpm electron:build:win  # 未署名の .exe（NSISインストーラー）を release/ に生成（Windowsのみ）
 ```
 
-- `pnpm electron` はビルド済みの `.output/server/index.mjs`（Nitroサーバー、既存の自動読み込みロジックそのもの）を、Electron自身に同梱されたNode.jsランタイム上で子プロセスとして起動し（`ELECTRON_RUN_AS_NODE=1`）、起動確認後にその画面を1つのウインドウで表示します。パース処理（sql.js）は他の読み込み方法と同様ブラウザ内（Electronのレンダラープロセス内のChromium）で完結します。
-- フルディスクアクセスが付与されていない場合の案内は、既存のWeb版の「読み取り権限がありません」アラート（`app/components/UploadPanel.vue` の `serverPermissionHint`）がそのままデスクトップアプリのウインドウ内にも表示されます（専用のUIを別途実装していません）。System Settings → プライバシーとセキュリティ → フルディスクアクセスで、このアプリ自体に権限を付与してください。
-- **未署名です**: コード署名・Notarizationは行っていません（Apple Developer Program の証明書が必要なため対象外。README/#140参照）。`pnpm electron:build` で生成した `.dmg` から初回起動する際は、Gatekeeperの警告が出るため、Finderでアプリを右クリック→「開く」から起動してください。未署名ビルドはmacOSのTCC（フルディスクアクセス等の権限管理）がアプリを固定の署名IDではなくパスや実行ファイルの内容で識別するため、再ビルドしたアプリを別の場所に配置し直した場合などに、以前付与したフルディスクアクセス権限が引き継がれず再付与が必要になることがあります。
-- Windows向け `.exe` パッケージングは対象外です（別issueで対応予定）。
-- 実装は `electron/main.mjs`（メインプロセス。子プロセスの起動・起動待ち・ウインドウ表示）と `electron/serverProcess.mjs`（Nitroサーバーのエントリパス解決・起動待ちの純粋関数、`tests/unit/electron/serverProcess.test.ts` でテスト）にあります。パッケージング設定は `package.json` の `build` フィールド（[electron-builder](https://www.electron.build/)）です。
+- `pnpm electron` はビルド済みの `.output/server/index.mjs`（Nitroサーバー、既存の自動読み込みロジックそのもの）を、Electron自身に同梱されたNode.jsランタイム上で子プロセスとして起動し（`ELECTRON_RUN_AS_NODE=1`）、起動確認後にその画面を1つのウインドウで表示します。パース処理（sql.js）は他の読み込み方法と同様ブラウザ内（Electronのレンダラープロセス内のChromium）で完結します。この起動・パス解決の仕組みはOS非依存（`node:path` を使用）で、Windowsの `History.db` / `places.sqlite` パス解決や `node:sqlite` のBackup APIまわりのファイルロック挙動は#138（PR#192）で対応済みのロジックがそのままElectron経由でも使われます。
+- macOSではフルディスクアクセスが付与されていない場合の案内が、既存のWeb版の「読み取り権限がありません」アラート（`app/components/UploadPanel.vue` の `serverPermissionHint`）としてデスクトップアプリのウインドウ内にも表示されます（専用のUIを別途実装していません）。System Settings → プライバシーとセキュリティ → フルディスクアクセスで、このアプリ自体に権限を付与してください。Windowsにはフルディスクアクセス相当の概念がなく、対象ファイルへの読み取り権限があれば追加の権限設定は不要です。
+- **未署名です**: コード署名・Notarization（macOS）やコードサイニング証明書（Windows）は行っていません（対象外。README/#140参照）。
+  - macOS: `pnpm electron:build` で生成した `.dmg` から初回起動する際、Gatekeeperの警告が出るため、Finderでアプリを右クリック→「開く」から起動してください。未署名ビルドはmacOSのTCC（フルディスクアクセス等の権限管理）がアプリを固定の署名IDではなくパスや実行ファイルの内容で識別するため、再ビルドしたアプリを別の場所に配置し直した場合などに、以前付与したフルディスクアクセス権限が引き継がれず再付与が必要になることがあります。
+  - Windows: `pnpm electron:build:win` で生成した `.exe` を実行すると、未署名のためWindows Defender SmartScreenの「WindowsによってPCが保護されました」という警告が出ます。「詳細情報」をクリックし、表示される「実行」ボタンから起動してください。
+- 実装は `electron/main.mjs`（メインプロセス。子プロセスの起動・起動待ち・ウインドウ表示）と `electron/serverProcess.mjs`（Nitroサーバーのエントリパス解決・起動待ちの純粋関数、`tests/unit/electron/serverProcess.test.ts` でテスト）にあります。パッケージング設定は `package.json` の `build` フィールド（[electron-builder](https://www.electron.build/)、`mac`/`win`/`nsis` 各ターゲット）です。コード署名・Notarization・自動アップデート機構は対象外です（別issueで検討予定）。
 
 ## テスト
 
@@ -163,7 +165,7 @@ ESLintは [`@nuxt/eslint`](https://eslint.nuxt.com/) モジュールが `nuxt.co
 - [sql.js](https://sql.js.org/)（ブラウザ内SQLite/WebAssembly）
 - `node:sqlite`（Node.js組み込み。自動読み込み時のWALマージに使用）
 - [pnpm](https://pnpm.io/)
-- [Electron](https://www.electronjs.org/) / [electron-builder](https://www.electron.build/)（macOSデスクトップアプリとしての配布。上記「デスクトップアプリ」参照）
+- [Electron](https://www.electronjs.org/) / [electron-builder](https://www.electron.build/)（macOS / Windowsデスクトップアプリとしての配布。上記「デスクトップアプリ」参照）
 
 ## サプライチェーン攻撃対策
 
