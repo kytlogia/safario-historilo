@@ -36,7 +36,7 @@ Agentツールで以下の2プロンプトを同じメッセージ内で並行�
 
 > issue #$1 に対応するPRをレビューする。
 >
-> 1. issue #$1 を参照するPRが作成されるまで待つ(`gh pr list --search "$1 in:body state:open"` などを1分間隔でポーリングし、本文やタイトルにissue #$1への参照があるPRを探す)。
+> 1. issue #$1 を参照するPRが作成されるまで待つ(`gh pr list --search "\"Closes #$1\" in:body state:open"`などを1分間隔でポーリングし、本文に`Closes #$1` を含むPRを探す。issue番号だけでの検索は別PRの誤爆を招くため使わない)。
 > 2. PRが見つかったら、CIがグリーンになり(`gh pr checks <PR番号>`)、かつ直近数分間新規コミットが無い(CI修正やCopilotレビュー対応が落ち着いた)状態になるまで待つ。
 > 3. `code-review` スキルでこのPRをレビューし、指摘があればインラインコメントとして投稿する(例: `/code-review <PR番号> --comment`)。
 > 4. 指摘に対する修正コミットがpushされるのを待ち(`gh pr view <PR番号> --json commits` などをポーリング)、該当箇所を確認する。
