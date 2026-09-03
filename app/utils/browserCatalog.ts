@@ -40,7 +40,7 @@ export const BROWSER_CATALOG: BrowserCatalogEntry[] = [
   {
     id: 'firefox',
     route: '/firefox',
-    icon: 'mdi-fire',
+    icon: 'mdi-firefox',
     label: 'Firefox',
     color: 'orange',
     navLabelKey: 'nav.viewFirefox',
