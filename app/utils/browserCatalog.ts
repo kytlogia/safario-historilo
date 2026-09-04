@@ -110,7 +110,7 @@ export const BROWSER_CATALOG: BrowserCatalogEntry[] = [
   {
     id: 'netscape',
     route: '/netscape',
-    icon: 'mdi-sail-boat',
+    icon: 'mdi-alpha-n-circle-outline',
     label: 'Netscape',
     color: 'green',
     navLabelKey: 'nav.viewNetscape'
