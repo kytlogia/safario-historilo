@@ -17,7 +17,7 @@ jobs:
   quality:
     name: Lint / Format / Typecheck / Test / Build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,8 +42,22 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # registry.npmjs.org's advisories API intermittently stalls for extended
+      # periods (#216); pnpm's own retry budget (~4m10s) isn't always enough,
+      # so fail each attempt fast and let nick-fields/retry spread several
+      # attempts across a few minutes of wall time instead.
       - name: Audit dependencies
-        run: pnpm audit --audit-level=high
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 2
+          max_attempts: 5
+          retry_wait_seconds: 60
+          command: pnpm audit --audit-level=high
+        env:
+          npm_config_fetch_retries: "1"
+          npm_config_fetch_retry_mintimeout: "5000"
+          npm_config_fetch_retry_maxtimeout: "15000"
+          npm_config_fetch_timeout: "30000"
 
   e2e:
     name: E2E tests (Playwright)
