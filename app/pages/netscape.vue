@@ -36,7 +36,7 @@ const { isDark, toggleTheme } = useAppTheme()
   <div>
     <v-app-bar flat density="comfortable" color="surface">
       <v-app-bar-title>
-        <v-icon icon="mdi-sail-boat" class="mr-2" />
+        <v-icon icon="mdi-alpha-n-circle-outline" class="mr-2" />
         Netscape History Detail
       </v-app-bar-title>
       <template #append>
