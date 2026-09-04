@@ -21,6 +21,9 @@ logs
 .fleet
 .idea
 
+# Claude Code Agentツールのworktree隔離実行時に作られる一時ディレクトリ
+.claude/worktrees/
+
 # Test output
 coverage
 test-results
