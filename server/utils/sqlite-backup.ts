@@ -18,7 +18,8 @@ function isLockedDbErrorSignature(err: unknown): boolean {
   return (
     err instanceof Error &&
     (err as NodeJS.ErrnoException & { errcode?: number }).code === 'ERR_SQLITE_ERROR' &&
-    (err as { errcode?: number }).errcode === 0
+    (err as { errcode?: number }).errcode === 0 &&
+    err.message.trim().toLowerCase() === 'not an error'
   )
 }
 
