@@ -44,7 +44,10 @@ describe('toHistoryDbHttpError', () => {
   })
 
   it('maps HistoryDbLockedError to 503 with its own message', () => {
-    const err = toHistoryDbHttpError(new HistoryDbLockedError('ブラウザを終了してください'), FALLBACK)
+    const err = toHistoryDbHttpError(
+      new HistoryDbLockedError('ブラウザを終了してください'),
+      FALLBACK
+    )
     expect(err).toMatchObject({ statusCode: 503, message: 'ブラウザを終了してください' })
   })
 

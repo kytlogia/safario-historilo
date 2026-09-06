@@ -1,4 +1,8 @@
-import { HistoryDbLockedError, HistoryDbNotFoundError, HistoryDbNotReadableError } from './history-store'
+import {
+  HistoryDbLockedError,
+  HistoryDbNotFoundError,
+  HistoryDbNotReadableError
+} from './history-store'
 
 /**
  * `node:sqlite` has a known bug where certain internal failures surface as
@@ -32,13 +36,25 @@ export function toHistoryDbHttpError(err: unknown, fallbackMessage: string) {
     return createError({ statusCode: 403, statusMessage: 'Forbidden', message: err.message })
   }
   if (err instanceof HistoryDbLockedError) {
-    return createError({ statusCode: 503, statusMessage: 'Service Unavailable', message: err.message })
+    return createError({
+      statusCode: 503,
+      statusMessage: 'Service Unavailable',
+      message: err.message
+    })
   }
   if (isError(err)) {
     return err
   }
   if (err instanceof Error && !isMeaninglessErrorMessage(err.message)) {
-    return createError({ statusCode: 500, statusMessage: 'Internal Server Error', message: err.message })
+    return createError({
+      statusCode: 500,
+      statusMessage: 'Internal Server Error',
+      message: err.message
+    })
   }
-  return createError({ statusCode: 500, statusMessage: 'Internal Server Error', message: fallbackMessage })
+  return createError({
+    statusCode: 500,
+    statusMessage: 'Internal Server Error',
+    message: fallbackMessage
+  })
 }
