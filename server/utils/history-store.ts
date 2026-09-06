@@ -61,6 +61,16 @@ export class HistoryDbNotFoundError extends Error {}
 export class HistoryDbNotReadableError extends Error {}
 
 /**
+ * Thrown when the DB file exists and is readable but a hot-copy of it fails
+ * because a running browser instance holds a lock on it (see
+ * backupSqliteDatabaseToBuffer in sqlite-backup.ts, which detects this from
+ * node:sqlite's own error signature). Distinct from HistoryDbNotReadableError
+ * (an OS permission problem) — this one is transient and resolves itself
+ * once the browser is closed.
+ */
+export class HistoryDbLockedError extends Error {}
+
+/**
  * Node's filesystem APIs don't expand `~` to the home directory the way a
  * shell does, so a configured path of `~/Library/Safari/History.db` would
  * otherwise be looked up literally under a directory named `~`.
